@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>毛は、薄い殻を重ねて生やす — やさいのつくりかた</title>
+<meta name="description" content="毛は、薄い殻を重ねて生やす">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 再帰</a>
+      <a href="ch13.html">13 螺旋</a>
+      <a href="ch14.html">14 頂点色</a>
+      <a href="ch15.html" aria-current="page">15 毛</a>
+      <a href="ch16.html">16 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-okra)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第15章</p>
+<section class="chapter" id="ch15" style="--ch:var(--p-okra)">
+  <div class="chapter-head">
+    <div class="chnum">15<small>Shell</small></div>
+    <div>
+      <h2>毛は、薄い殻を重ねて生やす</h2>
+      <p class="sub">shell fur — シェル法</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>枝豆のいちばんの特徴は産毛です。でも<b>法線マップでは毛は出ません</b>。輪郭がつるつるのままだからです。</li>
+        <li>そこで本体の少し外側に、毛の点々を描いた<b>透明な殻</b>を1枚2枚と重ねます。</li>
+        <li>正面はうっすら、輪郭では殻が斜めに重なって濃くなる。これが毛に見えます。</li>
+      </ul>
+    </div>
+
+    <p>
+      07章で、オクラの産毛は <b>sheen</b>（布のような照り）で表しました。
+      表面が縁のあたりで柔らかく光る、という質感です。オクラはそれで足ります。
+      でも枝豆はそうはいきません。枝豆の毛はもっと長く、密で、
+      <b>シルエットに毛が立って見える</b>からです。
+    </p>
+    <p>
+      06章の法線マップは「実際には形を変えず、光の当たり方だけ嘘をつく」技術でした。
+      安上がりですが、弱点があります。<b>輪郭には効かない。</b>
+      横から見たときの縁は形そのものなので、いくら法線をいじっても滑らかなままです。
+    </p>
+
+    <h3>やり方 — 少し大きい殻を、何枚か重ねる</h3>
+    <p>
+      そこで<b>シェル法</b>（shell fur）を使います。考え方はとても素朴です。
+    </p>
+    <ol>
+      <li>莢のメッシュを、ほんの少し外側へ膨らませたコピーを作る</li>
+      <li>そこに「毛の断面の点々」を描いた半透明のテクスチャを貼る</li>
+      <li>これを、膨らませる量を変えながら2〜3枚重ねる</li>
+    </ol>
+    <p>
+      毛を1本ずつ作るわけではありません。毛を<b>輪切りにした点々</b>を、
+      高さ違いで何枚か置いているだけです。それでも毛に見えます。
+      正面から見ると点々はまばらに散っているだけですが、
+      輪郭のあたりでは同じ点々を<b>斜めから何枚も透かして見る</b>ことになるので、
+      そこだけ濃く積み上がるからです。
+    </p>
+    <figure>
+<pre><span class="k">for</span> (<span class="k">let</span> k = <span class="n">0</span>; k &lt; <span class="n">3</span>; k++) {
+    <span class="k">const</span> f = <span class="k">new</span> BABYLON.StandardMaterial(<span class="s">"edamameFuzz"</span> + k, scene);
+    f.opacityTexture = <span class="k">this</span>.fuzzTex;      <span class="c">// 毛の点々（アルファ）</span>
+    f.alpha = cfg.fuzzAlpha * Math.pow(<span class="n">0.55</span>, k);  <span class="c">// 外側の殻ほど薄く</span>
+    f.backFaceCulling = <span class="k">false</span>;
+    f.disableDepthWrite = <span class="k">true</span>;             <span class="c">// 前後で悩まないようにする</span>
+    <span class="k">this</span>.fuzzMats.push(f);
+}</pre>
+      <figcaption>枝豆.js。殻ごとにアルファを 0.55 倍ずつ落としていく</figcaption>
+    </figure>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 殻を重ねる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="fuzzShell">殻の枚数 <span class="v" id="fuzzShellV">2 枚</span></label>
+            <input type="range" id="fuzzShell" min="0" max="4" step="1" value="2">
+          </div>
+          <div class="ctrl">
+            <label for="fuzzLen">毛の長さ <span class="v" id="fuzzLenV">0.075</span></label>
+            <input type="range" id="fuzzLen" min="0.01" max="0.20" step="0.005" value="0.075">
+          </div>
+          <div class="ctrl">
+            <label for="fuzzA">毛の濃さ <span class="v" id="fuzzAV">0.30</span></label>
+            <input type="range" id="fuzzA" min="0.05" max="0.9" step="0.01" value="0.30">
+          </div>
+          <div class="readout" id="fuzzOut"></div>
+          <p class="hint">枚数を0にすると輪郭がつるつるになります。1枚でも入れると、縁だけ毛羽立って見えます。</p>
+        </div>
+        <div>
+          <canvas id="fuzzCanvas" width="520" height="380" aria-label="シェル法による産毛のデモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>枝豆.js は最初、<code>opacityFresnel</code>（見る角度で透明度を変える機能）を使って
+      「輪郭付近だけ毛を見せる」つもりでした。ところが Babylon.js のこの機能は
+      <code>alpha += left*(1-F) + F*right</code> という<b>足し算</b>で、
+      しかも <code>leftColor</code> が<b>正面</b>側です。
+      白と黒を入れたところ、正面のアルファに 1.0 が足されて完全に不透明になり、
+      莢が<b>霜をかぶったように真っ白</b>になりました。
+      いまは素直なシェル法に戻してあります。
+      「便利そうな機能を、中身を確かめずに使うと壊れる」という記録です。</p>
+    </div>
+    <div class="note">
+      <b>毛の色を純白にしない。</b>
+      産毛は白っぽく見えますが、そのまま白で描くと霜に見えます。
+      枝豆.js は毛の色に莢の緑を3割混ぜています。
+      塩ゆでにしたときは <code>fuzzAlpha</code> を0.7倍にします。
+      濡れた毛は寝て束になるからです。
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>殻の枚数を0にして、輪郭が完全に滑らかになることを確かめる。</li>
+        <li>枚数1・濃さ0.9と、枚数3・濃さ0.3を見比べる。どちらが毛らしいか。</li>
+        <li>毛の長さを0.20まで伸ばす。どのあたりから「カビ」に見えはじめるか。</li>
+        <li>実物の枝豆を明るいほうへかざして、輪郭に毛が立つのを見る。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch14.html"><span class="dir">← まえの章</span><span class="ttl">14 模様を貼らずに、頂点で塗る</span></a>
+    <a class="next" href="ch16.html"><span class="dir">つぎの章 →</span><span class="ttl">16 「似ているのに別物」を作り分ける</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

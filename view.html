@@ -26,6 +26,11 @@
       <a href="ch09.html">09 部品</a>
       <a href="ch10.html">10 曲がり</a>
       <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 再帰</a>
+      <a href="ch13.html">13 螺旋</a>
+      <a href="ch14.html">14 頂点色</a>
+      <a href="ch15.html">15 毛</a>
+      <a href="ch16.html">16 差分</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html" aria-current="page">ソース</a>
       <a href="terms.html">用語</a>
@@ -41,7 +46,7 @@
     <div class="chnum" style="font-size:13px">src<small style="opacity:.7">SOURCE</small></div>
     <div>
       <h2>サンプルのソースを読む</h2>
-      <p class="sub">18本の .js を、そのまま表示します</p>
+      <p class="sub">23本の .js を、そのまま表示します</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
@@ -61,6 +66,7 @@
         <span class="d" id="viewDesc"></span>
         <span class="meta" id="viewMeta"></span>
         <button class="chip" type="button" id="viewCopy">コードをコピー</button>
+        <a id="viewPlay" href="play.html">▶ 動かす</a>
         <a id="viewRaw" href="#" target="_blank" rel="noopener">別のタブで開く ↗</a>
       </div>
       <div class="codewrap" id="viewWrap">
@@ -72,21 +78,31 @@
     <div class="body" style="margin-top:34px">
       <h3>どこを読めばいいか</h3>
       <p>
-        18本とも、ファイルの先頭に「構成」というコメントがあります。
-        並びはどのファイルも同じなので、番号とこのサイトの章を対応させておきます。
+        どのファイルも、先頭に「構成」というコメントがあります。
+        並びはだいたい共通なので、番号とこのサイトの章を対応させておきます。
       </p>
       <table>
         <tr><th>ファイル内の番号</th><th>中身</th><th>対応する章</th></tr>
-        <tr><td>0. CONFIG</td><td>品種プリセット。太さや長さの数値</td><td><a href="ch01.html">01 手続き生成</a></td></tr>
+        <tr><td>0. CONFIG</td><td>品種プリセット。太さや長さの数値</td><td><a href="ch01.html">01 手続き生成</a> / <a href="ch16.html">16 差分</a></td></tr>
         <tr><td>1. Rng</td><td>シード付き擬似乱数</td><td><a href="ch02.html">02 乱数</a></td></tr>
         <tr><td>2. Noise</td><td>値ノイズ / fBm</td><td><a href="ch03.html">03 ノイズ</a></td></tr>
         <tr><td>3. Mesh utils</td><td>巻き順の判定・法線の溶接・掃引</td><td><a href="ch05.html">05 面と法線</a> / <a href="ch10.html">10 曲がり</a></td></tr>
-        <tr><td>4. Profile</td><td>断面のテーブル、稜やくぼみ</td><td><a href="ch04.html">04 かたち</a></td></tr>
-        <tr><td>5. TextureLab</td><td>アルベド・ORM・法線マップの生成</td><td><a href="ch06.html">06 テクスチャ</a></td></tr>
+        <tr><td>4. Profile / Fields</td><td>断面のテーブル、稜やくぼみ、膨らみの場</td><td><a href="ch04.html">04 かたち</a></td></tr>
+        <tr><td>5. TextureLab</td><td>アルベド・ORM・法線マップの生成</td><td><a href="ch06.html">06 テクスチャ</a> / <a href="ch15.html">15 毛</a></td></tr>
         <tr><td>6. 本体</td><td>その野菜そのものの組み立て</td><td><a href="ch09.html">09 部品</a></td></tr>
         <tr><td>7. Basket</td><td>ざる</td><td><a href="ch08.html">08 物理</a></td></tr>
         <tr><td>8. Scene / 物理</td><td>光・影・露出と Havok</td><td><a href="ch11.html">11 光</a> / <a href="ch08.html">08 物理</a></td></tr>
         <tr><td>9. GUI</td><td>右下のスライダー</td><td>—</td></tr>
+      </table>
+      <p>
+        ただし、あとから加わった<b>ブロッコリー・カリフラワー・ロマネスコ</b>の3本は、
+        この並びに収まりません。Profile も TextureLab も持たず、
+        代わりに <b>Corymb</b>（散房花序の再帰）や <b>Fractal</b>（黄金角の再帰配置）という層があります。
+      </p>
+      <table>
+        <tr><th>この3本だけにある番号</th><th>中身</th><th>対応する章</th></tr>
+        <tr><td>4. Fields</td><td>頭部の包絡面 / 瘤の場 / 遮蔽（AO）</td><td><a href="ch14.html">14 頂点カラー</a></td></tr>
+        <tr><td>5. Corymb / Fractal</td><td>房や小塔の再帰生成</td><td><a href="ch12.html">12 再帰</a> / <a href="ch13.html">13 螺旋</a></td></tr>
       </table>
       <div class="note">
         <b>コメントの【対策】を探してみてください。</b>
@@ -98,7 +114,7 @@
   </div>
 </section>
   <div class="pager">
-    <a class="prev" href="zukan.html"><span class="dir">← まえの章</span><span class="ttl">18 どのファイルで、何が学べるか</span></a>
+    <a class="prev" href="zukan.html"><span class="dir">← まえの章</span><span class="ttl">23 どのファイルで、何が学べるか</span></a>
     <a class="next" href="terms.html"><span class="dir">つぎの章 →</span><span class="ttl">用語 コードに出てくる言葉</span></a>
   </div>
 </div>

@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>くり返しが、形をつくる — やさいのつくりかた</title>
+<meta name="description" content="くり返しが、形をつくる">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html" aria-current="page">12 再帰</a>
+      <a href="ch13.html">13 螺旋</a>
+      <a href="ch14.html">14 頂点色</a>
+      <a href="ch15.html">15 毛</a>
+      <a href="ch16.html">16 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-leaf)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第12章</p>
+<section class="chapter" id="ch12" style="--ch:var(--p-leaf)">
+  <div class="chapter-head">
+    <div class="chnum">12<small>Recursion</small></div>
+    <div>
+      <h2>くり返しが、形をつくる</h2>
+      <p class="sub">recursion &amp; self-similarity — 再帰と自己相似</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>ブロッコリーやロマネスコは、横顔を回しても（04章）軸に沿わせても（10章）作れません。</li>
+        <li>この3本の正体は<b>同じ手順を、小さくしてくり返す</b>ことです。これを<b>再帰</b>といいます。</li>
+        <li>むずかしいのは作り方ではなく<b>どこで止めるか</b>。止め方を外すと、粒がバラバラになるか個数が爆発します。</li>
+      </ul>
+    </div>
+
+    <p>
+      ここまでの章で作ってきた野菜は、どれも「1個のかたまり」でした。
+      横顔を回して作るか（04章）、曲がった軸に断面を並べて作るか（10章）。
+      ところがブロッコリー・カリフラワー・ロマネスコは、そのどちらでもありません。
+      これらは<b>枝が分かれて、その先でまた枝が分かれてできた構造</b>で、
+      形を1本の折れ線で言い表すことができません。
+    </p>
+    <p>
+      こういうものは、<b>自分自身を呼び出す関数</b>で作ります。
+      「円錐をひとつ描く。その表面に、少し小さい円錐をいくつか置く。
+      置いた円錐それぞれについて、また同じことをする」——
+      これだけで、あの複雑な形が出てきます。
+    </p>
+
+    <h3>ロマネスコの正体は、2行で言える</h3>
+    <p>
+      ロマネスコを「ブロッコリーの房を尖らせたもの」と考えると、絶対に似ません。
+      ロマネスコ.js の冒頭には、こう書いてあります。
+    </p>
+    <ul>
+      <li>(a) 親の円錐の面のうえに、子を「<b>頂点からの距離が等比数列</b> s<sub>i</sub> = S·λ<sup>i</sup>、
+        <b>方位が137.5°ずつ</b>」で置く</li>
+      <li>(b) <b>子の大きさを、その距離に比例させる</b></li>
+    </ul>
+    <p>
+      この2つが揃うと<b>自己相似</b>になります。どこを拡大しても同じ形が出てくる、という性質です。
+      そして自己相似になったとたん、見る向きによって8本・13本・21本と数の変わる螺旋が
+      <b>勝手に</b>現れます。螺旋を線として描こうとしたり、子を等間隔に並べたりすると、
+      ただのイガグリで終わります（この螺旋の話は<a href="ch13.html">13章</a>で）。
+    </p>
+    <figure>
+<pre><span class="k">function</span> growFractal(cfg, rng, out, base, axis, rho, H, level) {
+    <span class="k">const</span> L = cfg.levels[Math.min(level, cfg.levels.length - <span class="n">1</span>)];
+    <span class="c">// 打ち切りの判定。ここが章の本題</span>
+    <span class="k">const</span> leaf = (level &gt;= cfg.maxLevel)
+        || (L.coneK * rho * L.startFrac &lt; cfg.minChild);
+    ...
+    <span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt;= iMax; i++) {
+        <span class="k">const</span> f  = L.startFrac * Math.pow(lam, i);   <span class="c">// 頂点からの距離（等比）</span>
+        <span class="k">const</span> th = th0 + i * <span class="n">2.3999632</span>;              <span class="c">// 137.5° ずつ回す</span>
+        <span class="k">const</span> cr = L.coneK * coneR(rho, ..., tt);   <span class="c">// その場所の半径に見合う大きさ</span>
+        growFractal(cfg, rng, out, cb, ax, cr, cr * CL.aspect, level + <span class="n">1</span>);
+    }
+}</pre>
+      <figcaption>ロマネスコ.js の中心。自分自身を呼んでいるのが分かる</figcaption>
+    </figure>
+
+    <h3>「何階層まで」で止めてはいけない</h3>
+    <p>
+      再帰でいちばん大事なのは、<b>止める条件</b>です。素直に考えると「3階層まで潜る」と
+      決めたくなります。でもこれをやると失敗します。
+    </p>
+    <p>
+      頭の下側にある大きな小塔は、3階層では末端がまだ1cm近くあります。
+      つるつるした大きな瘤にしか見えません。逆に頂上付近の小さな小塔は、
+      3階層目がもう見えない大きさになっています。
+      <b>実物のロマネスコは、大きい小塔ほど深く分岐していて、
+      末端の粒の絶対的な大きさがどこでも1〜2mmに揃っています。</b>
+      だから打ち切りは階層数ではなく、<code>minChild</code>（cm単位の大きさ）で決めます。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — どこで止めるか</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="fracK">子の大きさの比 <span class="v" id="fracKV">0.52</span></label>
+            <input type="range" id="fracK" min="0.30" max="0.62" step="0.01" value="0.52">
+          </div>
+          <div class="ctrl">
+            <label for="fracMin">打ち切る粒の大きさ <span class="v" id="fracMinV">1.5 mm</span></label>
+            <input type="range" id="fracMin" min="0.8" max="9" step="0.1" value="1.5">
+          </div>
+          <label class="switch"><input type="checkbox" id="fracDepth">階層数で打ち切る（3階層）</label>
+          <div class="readout" id="fracOut"></div>
+          <p class="hint">「階層数で打ち切る」を入れると、末端の大きさがそろわなくなります。最後の行の「倍」を見てください。</p>
+        </div>
+        <div>
+          <canvas id="fracCanvas" width="520" height="460" aria-label="再帰で置いた円錐の側面図"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>本気で作ると1000万個になる</h3>
+    <p>
+      実験で「打ち切る粒の大きさ」を下げていくと、個数がすごい勢いで増えます。
+      これは計算してみると分かります。子は1階層あたり k 倍にしか小さくならないので、
+      4.6cmの頭から1mmの粒まで届くには、k = 0.5 でも
+      log(0.001/0.046) / log(0.5) ≒ <b>5.5階層</b>。
+      1階層あたり親の面を埋めるのに必要な個数を掛けると、末端は<b>1000万個</b>になります。
+      実物のロマネスコは、本当にその規模で分岐しています。
+    </p>
+    <p>
+      パソコンでは無理です。そこでロマネスコ.js は、末端だけ<b>「面に粒を彫る」</b>ことで
+      代用しています。ジオメトリは輪郭だけを担当し、細かい螺旋は面の凹凸に任せる。
+      作りたいものが大きすぎるときは、<b>どこまでを本物の形で作り、
+      どこからを表面の細工で済ませるか</b>を決めることになります。
+    </p>
+    <div class="note">
+      <b>被覆率という物差し。</b>
+      親の面が子で埋まっているかどうかは、式で確かめられます。
+      親の側面積を子の底面積で割った<b>被覆率 = k²·ρ /( S·(1−λ²) )</b>。
+      これが1を切ると親の面がそのまま見えて、「つるつるの円錐に粒が点在する」絵になります。
+      子を小さくすれば実物に近づく、と単純には言えません。
+      小さくすると面を埋めるのに必要な個数が増えて、すぐ破綻します。
+      <b>子の大きさと個数は、独立に決められません。</b>
+    </div>
+
+    <h3>ブロッコリーは、順番が逆</h3>
+    <p>
+      同じ再帰でも、ブロッコリーは作り方が逆向きです。
+      素直に「頭の縄張りを3〜4個に分けて、それぞれをまた分けて……」とやると、
+      房と房のあいだに<b>穴が空きます</b>。3個に分けたとき、隣り合う子の中心は
+      100°以上離れてしまうからです。
+    </p>
+    <p>
+      そこでブロッコリー.js は、<b>先に房の位置を全部決めます</b>。
+      頭の表面にフィボナッチ格子で均等に並べ（これも<a href="ch13.html">13章</a>の話です）、
+      そのあとで近いものどうしを k-means でまとめ直し、
+      まとまりの中心へ向かって枝を伸ばす。こうすれば、
+      表面が埋まっていることが最初から保証されます。
+    </p>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>子の軸を、親の面の法線のままにしないこと。</b>
+      面に垂直なまま生やすと、小塔が放射状に開いて<b>ウニ</b>になります。
+      実物はどの小塔も頭のてっぺんを向いて寝ているので、
+      法線から親の軸のほうへ大きく寄せます（<code>tilt</code>）。
+      上から見て星形・ヒトデ形になったら、たいていここが原因です。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「階層数で打ち切る」を入れて、末端の「いちばん大きい ÷ いちばん小さい」が何倍になるか読み取る。</li>
+        <li>打ち切る大きさを0.8mmまで下げて、円錐の総数が何個になるか見る。</li>
+        <li>子の大きさの比を0.30まで下げる。親の面が見えてくる（被覆率が1を切る）ことを確かめる。</li>
+        <li>身のまわりで自己相似な形を3つ探す（例：シダの葉、雷、木の枝）。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch11.html"><span class="dir">← まえの章</span><span class="ttl">11 見せ方を決める（光と露出）</span></a>
+    <a class="next" href="ch13.html"><span class="dir">つぎの章 →</span><span class="ttl">13 螺旋は、描かない</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>
