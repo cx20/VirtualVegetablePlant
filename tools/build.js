@@ -19,6 +19,11 @@
  *
  *  手書きで管理しているもの（このスクリプトは触りません）:
  *    ・assets/site.css / assets/labs.js / assets/havok-lab.js
+ *
+ *  別のスクリプトが作るもの:
+ *    ・assets/thumbs/*.jpg と thumbs.js … 図鑑カードの実行結果サムネイル。
+ *      収録は node tools/shoot.js（ヘッドレスの Chrome で実際に動かして撮る）。
+ *      サンプルの見た目を変えたときだけ撮り直せば足ります
  * ===================================================================== */
 /* index.html（1枚もの）を複数ページに組み替えるビルドスクリプト */
 const fs = require("fs");
@@ -1486,10 +1491,22 @@ ${tryBox([
     .replace('<div class="chnum">18<small>FILES</small></div>',
              '<div class="chnum">23<small>FILES</small></div>')
     .replace("18本それぞれに、そこでしか出てこない技術がある",
-             "23本それぞれに、そこでしか出てこない技術がある");
+             "23本それぞれに、そこでしか出てこない技術がある")
+    .replace(
+      `      左の色帯は、そのファイルのコードに実際に書かれている果皮の色です。
+      同じ枠組みなのに、担当する「難所」が1本ずつ違います。`,
+      `      写真は<b>実際に動かした結果</b>です。1枚も画像を読み込まず、
+      すべてその場で計算して描かれています。
+      <b>写真を押すと、そのサンプルがこのサイトの中で動きます</b>
+      （組み立てに数秒かかります）。
+      左の色帯は、そのファイルのコードに実際に書かれている果皮の色。
+      同じ枠組みなのに、担当する「難所」が1本ずつ違います。`
+    );
   pages.push({
     file: "zukan.html", no: "23", tag: "FILES", color: P.corn,
     title: "どのファイルで、何が学べるか", crumb: "図鑑",
+    // サムネイルの一覧。tools/shoot.js が書き出す。labs.js より先に読ませる
+    scripts: ["assets/thumbs/thumbs.js"],
     html: sec
   });
 }
@@ -1527,6 +1544,7 @@ pages.push({
         <span class="d" id="viewDesc"></span>
         <span class="meta" id="viewMeta"></span>
         <button class="chip" type="button" id="viewCopy">コードをコピー</button>
+        <a id="viewPlay" href="play.html">▶ 動かす</a>
         <a id="viewRaw" href="#" target="_blank" rel="noopener">別のタブで開く ↗</a>
       </div>
       <div class="codewrap" id="viewWrap">
@@ -1647,7 +1665,7 @@ function shell(o) {
 <title>${o.fullTitle || o.title + " — やさいのつくりかた"}</title>
 <meta name="description" content="${o.desc || ""}">
 <link rel="stylesheet" href="assets/site.css">
-<script src="assets/labs.js" defer></script>${(o.scripts || []).map((s) => '\n<script src="' + s + '" defer></script>').join("")}
+${(o.scripts || []).map((s) => '<script src="' + s + '" defer></script>\n').join("")}<script src="assets/labs.js" defer></script>
 </head>
 <body>
 <header class="topbar">
@@ -1701,6 +1719,53 @@ ${pagerHTML(prev, next)}
   );
   console.log("wrote", p.file);
 });
+
+/* ---------- サンプルを実行するページ ----------
+   章立ての流れには入れないので、pages とは別に単独で書き出す。
+   図鑑のサムネイルからここへ飛ぶ。 */
+{
+  const body = `<div class="wrap" style="--ch:var(--p-leaf)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span><a href="zukan.html">図鑑</a><span class="sep">/</span>実行</p>
+  <section class="chapter" id="play" style="--ch:var(--p-leaf);padding-top:26px">
+    <div class="chapter-head">
+      <div class="chnum" style="font-size:13px">RUN<small style="opacity:.7">PLAY</small></div>
+      <div>
+        <h2 id="playTitle">—</h2>
+        <p class="sub">このページで、サンプルがそのまま動いています</p>
+      </div>
+    </div>
+    <div class="body" style="max-width:none">
+      <div class="playbar">
+        <span id="playState">準備中…</span>
+        <a id="playSrc" href="view.html">ソースを読む →</a>
+        <a id="playRaw" href="#" target="_blank" rel="noopener">.js を直接開く ↗</a>
+        <a href="zukan.html">図鑑へ戻る</a>
+      </div>
+      <div class="playstage" id="playStage">
+        <canvas id="playCanvas" touch-action="none"></canvas>
+      </div>
+      <p class="hint" style="margin-top:10px">
+        3Dモデルも写真も読み込んでいません。このページを開いた瞬間に、
+        座標も模様も計算で作られています。組み立てに数秒かかります。
+        右下のつまみで品種や個数を変えると、その場で作り直されます。
+      </p>
+    </div>
+  </section>
+</div>`;
+  fs.writeFileSync(
+    path.join(ROOT, "play.html"),
+    shell({
+      title: "サンプルを動かす",
+      fullTitle: "サンプルを動かす — やさいのつくりかた",
+      desc: "選んだサンプルをその場で実行します",
+      cur: "zukan.html",
+      body: body,
+      scripts: ["assets/play.js"]
+    }),
+    "utf8"
+  );
+  console.log("wrote play.html");
+}
 
 /* ---------- サンプルのソースを、ビューアから読める形で書き出す ----------
    file:// では fetch も XHR も使えないので、<script> で読める形にしておく。

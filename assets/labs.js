@@ -1328,24 +1328,46 @@ var FILES = [
         ["ロマネスコ", "ロマネスコ.js", "#A2B340", "黄金角137.5°と等比数列だけで自己相似の螺旋が生まれる。打ち切りの設計がすべて。"]
 ];
 function viewHref(file) { return "view.html?f=" + encodeURIComponent(file); }
+function playHref(file) { return "play.html?f=" + encodeURIComponent(file); }
 
 /* ======================================================================
    図鑑 — カードからソースを開けるようにする
    ====================================================================== */
 (function () {
     var host = $("#catalog"); if (!host) return;
+    // tools/shoot.js が書き出したサムネイル一覧。無くてもカードは出る
+    var TH = window.__THUMBS || {};
     var frag = document.createDocumentFragment();
     FILES.forEach(function (v) {
-        var a = document.createElement("a");
-        a.className = "card";
-        a.href = viewHref(v[1]);
-        a.style.setProperty("--sw", v[2]);
-        a.innerHTML = '<h4></h4><p class="fn"></p><p class="d"></p>' +
-            '<span class="more">ソースを読む →</span>';
-        a.querySelector("h4").textContent = v[0];
-        a.querySelector(".fn").textContent = v[1];
-        a.querySelector(".d").textContent = v[3];
-        frag.appendChild(a);
+        // カードの中にリンクが2本（実行・ソース）入るので、カード自体は div。
+        // 写真をクリックすると、その場でサンプルが動きはじめる
+        var card = document.createElement("div");
+        card.className = "card";
+        card.style.setProperty("--sw", v[2]);
+        var t = TH[v[1]];
+        card.innerHTML =
+            (t ? '<a class="shot"><img alt="" loading="lazy" decoding="async">' +
+                 '<span class="playmark">▶ 動かす</span></a>' : "") +
+            '<div class="cardbody"><h4></h4><p class="fn"></p><p class="d"></p>' +
+            '<p class="acts"><a class="run"></a><a class="src">ソースを読む →</a></p></div>';
+        if (t) {
+            var shot = card.querySelector(".shot"), img = shot.querySelector("img");
+            // 切り出しの縦横比はサンプルごとに違うので、余ったところは
+            // そのシーンの背景色で埋める（3D側の背景とつながって見える）
+            shot.style.background = t.bg || "#eee";
+            shot.href = playHref(v[1]);
+            img.src = "assets/thumbs/" + t.img;
+            img.width = t.w; img.height = t.h;
+            img.alt = v[0] + " — " + v[1] + " を実行した画面";
+        }
+        card.querySelector("h4").textContent = v[0];
+        card.querySelector(".fn").textContent = v[1];
+        card.querySelector(".d").textContent = v[3];
+        var run = card.querySelector(".run");
+        run.href = playHref(v[1]);
+        run.textContent = "▶ 動かす";
+        card.querySelector(".src").href = viewHref(v[1]);
+        frag.appendChild(card);
     });
     host.appendChild(frag);
 })();
@@ -1499,6 +1521,8 @@ function highlightJs(src) {
         if (titleEl) titleEl.textContent = v[1];
         if (descEl) descEl.textContent = v[3];
         if (rawEl) rawEl.href = encodeURIComponent(v[1]);
+        var playEl = $("#viewPlay");
+        if (playEl) playEl.href = playHref(v[1]);
         $$("#viewChips .chip").forEach(function (b) {
             b.setAttribute("aria-pressed", b.dataset.file === v[1] ? "true" : "false");
         });
