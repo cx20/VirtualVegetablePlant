@@ -46,9 +46,10 @@ const BUILD_TIMEOUT = +(process.env.SHOOT_BUILD_TIMEOUT || 300000);
  *         そこで「もの（メッシュ）が増えず、動かなくなった」ことを見て待つ */
 const SETTLE_TIMEOUT = 150000;
 const STABLE_POLLS = 2;        // 個数がこれだけ連続で同じなら投入は済み
-const GIVEUP_POLLS = 12;       // 速度が落ちきらないサンプル用の保険
+const STILL_POLLS = 3;         // 誰も動かない状態がこれだけ続いたら完了
+const GIVEUP_POLLS = 14;       // 止まりきらないサンプル用の保険
 const POLL_EVERY = 1500;
-const SETTLE_SPEED = 1.0;      // これ以下なら「転がり終わった」（cm/s 相当）
+const SETTLE_MOVE = 0.02;      // 1回ぶんの間にこれ以下しか動かなければ静止（cm）
 
 const only = process.argv[2];
 const files = fs
@@ -150,14 +151,32 @@ window.__hideGui = function () {
            にし、静まったら STATIC に固定するので、
            「見えているものの数」と「いちばん速いものの速さ」を見れば確実 */
 window.__sig = function () {
-    var s = window.__scene; if (!s) return "0:99";
-    var n = 0, vmax = 0;
+    var s = window.__scene; if (!s) return "0:99:99";
+    var n = 0, vmax = 0, bodies = 0;
+    var cur = [];
     var list = s.meshes.concat(s.transformNodes || []);
     for (var i = 0; i < list.length; i++) {
         var m = list[i];
-        if (m.getTotalVertices && m.getTotalVertices() && m.isEnabled()) n++;
+        var real = m.getTotalVertices && m.getTotalVertices() && m.isEnabled();
+        if (real) {
+            n++;
+            // 【対策】剛体の速度だけを見ていたら、全サンプルで 0.00 と出た。
+            //         止まったからではなく読めていなかったので、落下の
+            //         途中で「静止した」と判定して撮ってしまい、野菜が
+            //         ざるを突き抜けた絵になった。位置と姿勢を実測する
+            m.computeWorldMatrix(true);
+            var p = m.getAbsolutePosition();
+            cur.push(p.x, p.y, p.z);
+            var bb = m.getBoundingInfo && m.getBoundingInfo().boundingBox;
+            if (bb) {
+                // 回転だけしているものも捉えたいので、対角の2点も見る
+                cur.push(bb.vectorsWorld[0].x, bb.vectorsWorld[0].y, bb.vectorsWorld[0].z);
+                cur.push(bb.vectorsWorld[7].x, bb.vectorsWorld[7].y, bb.vectorsWorld[7].z);
+            }
+        }
         var b = m.physicsBody;
         if (b) {
+            bodies++;
             try {
                 var v = b.getLinearVelocity().length();
                 var w = b.getAngularVelocity().length();
@@ -166,7 +185,18 @@ window.__sig = function () {
             } catch (e) { /* STATIC に落とされた後は読めないことがある */ }
         }
     }
-    return n + ":" + vmax.toFixed(2);
+    // 前回からいちばん大きく動いた距離（cm）
+    var prev = window.__prevPos, motion = 999;
+    window.__prevPos = cur;
+    if (prev && prev.length === cur.length) {
+        motion = 0;
+        for (var k = 0; k < cur.length; k += 3) {
+            var dx = cur[k] - prev[k], dy = cur[k + 1] - prev[k + 1], dz = cur[k + 2] - prev[k + 2];
+            var dd = Math.sqrt(dx * dx + dy * dy + dz * dz);
+            if (dd > motion) motion = dd;
+        }
+    }
+    return n + ":" + motion.toFixed(4) + ":" + bodies + "/" + vmax.toFixed(2);
 };
 
 /* 描かれた絵そのものを走査して、野菜の写っている範囲を返す。
@@ -288,13 +318,22 @@ window.__geoFrame = function () {
 /* 診断用。どのメッシュが枠の計算に入ったかを見る */
 window.__dump = function () {
     var s = window.__scene, out = [];
-    for (var i = 0; i < s.meshes.length; i++) {
-        var m = s.meshes[i];
-        out.push(m.name + " v=" + (m.getTotalVertices ? m.getTotalVertices() : 0) +
-            " en=" + (m.isEnabled() ? 1 : 0) + " vis=" + (m.isVisible ? 1 : 0) +
-            " r=" + (m.getBoundingInfo ? m.getBoundingInfo().boundingSphere.radiusWorld.toFixed(2) : "?"));
+    var all = s.meshes.concat(s.transformNodes || []);
+    for (var i = 0; i < all.length && i < 40; i++) {
+        var m = all[i];
+        m.computeWorldMatrix(true);
+        var p = m.getAbsolutePosition();
+        out.push(m.name +
+            " v=" + (m.getTotalVertices ? m.getTotalVertices() : 0) +
+            " en=" + (m.isEnabled() ? 1 : 0) +
+            " par=" + (m.parent ? m.parent.name : "-") +
+            " body=" + (m.physicsBody ? 1 : 0) +
+            " imp=" + (m.physicsImpostor ? 1 : 0) +
+            " y=" + p.y.toFixed(2));
     }
-    return out.join(" / ");
+    out.push("[meshes=" + s.meshes.length + " nodes=" + (s.transformNodes || []).length +
+        " engine=" + (s.getPhysicsEngine() ? "yes" : "no") + "]");
+    return out.join("  ||  ");
 };
 </script></body></html>`;
 
@@ -302,10 +341,16 @@ window.__dump = function () {
    【対策】毎回 CDN から読ませていたら、何十回も走らせるうちに
            読み込みが落ちるようになり、「組み立てが終わりません」で
            止まるサンプルが出た。手元に置いてしまえば起きない */
+/* 【対策】UMD だけ置いても足りない。HavokPhysics() は自分と同じ場所から
+ *         HavokPhysics.wasm を読みに行くので、これを配り忘れると
+ *         物理の初期化が黙って失敗する。サンプル側は物理が無ければ
+ *         「一列に並べる」フォールバックに落ちるので、絵は出るが
+ *         野菜がざるを突き抜けた状態で撮れてしまう */
 const LIBS = {
   "babylon.js": "https://cdn.babylonjs.com/babylon.js",
   "babylon.gui.min.js": "https://cdn.babylonjs.com/gui/babylon.gui.min.js",
-  "HavokPhysics_umd.js": "https://cdn.babylonjs.com/havok/HavokPhysics_umd.js"
+  "HavokPhysics_umd.js": "https://cdn.babylonjs.com/havok/HavokPhysics_umd.js",
+  "HavokPhysics.wasm": "https://cdn.babylonjs.com/havok/HavokPhysics.wasm"
 };
 const LIBDIR = path.join(require("os").tmpdir(), "vvp-shoot-lib");
 
@@ -342,7 +387,10 @@ const server = http.createServer((req, res) => {
     const name = path.basename(u.pathname);
     const p = path.join(LIBDIR, name);
     if (!LIBS[name] || !fs.existsSync(p)) { res.writeHead(404); return res.end(); }
-    res.writeHead(200, { "content-type": "application/javascript; charset=utf-8" });
+    res.writeHead(200, {
+      "content-type": name.endsWith(".wasm")
+        ? "application/wasm" : "application/javascript; charset=utf-8"
+    });
     return res.end(fs.readFileSync(p));
   }
   if (u.pathname === "/sample") {
@@ -494,6 +542,8 @@ function findChrome() {
   const done = [], failed = [];
   for (const f of files) {
     const label = f.replace(/\.js$/, "");
+    // ざるに盛るサンプルだけ物理を使う。1個だけのスタジオ撮りは使わない
+    const needsPhysics = fs.readFileSync(path.join(ROOT, f), "utf8").includes("HavokPhysics()");
     process.stdout.write("  " + label.padEnd(14, "　") + " ");
     const t0 = Date.now();
     let page = null;
@@ -520,6 +570,18 @@ function findChrome() {
         state = r.result.value || "loading";
         if (state !== "loading") break;
       }
+      if (state === "built") {
+        // 【対策】物理が死んでいても絵は出る。ただしサンプルは
+        //         「一列に並べる」フォールバックに落ちるので、
+        //         ざるを突き抜けた嘘の絵になる。撮る前に必ず確かめる
+        const phys = (await page.send("Runtime.evaluate", {
+          expression: "!!(window.__scene && window.__scene.getPhysicsEngine())",
+          returnByValue: true
+        })).result.value;
+        if (needsPhysics && !phys) {
+          throw new Error("物理エンジンが動いていません（Havok の wasm を配れていない可能性）");
+        }
+      }
       if (state !== "built") {
         // 何が読めていないのかが分からないと直しようがないので、状況を添える
         const diag = (await page.send("Runtime.evaluate", {
@@ -536,29 +598,36 @@ function findChrome() {
       // 盛り付けが終わる（増えも動きもしなくなる）まで待つ。
       // 待っているあいだは粗く描いて、物理を実時間で進める
       await page.send("Runtime.evaluate", { expression: "window.__fast(true)", returnByValue: true });
-      let lastCount = -1, same = 0, lastFrames = 0, fps = 0, vmax = 99;
+      let lastCount = -1, same = 0, still = 0, lastFrames = 0, fps = 0;
+      let motion = 999, dbg = "";
       const settleUntil = Date.now() + SETTLE_TIMEOUT;
       while (Date.now() < settleUntil) {
         await sleep(POLL_EVERY);
         const r = await page.send("Runtime.evaluate", {
           expression: "window.__sig() + '|' + window.__frames", returnByValue: true
         });
-        const [sig, fr] = String(r.result.value || "0:99|0").split("|");
-        const [cnt, vel] = sig.split(":");
+        const [sig, fr] = String(r.result.value || "0:99:0/0|0").split("|");
+        const part = sig.split(":");
+        const cnt = +part[0];
+        motion = +part[1];
+        dbg = part[2] || "";
         const drawn = (+fr) - lastFrames; lastFrames = +fr;
         fps = drawn / (POLL_EVERY / 1000);
-        vmax = +vel;
         // 【対策】絵が止まっているだけの「見せかけの安定」を弾く。
         //         描けていないなら、物理も進んでいない
-        same = (+cnt === lastCount && drawn > 2) ? same + 1 : 0;
-        lastCount = +cnt;
-        if (same >= STABLE_POLLS && vmax < SETTLE_SPEED) break;
+        const alive = drawn > 2;
+        same = (cnt === lastCount && alive) ? same + 1 : 0;
+        still = (motion < SETTLE_MOVE && alive) ? still + 1 : 0;
+        lastCount = cnt;
+        // 投入が終わり（個数が動かない）、かつ誰も動いていない状態が続いたら完了
+        if (same >= STABLE_POLLS && still >= STILL_POLLS) break;
         if (same >= GIVEUP_POLLS) break;   // 止まりきらないものは、そこで撮る
       }
       if (process.env.SHOOT_DEBUG) {
         console.log("\n    組立 " + Math.round((tBuilt - t0) / 1000) + "s" +
           "  整定 " + Math.round((Date.now() - tBuilt) / 1000) + "s" +
-          "  fps≈" + fps.toFixed(1) + "  最大速度=" + vmax.toFixed(2));
+          "  fps≈" + fps.toFixed(1) + "  最大移動=" + motion.toFixed(4) + "cm" +
+          "  剛体/速度=" + dbg);
       }
 
       // 撮る用に解像度を戻し、GUI を隠して、描き直しを待つ

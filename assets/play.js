@@ -103,6 +103,7 @@ function run(code) {
 
     say("組み立てています…（数秒かかります）");
     Promise.resolve().then(factory).then(function (scene) {
+        window.__playScene = scene;   // 動作確認用
         engine.runRenderLoop(function () {
             if (scene.activeCamera) scene.render();
         });
