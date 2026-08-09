@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>同じ種からは、同じ野菜が生える — やさいのつくりかた</title>
+<meta name="description" content="同じ種からは、同じ野菜が生える">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html" aria-current="page">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-potato)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第02章</p>
+<section class="chapter" id="ch02" style="--ch:var(--p-potato)">
+  <div class="chapter-head">
+    <div class="chnum">02<small>Rng</small></div>
+    <div>
+      <h2>同じ種からは、同じ野菜が生える</h2>
+      <p class="sub">seeded pseudo random — シード付き擬似乱数</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>野菜を1個ずつ違う形にするには乱数が要りますが、<code>Math.random()</code> は使いません。</li>
+        <li><b>やり直しがきかない</b>からです。いい形が出ても、二度と同じものは作れません。</li>
+        <li>そこで「種（シード）」を渡すと<b>いつも同じ順番</b>で数字が出る乱数を、自分で作ります。</li>
+      </ul>
+    </div>
+
+    <p>
+      野菜を1個ずつ違う形にするには乱数が要ります。でも <code>Math.random()</code> は使いません。
+      理由は単純で、<b>やり直しがきかない</b>からです。
+      「さっき出たあのジャガイモ、いい形だったな」と思っても、二度と同じものは出てきません。
+      バグを見つけても、同じ状況を再現できません。
+    </p>
+    <p>
+      そこで<b>シード（種）付きの乱数</b>を自分で書きます。整数をひとつ渡すと、
+      そこから決まりきった順番で数字が出てくる仕組みです。同じシードなら何度でも同じ列が出ます。
+      「ランダムに見えるけれど、実は完全に予測できる」——だから擬似（ぎじ）乱数と言います。
+    </p>
+    <figure>
+<pre><span class="k">class</span> Rng {
+    <span class="k">constructor</span>(seed) { <span class="k">this</span>.s = seed &gt;&gt;&gt; <span class="n">0</span>; }
+    next() {
+        <span class="k">this</span>.s = (<span class="k">this</span>.s + <span class="n">0x6D2B79F5</span>) | <span class="n">0</span>;
+        <span class="k">let</span> t = Math.imul(<span class="k">this</span>.s ^ (<span class="k">this</span>.s &gt;&gt;&gt; <span class="n">15</span>), <span class="n">1</span> | <span class="k">this</span>.s);
+        t = (t + Math.imul(t ^ (t &gt;&gt;&gt; <span class="n">7</span>), <span class="n">61</span> | t)) ^ t;
+        <span class="k">return</span> ((t ^ (t &gt;&gt;&gt; <span class="n">14</span>)) &gt;&gt;&gt; <span class="n">0</span>) / <span class="n">4294967296</span>;
+    }
+    range(a, b) { <span class="k">return</span> a + (b - a) * <span class="k">this</span>.next(); }
+    gauss(m, sd) { <span class="c">/* 平均 m・ばらつき sd の正規分布 */</span> }
+}</pre>
+      <figcaption>18本すべてに入っている Rng。中身は掛け算とビット演算をかき混ぜているだけ</figcaption>
+    </figure>
+    <p>
+      <code>&gt;&gt;&gt;</code> や <code>^</code> は数字を2進数として混ぜる演算です。
+      桁をずらして重ねて、掛けて、また混ぜる。カードをシャッフルするのに近い操作で、
+      「規則性はあるのに人間には読めない」状態を作っています。
+      <code>0x6D2B79F5</code> のような数は、混ざり方がよくなるように選ばれた定数です。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 種をまいてみる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="seedInput">シード（種の番号）</label>
+            <input type="number" id="seedInput" value="20260725" step="1">
+          </div>
+          <div class="chips">
+            <button class="chip" type="button" data-seedbtn="same">同じ種をもう一度</button>
+            <button class="chip" type="button" data-seedbtn="next">次の種へ</button>
+          </div>
+          <div class="readout" id="seedNumbers"></div>
+          <p class="hint">同じ番号を入れれば、何度でもまったく同じ5本が生えます。</p>
+        </div>
+        <div>
+          <canvas id="seedCanvas" width="760" height="300" aria-label="シードから生成された5本のにんじんのシルエット"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>乱数の使い道は「バラバラにする」ことではなく「<b>ありそうなばらつきを作る</b>」ことです。
+      太さを完全にランダムにすると、実物には存在しない極端な個体が混ざります。
+      だからコードでは <code>gauss()</code>（正規分布）を多用します。
+      平均のまわりに集まり、たまに少し外れる——実物の野菜の分布はこの形です。</p>
+    </div>
+  
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>同じシードを2回入れて、まったく同じ形が出ることを確かめる。</li>
+        <li>気に入った形が出たシードの数字を、メモしておく。これが「保存」になります。</li>
+        <li>ニンジン.js の <code>START_SEED</code>（175行目あたり）を自分の誕生日（例 20260801）にして実行する。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch01.html"><span class="dir">← まえの章</span><span class="ttl">01 「作る」と「読み込む」はどう違うのか</span></a>
+    <a class="next" href="ch03.html"><span class="dir">つぎの章 →</span><span class="ttl">03 でこぼこを、なめらかな乱数で作る</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

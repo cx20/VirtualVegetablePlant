@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>三角形の向きと、面の傾き — やさいのつくりかた</title>
+<meta name="description" content="三角形の向きと、面の傾き">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html" aria-current="page">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-tomato)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第05章</p>
+<section class="chapter" id="ch05" style="--ch:var(--p-tomato)">
+  <div class="chapter-head">
+    <div class="chnum">05<small>Mesh</small></div>
+    <div>
+      <h2>三角形の向きと、面の傾き</h2>
+      <p class="sub">winding order &amp; normals — 巻き順と法線</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>3Dの立体の正体は、<b>点の座標</b>と<b>点を三角形に結ぶ番号表</b>の2つだけです。</li>
+        <li>三角形には表と裏があり（巻き順）、裏向きの面は初めから描かれません（背面カリング）。</li>
+        <li>面の向き＝<b>法線</b>が明るさを決めます。平均してならすと、なめらかに見えます。</li>
+      </ul>
+    </div>
+
+    <p>
+      3Dの立体は、突き詰めると<b>点の座標</b>と<b>点を三角形に結ぶ番号表</b>の2つです。
+      Babylon.js では前者が <code>positions</code>、後者が <code>indices</code>。
+      さらに <code>normals</code>（法線）と <code>uvs</code> を足して <code>VertexData</code> に詰めれば、
+      それがもうメッシュになります。
+    </p>
+    <figure>
+<pre><span class="k">const</span> vd = <span class="k">new</span> BABYLON.VertexData();
+vd.positions = positions;   <span class="c">// 頂点の座標 [x,y,z, x,y,z, ...]</span>
+vd.indices   = indices;     <span class="c">// 三角形 [0,1,2, 2,1,3, ...]</span>
+vd.normals   = normals;     <span class="c">// 面の向き（光の当たり方を決める）</span>
+vd.uvs       = uvs;         <span class="c">// 模様を貼る位置</span>
+vd.applyToMesh(mesh, <span class="k">false</span>);</pre>
+      <figcaption>makeMesh()。3Dモデルの正体はこの4本の配列</figcaption>
+    </figure>
+
+    <h3>三角形には表と裏がある</h3>
+    <p>
+      三角形の3点を、表から見て<b>反時計回り</b>に並べると表向き、逆に並べると裏向きになります。
+      これを<b>巻き順（winding order）</b>と言います。
+      GPUは処理を減らすため、裏向きの面を初めから描きません（背面カリング）。
+      だから巻き順を間違えると、立体が消えたり内側が見えたりします。
+    </p>
+    <p>
+      コードの <code>finalize()</code> は、これを自動で直します。やり方が上手いので見てください。
+      代表の頂点をひとつ選び、その<b>法線</b>と「中心からその頂点へ向かうベクトル」の
+      内積を取る。内積が負なら法線が内側を向いている＝巻き順が逆、と判定して、
+      三角形の2番目と3番目の番号を入れ替えます。
+    </p>
+    <figure>
+<pre><span class="k">const</span> dot = normals[k]*(positions[k]-center.x)
+          + normals[k+<span class="n">1</span>]*(positions[k+<span class="n">1</span>]-center.y)
+          + normals[k+<span class="n">2</span>]*(positions[k+<span class="n">2</span>]-center.z);
+<span class="k">if</span> (dot &lt; <span class="n">0</span>) {                       <span class="c">// 内側を向いていた</span>
+    <span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; indices.length; i += <span class="n">3</span>) {
+        <span class="k">const</span> t = indices[i+<span class="n">1</span>]; indices[i+<span class="n">1</span>] = indices[i+<span class="n">2</span>]; indices[i+<span class="n">2</span>] = t;
+    }
+}</pre>
+      <figcaption>finalize()。内積の符号だけで表裏を判定している</figcaption>
+    </figure>
+
+    <h3>法線をならすと、なめらかになる</h3>
+    <p>
+      法線は「その面がどっちを向いているか」を表す矢印で、明るさはこれで決まります。
+      面ごとに1本ずつ持つとカクカクした多面体に見え（フラットシェーディング）、
+      頂点ごとに<b>まわりの面の平均</b>を持たせるとなめらかに見えます（スムーズシェーディング）。
+      同じ形なのに、法線の作り方だけで見た目が変わります。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 向きを壊してみる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="meshMode">
+            <button class="chip" type="button" data-mmode="solid" aria-pressed="true">ふつう</button>
+            <button class="chip" type="button" data-mmode="wire">ワイヤー</button>
+            <button class="chip" type="button" data-mmode="normal">法線の色</button>
+            <button class="chip" type="button" data-mmode="facing">表裏の判定</button>
+          </div>
+          <label class="switch"><input type="checkbox" id="meshSmooth" checked>法線をならす（溶接する）</label>
+          <label class="switch"><input type="checkbox" id="meshFlip">巻き順をわざと逆にする</label>
+          <label class="switch"><input type="checkbox" id="meshCull" checked>裏面を描かない（背面カリング）</label>
+          <div class="ctrl">
+            <label for="meshSeg">1周の分割数 <span class="v" id="meshSegV">40</span></label>
+            <input type="range" id="meshSeg" min="5" max="64" step="1" value="40">
+          </div>
+          <p class="hint">「巻き順を逆」＋「裏面を描かない」で、トマトが消えます。3Dで最初に必ず出会うバグです。</p>
+        </div>
+        <div>
+          <canvas id="meshCanvas" width="560" height="440" aria-label="法線と巻き順のデモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>1周してつながる部分（u=0 と u=1）は、UVのために<b>同じ場所に頂点が2つ</b>あります。
+      放っておくと2つの法線がわずかに違い、そこだけ縦の線が入って見えます。
+      <code>weldNormals()</code> は座標を8192倍して丸めた値をキーに同じ位置の頂点を集め、
+      法線を平均して揃えます。これで縫い目が消えます。</p>
+    </div>
+  
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「巻き順をわざと逆にする」＋「裏面を描かない」で、トマトを消してみる。</li>
+        <li>「法線をならす」を切って、カクカクになる様子を見る。分割数を8まで下げるとよく分かる。</li>
+        <li>「法線の色」モードで、上を向いた面が何色になるか観察する（緑が強くなります）。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch04.html"><span class="dir">← まえの章</span><span class="ttl">04 横顔を1本描けば、立体になる</span></a>
+    <a class="next" href="ch06.html"><span class="dir">つぎの章 →</span><span class="ttl">06 模様も、その場で描く</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

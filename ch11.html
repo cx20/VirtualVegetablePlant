@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>見せ方を決める（光と露出） — やさいのつくりかた</title>
+<meta name="description" content="見せ方を決める（光と露出）">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html" aria-current="page">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-suika)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第11章</p>
+<section class="chapter" id="ch11" style="--ch:var(--p-suika)">
+  <div class="chapter-head">
+    <div class="chnum">11<small>Scene</small></div>
+    <div>
+      <h2>見せ方を決める（光と露出）</h2>
+      <p class="sub">IBL / shadow / SSAO / tone mapping</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>形・模様・質感がぜんぶ正しくても、<b>光の当て方を外すと台無し</b>になります。</li>
+        <li>いまの3Dは、360度の風景写真をそのまま光源として使います（<b>IBL</b>）。</li>
+        <li>明るさは計算のなかでは1を超えます。それを画面用に圧縮するのが<b>トーンマッピング</b>です。</li>
+      </ul>
+    </div>
+
+    <p>
+      18本のファイルの最後のほうに、必ず同じような行が並んでいます。
+      <code>IBL / ライト / 影 / SSAO2 / トーンマッピング</code>。
+      ここは野菜そのものではなく、<b>写真でいうところの照明とカメラの設定</b>です。
+      同じ野菜でも、この設定次第で「おいしそう」にも「標本」にもなります。
+    </p>
+
+    <h3>光は「電球」ではなく「風景」で当てる</h3>
+    <p>
+      現実で野菜を見るとき、光は電球ひとつから来ているわけではありません。
+      窓から入った空の光、白い壁の照り返し、机の反射。四方八方から来ています。
+      これを再現するために、<b>360度ぐるりと撮った風景の画像を、そのまま光源として使います</b>。
+      これを IBL（イメージ・ベースド・ライティング＝画像による照明）といいます。
+      野菜の表面に映り込む「まわりの景色」も、これで一気に本物らしくなります。
+    </p>
+    <ul>
+      <li><b>キーライト</b> — 主役の1灯。影の向きを決める。</li>
+      <li><b>影（シャドウマップ）</b> — 光から見て手前にあるものの距離を記録して、影を落とす。</li>
+      <li><b>SSAO</b> — 物どうしの<b>すみっこ</b>を暗くする。ざるに盛った野菜のすき間が締まる。</li>
+    </ul>
+
+    <h3>明るさは1を超える。だから圧縮する</h3>
+    <p>
+      画面で出せる白は 255 が上限です。でも計算の途中では、ハイライトの明るさは
+      平気で 5 や 20 になります。そのまま切り捨てると、光っている部分が
+      <b>ベターっとした真っ白</b>になって、形が消えます。
+      そこで、明るいところほど強く圧縮する関数を通してから画面に出します。
+      これが<b>トーンマッピング</b>です。写真の「白飛びしにくい設定」と同じことをしています。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 光と露出を動かす</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="scLight">光の向き <span class="v" id="scLightV">-35°</span></label>
+            <input type="range" id="scLight" min="-180" max="180" step="1" value="-35">
+          </div>
+          <div class="ctrl">
+            <label for="scAmb">まわりの光（環境光） <span class="v" id="scAmbV">1.00</span></label>
+            <input type="range" id="scAmb" min="0" max="2.2" step="0.01" value="1">
+          </div>
+          <div class="ctrl">
+            <label for="scExpo">露出 <span class="v" id="scExpoV">1.00</span></label>
+            <input type="range" id="scExpo" min="0.2" max="3" step="0.01" value="1">
+          </div>
+          <label class="switch"><input type="checkbox" id="scTone" checked>トーンマッピングを使う</label>
+          <div class="readout">いまの状態：<b id="scWarn">—</b></div>
+          <p class="hint">トーンマッピングを切って露出を2.5にすると、ハイライトが白く潰れて形が消えます。</p>
+        </div>
+        <div>
+          <canvas id="sceneCanvas" width="560" height="440" aria-label="光と露出のデモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>環境光を落とすと、影が「真っ黒」になる</h3>
+    <p>
+      環境光を0にしてみてください。光が当たっていない側が、完全な黒になります。
+      現実にはこうなりません。まわりの壁や机から必ず光が回り込むからです。
+      逆に環境光を上げすぎると、影が消えて<b>ぺったりした絵</b>になります。
+      「まわりからどれくらい光が回り込むか」を決めるのが、この数値です。
+    </p>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>色には<b>sRGB</b>と<b>リニア</b>の2種類があります。
+      画面に表示するための色（sRGB）と、光の計算をするための色（リニア）は別物で、
+      そのまま混ぜると濁ったり明るくなりすぎたりします。
+      各ファイルのコメントに「sRGB相当のHSV（後でリニアへ）」と書いてあるのはこの区別です。
+      Babylon.js では色を作るときに <code>toLinearSpace()</code> を通します。
+      ここを忘れると、「なぜか全体が白っぽい」という直しにくいバグになります。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>トーンマッピングを切って、露出を2.5まで上げる。ハイライトが潰れて形が消える様子を見る。</li>
+        <li>環境光を0にして、影の側が真っ黒になることを確かめる。</li>
+        <li>光の向きを真後ろ（180°）にする。輪郭だけが光る「逆光」になります。</li>
+        <li>自分のスマホで野菜を撮り、窓の光がどちらから来ているか観察する。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch10.html"><span class="dir">← まえの章</span><span class="ttl">10 曲がったものを作る</span></a>
+    <a class="next" href="zukan.html"><span class="dir">つぎの章 →</span><span class="ttl">18 どのファイルで、何が学べるか</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

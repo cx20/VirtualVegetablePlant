@@ -1,0 +1,2132 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>やさいのつくりかた — コードで野菜を育てる技術ノート</title>
+<style>
+/* =========================================================
+   トークン
+   色はすべてプロジェクトの .js から実際に使われている値を拾って
+   sRGB 0-1 → 16進に直したもの。飾りではなく出典のある色。
+   ========================================================= */
+:root{
+  --paper:#F0F2EA;
+  --paper-2:#E7EBDF;
+  --paper-3:#DDE3D3;
+  --grid:#C6D2BC;
+  --grid-strong:#AFC0A3;
+
+  --ink:#1A231C;
+  --ink-2:#4C5A50;
+  --ink-3:#7B8A7F;
+
+  /* 顔料（出典つき） */
+  --p-tomato:#DA130E;   /* トマト.js skinBody   [0.855,0.075,0.055] */
+  --p-leaf:#2B6F1C;     /* ピーマン.js skinMid  [0.170,0.435,0.108] */
+  --p-okra:#528530;     /* オクラ.js podMid     [0.320,0.520,0.190] */
+  --p-nasu:#3A2450;     /* ナス.js 果皮の紫 */
+  --p-corn:#D9A227;     /* トウモロコシ.js 粒 */
+  --p-potato:#8A6B3F;   /* ジャガイモ.js 泥と皮 */
+  --p-melon:#B3A667;    /* メロン.js 網目 */
+  --p-carrot:#E2691C;   /* ニンジン.js 皮層 */
+  --p-suika:#1F4A1B;    /* スイカ.js 濃緑の縞 */
+  --p-onion:#E8D3A8;    /* 玉ねぎ.js 外皮 */
+
+  --accent:var(--p-tomato);
+
+  --font-display:"Hiragino Mincho ProN","HiraMinProN-W6","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  --font-body:"Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","Meiryo",system-ui,sans-serif;
+  --font-mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Noto Sans Mono",monospace;
+
+  --rule:1px solid var(--grid-strong);
+  --maxw:1160px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+body{
+  margin:0;
+  font-family:var(--font-body);
+  color:var(--ink);
+  background-color:var(--paper);
+  /* 方眼紙。この教材の主題そのものが「座標を並べて形を作る」なので、
+     背景が飾りではなく作業台になる */
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    linear-gradient(var(--grid-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-strong) 1px, transparent 1px);
+  background-size:8px 8px, 8px 8px, 64px 64px, 64px 64px;
+  background-position:-1px -1px,-1px -1px,-1px -1px,-1px -1px;
+  line-height:1.85;
+  font-size:16px;
+  -webkit-text-size-adjust:100%;
+}
+
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(218,19,14,.3)}
+a:hover{border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--p-tomato);outline-offset:3px}
+
+/* =========================================================
+   ヘッダ / ナビ
+   ========================================================= */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(240,242,234,.93);
+  backdrop-filter:blur(6px);
+  border-bottom:var(--rule);
+}
+.topbar-in{
+  max-width:var(--maxw);margin:0 auto;padding:9px 20px;
+  display:flex;align-items:center;gap:18px;
+}
+.brand{
+  font-family:var(--font-display);font-size:17px;letter-spacing:.06em;
+  white-space:nowrap;color:var(--ink);border:0;
+}
+.brand .dot{color:var(--p-tomato)}
+.navlinks{
+  display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-left:auto;
+}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{
+  font-family:var(--font-mono);font-size:11.5px;letter-spacing:.08em;
+  color:var(--ink-2);border:0;padding:5px 9px;border-radius:2px;white-space:nowrap;
+}
+.navlinks a:hover{background:var(--paper-3);color:var(--ink)}
+
+/* =========================================================
+   ヒーロー
+   ========================================================= */
+.hero{max-width:var(--maxw);margin:0 auto;padding:52px 20px 30px}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.eyebrow{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;
+  color:var(--ink-3);text-transform:uppercase;margin:0 0 14px;
+}
+h1{
+  font-family:var(--font-display);font-weight:600;
+  font-size:clamp(34px,5.4vw,58px);line-height:1.24;margin:0 0 20px;
+  letter-spacing:.02em;
+}
+h1 .accent{
+  color:var(--p-tomato);
+  /* 「育つ」を強調する下線。定規で引いた線＝実験ノートの語彙 */
+  box-shadow:inset 0 -.14em 0 rgba(218,19,14,.18);
+}
+.lede{font-size:16.5px;color:var(--ink-2);margin:0 0 26px;max-width:44ch}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{
+  font-family:var(--font-body);font-size:14px;
+  padding:10px 20px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);
+  border-radius:2px;cursor:pointer;transition:.15s;
+}
+.btn:hover{background:var(--p-tomato);border-color:var(--p-tomato)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--paper-3);color:var(--ink);border-color:var(--ink)}
+a.btn{border-bottom:1px solid var(--ink)}
+a.btn:hover{border-bottom-color:var(--p-tomato)}
+
+.stage{
+  position:relative;background:var(--paper-2);
+  border:var(--rule);border-radius:2px;padding:14px;
+}
+.stage canvas{display:block;width:100%;height:auto;border-radius:1px}
+.stage-caption{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-3);
+  letter-spacing:.06em;margin-top:10px;
+}
+.stage-caption b{color:var(--ink);font-weight:500;font-family:var(--font-body);font-size:12.5px}
+
+/* =========================================================
+   共通レイアウト
+   ========================================================= */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+.chapter{padding:64px 0;border-top:var(--rule)}
+.chapter-head{display:flex;gap:20px;align-items:flex-start;margin-bottom:26px}
+.chnum{
+  flex:none;width:56px;height:56px;border-radius:2px;
+  display:grid;place-items:center;
+  font-family:var(--font-mono);font-size:19px;letter-spacing:.02em;
+  color:#fff;background:var(--ch,#333);
+}
+.chnum small{display:block;font-size:8.5px;letter-spacing:.14em;opacity:.75;margin-top:-2px}
+.chapter h2{
+  font-family:var(--font-display);font-weight:600;
+  font-size:clamp(23px,3.2vw,31px);margin:0 0 6px;line-height:1.4;letter-spacing:.02em;
+}
+.chapter-head .sub{
+  font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3);letter-spacing:.05em;margin:0;
+}
+.body{max-width:70ch}
+.body p{margin:0 0 18px}
+.body h3{
+  font-family:var(--font-display);font-size:18.5px;font-weight:600;
+  margin:34px 0 12px;letter-spacing:.02em;
+}
+.body ul,.body ol{margin:0 0 18px;padding-left:1.3em}
+.body li{margin-bottom:7px}
+code{
+  font-family:var(--font-mono);font-size:.88em;
+  background:var(--paper-3);padding:1px 5px;border-radius:2px;
+}
+
+/* コードブロック */
+pre{
+  font-family:var(--font-mono);font-size:12.5px;line-height:1.75;
+  background:#1A231C;color:#D8E2D6;padding:16px 18px;border-radius:2px;
+  overflow-x:auto;margin:0 0 20px;
+}
+pre .c{color:#7E9481}      /* コメント */
+pre .k{color:#E9A0A0}      /* キーワード */
+pre .n{color:#E4C07A}      /* 数値 */
+pre .s{color:#A8D08D}      /* 文字列 */
+figure{margin:0 0 22px}
+figcaption{
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-3);
+  letter-spacing:.04em;margin-top:8px;
+}
+
+/* 注意ボックス（元コードの【対策】に対応） */
+.trap{
+  border-left:3px solid var(--p-tomato);
+  background:rgba(218,19,14,.045);
+  padding:14px 18px;margin:0 0 22px;border-radius:0 2px 2px 0;
+}
+.trap .label{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--p-tomato);display:block;margin-bottom:5px;
+}
+.trap p{margin:0;font-size:14.5px;color:var(--ink-2)}
+.trap p+p{margin-top:8px}
+
+.note{
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:14px 18px;margin:0 0 22px;font-size:14.5px;color:var(--ink-2);
+}
+.note b{color:var(--ink)}
+
+/* 実験パネル */
+.lab{
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:18px;margin:0 0 24px;max-width:none;
+}
+.lab-title{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;
+  color:var(--ink-3);margin:0 0 14px;display:flex;align-items:center;gap:9px;
+}
+.lab-title::before{
+  content:"";width:9px;height:9px;border-radius:50%;background:var(--ch,#333);flex:none;
+}
+.lab-cols{display:grid;gap:20px}
+.lab-cols.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.lab-cols.side{grid-template-columns:minmax(0,300px) minmax(0,1fr)}
+.lab canvas{
+  display:block;width:100%;height:auto;background:var(--paper);
+  border:1px solid var(--grid-strong);border-radius:2px;touch-action:none;
+}
+.controls{display:flex;flex-direction:column;gap:12px}
+.ctrl{display:flex;flex-direction:column;gap:5px}
+.ctrl label{
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-2);
+  display:flex;justify-content:space-between;gap:8px;letter-spacing:.03em;
+}
+.ctrl label .v{color:var(--ink-3)}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:2px;
+  background:var(--grid-strong);border-radius:2px;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--ch,#333);cursor:pointer;border:2px solid var(--paper-2);
+}
+input[type=range]::-moz-range-thumb{
+  width:15px;height:15px;border-radius:50%;background:var(--ch,#333);
+  cursor:pointer;border:2px solid var(--paper-2);
+}
+input[type=number],select{
+  font-family:var(--font-mono);font-size:13px;padding:6px 8px;
+  border:1px solid var(--grid-strong);background:var(--paper);
+  color:var(--ink);border-radius:2px;
+}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  font-family:var(--font-mono);font-size:11.5px;padding:6px 11px;
+  border:1px solid var(--grid-strong);background:var(--paper);
+  color:var(--ink-2);border-radius:2px;cursor:pointer;transition:.12s;
+}
+.chip:hover{border-color:var(--ink-3)}
+.chip[aria-pressed=true]{background:var(--ch,#333);color:#fff;border-color:var(--ch,#333)}
+.switch{
+  display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--ink-2);cursor:pointer;
+}
+.switch input{width:16px;height:16px;accent-color:var(--ch,#333);cursor:pointer}
+.readout{
+  font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);
+  background:var(--paper);border:1px solid var(--grid-strong);
+  padding:9px 11px;border-radius:2px;line-height:1.7;word-break:break-all;
+}
+.hint{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin:8px 0 0}
+
+/* 図鑑 */
+.catalog{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:14px;margin-top:8px;
+}
+.card{
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:15px 16px;position:relative;overflow:hidden;
+}
+.card::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--sw,#666);
+}
+.card h4{
+  font-family:var(--font-display);font-size:17px;margin:0 0 3px;font-weight:600;letter-spacing:.03em;
+}
+.card .fn{
+  font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);
+  margin:0 0 9px;letter-spacing:.02em;
+}
+.card p{font-size:13.5px;color:var(--ink-2);margin:0;line-height:1.7}
+
+/* 用語表 */
+table{border-collapse:collapse;width:100%;font-size:14px;margin:0 0 22px}
+th,td{border-bottom:1px solid var(--grid-strong);padding:10px 12px;text-align:left;vertical-align:top}
+th{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;
+  color:var(--ink-3);font-weight:400;
+}
+td:first-child{font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;color:var(--ink)}
+
+/* ロードマップ */
+.roadmap{list-style:none;padding:0;margin:0;counter-reset:step}
+.roadmap li{
+  display:flex;gap:16px;padding:13px 0;border-bottom:1px solid var(--grid-strong);align-items:baseline;
+}
+.roadmap .rn{
+  font-family:var(--font-mono);font-size:12px;color:var(--ink-3);
+  flex:none;width:34px;letter-spacing:.04em;
+}
+.roadmap .rt{flex:1}
+.roadmap .rt b{font-weight:600}
+.roadmap .rt span{display:block;font-size:13.5px;color:var(--ink-2)}
+
+footer{
+  border-top:var(--rule);margin-top:20px;padding:36px 0 60px;
+  font-size:13px;color:var(--ink-3);
+}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+footer b{color:var(--ink-2);font-weight:500}
+
+@media (max-width:860px){
+  .hero-grid{grid-template-columns:1fr;gap:28px}
+  .lab-cols.two,.lab-cols.side{grid-template-columns:1fr}
+  .chapter{padding:48px 0}
+  .chnum{width:46px;height:46px;font-size:16px}
+  .chapter-head{gap:14px}
+  body{font-size:15.5px}
+}
+</style>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="#top">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="#ch01">01 手続き生成</a>
+      <a href="#ch02">02 乱数</a>
+      <a href="#ch03">03 ノイズ</a>
+      <a href="#ch04">04 かたち</a>
+      <a href="#ch05">05 面と法線</a>
+      <a href="#ch06">06 テクスチャ</a>
+      <a href="#ch07">07 質感</a>
+      <a href="#ch08">08 物理</a>
+      <a href="#zukan">図鑑</a>
+      <a href="#terms">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ===================== HERO ===================== -->
+<section class="hero">
+  <div class="hero-grid">
+    <div>
+      <p class="eyebrow">Babylon.js / procedural vegetables</p>
+      <h1>3Dの野菜は、<br><span class="accent">数式から育つ</span>。</h1>
+      <p class="lede">
+        このサイトで扱う18本のプログラムは、3Dモデルも写真も1枚も読み込みません。
+        点の座標を計算で並べ、模様をその場で描き、光り方を数値で決める。
+        絵を描く技術ではなく、形を組み立てる技術です。中学・高校の数学で追えるところから順に見ていきます。
+      </p>
+      <div class="hero-cta">
+        <a class="btn" href="#ch01">はじめから読む</a>
+        <button class="btn ghost" id="heroReplay" type="button">もう一度育てる</button>
+      </div>
+    </div>
+    <div class="stage">
+      <canvas id="heroCanvas" width="640" height="480" aria-label="トマトが点から立体へ組み上がる様子"></canvas>
+      <div class="stage-caption">
+        <b id="heroStage">準備中</b>
+        <span id="heroCount">0 頂点</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<div class="wrap">
+
+<!-- ===================== 01 ===================== -->
+<section class="chapter" id="ch01" style="--ch:var(--p-leaf)">
+  <div class="chapter-head">
+    <div class="chnum">01<small>CONFIG</small></div>
+    <div>
+      <h2>「作る」と「読み込む」はどう違うのか</h2>
+      <p class="sub">procedural generation — 手続き的生成</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      ゲームや映画の3Dは、ふつう誰かが専用ソフトで作ったモデルファイルを読み込んで表示します。
+      ファイルの中には「頂点1番は(3.2, 1.1, 0.4)」といった座標が何万個も保存されていて、
+      プログラムはそれを並べて画面に出すだけです。
+    </p>
+    <p>
+      このプロジェクトは逆のことをしています。ファイルを読まず、
+      <b>プログラムを実行した瞬間に座標を計算で作る</b>。これを手続き的生成（プロシージャル生成）と呼びます。
+      野菜のような自然物と相性がよく、いいことが3つあります。
+    </p>
+    <ul>
+      <li><b>1個も同じにならない</b> — 数値を少し揺らすだけで、形の違う個体がいくらでも出てきます。実物のきゅうりが1本ずつ違うのと同じです。</li>
+      <li><b>あとから変えられる</b> — 「もう少し太く」がスライダー1本で通ります。モデルファイルなら作り直しです。</li>
+      <li><b>軽い</b> — 18本ぜんぶ合わせても、写真1枚より小さいテキストです。</li>
+    </ul>
+    <p>
+      その代わり、形を言葉ではなく<b>数式で説明できないと作れません</b>。
+      「トマトってどんな形?」に「肩がへこんでいて、縦に浅い筋が6本あって、上から見ると少しつぶれた丸」と
+      答えられるかどうかが勝負になります。だからこのプロジェクトのコードは、コメントの半分が
+      野菜の観察記録です。
+    </p>
+
+    <h3>18本すべてが同じ9層でできている</h3>
+    <p>
+      トマトもシイタケも玉ねぎも、ファイルの構造はまったく同じです。上から順に読めば、
+      どの野菜でも同じ場所に同じ役割のコードがあります。このサイトの章立ても、この層に対応させてあります。
+    </p>
+    <figure>
+<pre><span class="c">// 構成:
+//    0. CONFIG      … 品種プリセット（桃太郎 / フルーツトマト / ミニ）
+//    1. Rng         … シード付き擬似乱数
+//    2. Noise       … 3D値ノイズ / 2D周期ノイズ
+//    3. Mesh utils  … 巻き順の自動判定・法線の溶接・掃引
+//    4. Profile     … 果実の断面（r, y の2列テーブル）・房の稜・肩のくぼみ
+//    5. TextureLab  … 果皮のアルベド・ORM・法線、竹の網代
+//    6. Tomato      … 果実 + がく（萼片を1枚ずつ立体で）+ 果梗
+//    7. Basket      … ざる
+//    8. Scene / 物理（Havok で1個ずつ落とす）
+//    9. GUI</span></pre>
+      <figcaption>トマト.js の冒頭。18本すべてがこの並びで書かれている</figcaption>
+    </figure>
+    <div class="note">
+      <b>読む順番のおすすめ。</b>
+      最初の1本は<b>ニンジン.js</b>がいちばん素直です（円錐に溝を彫るだけ）。
+      次に<b>キュウリ.js</b>、慣れたら<b>トマト.js</b>。
+      <b>シイタケ.js</b>と<b>トウモロコシ.js</b>は構造が複雑なので後回しでかまいません。
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 02 ===================== -->
+<section class="chapter" id="ch02" style="--ch:var(--p-potato)">
+  <div class="chapter-head">
+    <div class="chnum">02<small>Rng</small></div>
+    <div>
+      <h2>同じ種からは、同じ野菜が生える</h2>
+      <p class="sub">seeded pseudo random — シード付き擬似乱数</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      野菜を1個ずつ違う形にするには乱数が要ります。でも <code>Math.random()</code> は使いません。
+      理由は単純で、<b>やり直しがきかない</b>からです。
+      「さっき出たあのジャガイモ、いい形だったな」と思っても、二度と同じものは出てきません。
+      バグを見つけても、同じ状況を再現できません。
+    </p>
+    <p>
+      そこで<b>シード（種）付きの乱数</b>を自分で書きます。整数をひとつ渡すと、
+      そこから決まりきった順番で数字が出てくる仕組みです。同じシードなら何度でも同じ列が出ます。
+      「ランダムに見えるけれど、実は完全に予測できる」——だから擬似（ぎじ）乱数と言います。
+    </p>
+    <figure>
+<pre><span class="k">class</span> Rng {
+    <span class="k">constructor</span>(seed) { <span class="k">this</span>.s = seed &gt;&gt;&gt; <span class="n">0</span>; }
+    next() {
+        <span class="k">this</span>.s = (<span class="k">this</span>.s + <span class="n">0x6D2B79F5</span>) | <span class="n">0</span>;
+        <span class="k">let</span> t = Math.imul(<span class="k">this</span>.s ^ (<span class="k">this</span>.s &gt;&gt;&gt; <span class="n">15</span>), <span class="n">1</span> | <span class="k">this</span>.s);
+        t = (t + Math.imul(t ^ (t &gt;&gt;&gt; <span class="n">7</span>), <span class="n">61</span> | t)) ^ t;
+        <span class="k">return</span> ((t ^ (t &gt;&gt;&gt; <span class="n">14</span>)) &gt;&gt;&gt; <span class="n">0</span>) / <span class="n">4294967296</span>;
+    }
+    range(a, b) { <span class="k">return</span> a + (b - a) * <span class="k">this</span>.next(); }
+    gauss(m, sd) { <span class="c">/* 平均 m・ばらつき sd の正規分布 */</span> }
+}</pre>
+      <figcaption>18本すべてに入っている Rng。中身は掛け算とビット演算をかき混ぜているだけ</figcaption>
+    </figure>
+    <p>
+      <code>&gt;&gt;&gt;</code> や <code>^</code> は数字を2進数として混ぜる演算です。
+      桁をずらして重ねて、掛けて、また混ぜる。カードをシャッフルするのに近い操作で、
+      「規則性はあるのに人間には読めない」状態を作っています。
+      <code>0x6D2B79F5</code> のような数は、混ざり方がよくなるように選ばれた定数です。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 種をまいてみる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="seedInput">シード（種の番号）</label>
+            <input type="number" id="seedInput" value="20260725" step="1">
+          </div>
+          <div class="chips">
+            <button class="chip" type="button" data-seedbtn="same">同じ種をもう一度</button>
+            <button class="chip" type="button" data-seedbtn="next">次の種へ</button>
+          </div>
+          <div class="readout" id="seedNumbers"></div>
+          <p class="hint">同じ番号を入れれば、何度でもまったく同じ5本が生えます。</p>
+        </div>
+        <div>
+          <canvas id="seedCanvas" width="760" height="300" aria-label="シードから生成された5本のにんじんのシルエット"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>乱数の使い道は「バラバラにする」ことではなく「<b>ありそうなばらつきを作る</b>」ことです。
+      太さを完全にランダムにすると、実物には存在しない極端な個体が混ざります。
+      だからコードでは <code>gauss()</code>（正規分布）を多用します。
+      平均のまわりに集まり、たまに少し外れる——実物の野菜の分布はこの形です。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 03 ===================== -->
+<section class="chapter" id="ch03" style="--ch:var(--p-suika)">
+  <div class="chapter-head">
+    <div class="chnum">03<small>Noise</small></div>
+    <div>
+      <h2>でこぼこを、なめらかな乱数で作る</h2>
+      <p class="sub">value noise &amp; fBm — 値ノイズとフラクタルノイズ</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      乱数をそのまま並べると砂嵐になります。となりのピクセルと何の関係もない値が出るからです。
+      でも自然の模様は違います。じゃがいもの皮のムラも、すいかの縞も、
+      <b>近いところは似ていて、遠いところは違う</b>。この性質を作るのがノイズです。
+    </p>
+
+    <h3>作り方は3行で言える</h3>
+    <ol>
+      <li>方眼紙の<b>交点にだけ</b>乱数を置く（格子点）</li>
+      <li>マスの中の点は、まわり4つの値を<b>なめらかに混ぜて</b>決める</li>
+      <li>マス目を細かくしたものを重ねる（オクターブ）</li>
+    </ol>
+    <p>
+      2番目の「なめらかに混ぜる」に <code>t*t*(3-2*t)</code> という式が出てきます。
+      これは <b>smoothstep</b> と呼ばれる関数で、0から1へ移るときに端で速度が0になります。
+      ただの直線で混ぜるとマスの境目に折れ線が見えてしまうので、この一手間が要ります。
+    </p>
+    <p>
+      3番目の重ね合わせが効きます。大きなうねりの上に半分の大きさを半分の強さで、
+      その上にさらに半分を——と重ねると、遠目には大きなムラ、近づくと細かいざらつきという
+      自然物そっくりの模様になります。この重ね方を<b>fBm</b>（フラクタルブラウン運動）と言い、
+      コードでは <code>fbm3()</code> や <code>fbm2u()</code> という名前で出てきます。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — ノイズを重ねる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="nzScale">マス目の細かさ <span class="v" id="nzScaleV">6</span></label>
+            <input type="range" id="nzScale" min="1" max="24" step="1" value="6">
+          </div>
+          <div class="ctrl">
+            <label for="nzOct">重ねる回数（オクターブ） <span class="v" id="nzOctV">1</span></label>
+            <input type="range" id="nzOct" min="1" max="6" step="1" value="1">
+          </div>
+          <div class="ctrl">
+            <label for="nzCon">コントラスト <span class="v" id="nzConV">1.0</span></label>
+            <input type="range" id="nzCon" min="0.3" max="3" step="0.05" value="1">
+          </div>
+          <div class="chips" id="nzPal">
+            <button class="chip" type="button" data-pal="gray" aria-pressed="true">白黒</button>
+            <button class="chip" type="button" data-pal="potato">ジャガイモ</button>
+            <button class="chip" type="button" data-pal="suika">スイカ</button>
+          </div>
+          <p class="hint">回数を1のままにすると、ぼんやりした雲にしかなりません。3〜4に上げた瞬間に「素材」に見えます。</p>
+        </div>
+        <div>
+          <canvas id="noiseCanvas" width="512" height="256" aria-label="ノイズのパターン"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>野菜の表面を1周する模様は、<b>一周してぴったりつながらないと縫い目が出ます</b>。
+      そのためコードのノイズには「周期版」があります（<code>v2u()</code> の <code>px</code> 引数）。
+      格子の番号を <code>x % px</code> で折り返して、右端の乱数と左端の乱数を同じにする、という仕掛けです。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 04 ===================== -->
+<section class="chapter" id="ch04" style="--ch:var(--p-carrot)">
+  <div class="chapter-head">
+    <div class="chnum">04<small>Profile</small></div>
+    <div>
+      <h2>横顔を1本描けば、立体になる</h2>
+      <p class="sub">profile &amp; sweep — プロファイルと掃引</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      ここがこのプロジェクトの中心です。野菜の形は、たった1本の折れ線から作られています。
+      縦軸に高さ <code>y</code>、横軸に半径 <code>r</code> をとった<b>横顔（プロファイル）</b>。
+      それを軸のまわりに1周ぐるっと回すと、立体ができます。ろくろで茶碗をひくのと同じ理屈で、
+      数学では<b>回転体</b>と言います。
+    </p>
+    <p>
+      具体的には、高さを何十段かに分け、それぞれの高さで半径 r の円（リング）を作り、
+      リングどうしを四角形でつないでいきます。これを<b>掃引（sweep）</b>と呼びます。
+    </p>
+    <figure>
+<pre><span class="c">// リング列の掃引。両端はキャップで閉じる</span>
+<span class="k">function</span> sweep(name, rings, centers, colsFn, scene) {
+    <span class="k">const</span> N = rings.length, M = rings[<span class="n">0</span>].length;   <span class="c">// N段 × M分割</span>
+    <span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; N; i++) {
+        <span class="k">for</span> (<span class="k">let</span> j = <span class="n">0</span>; j &lt; M; j++) {
+            <span class="k">const</span> k = i * M + j, p = rings[i][j];
+            positions[k*<span class="n">3</span>] = p.x; positions[k*<span class="n">3</span>+<span class="n">1</span>] = p.y; positions[k*<span class="n">3</span>+<span class="n">2</span>] = p.z;
+            uvs[k*<span class="n">2</span>] = j / (M-<span class="n">1</span>);        <span class="c">// u = 周方向</span>
+            uvs[k*<span class="n">2</span>+<span class="n">1</span>] = i / (N-<span class="n">1</span>);      <span class="c">// v = 下から上</span>
+        }
+    }
+    ...
+}</pre>
+      <figcaption>スイカ.js / トマト.js ほか。2重ループで頂点を並べているだけ</figcaption>
+    </figure>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 横顔を動かすと、立体が変わる</p>
+      <div class="lab-cols two">
+        <div>
+          <canvas id="profCanvas" width="440" height="520" aria-label="プロファイル編集キャンバス。点をドラッグできます"></canvas>
+          <p class="hint">● をドラッグしてください。左半分だけ描けば、右は自動で対称になります。</p>
+        </div>
+        <div>
+          <canvas id="profView" width="440" height="520" aria-label="回転体のプレビュー"></canvas>
+          <div class="controls" style="margin-top:12px">
+            <div class="chips" id="profPresets">
+              <button class="chip" type="button" data-prof="carrot" aria-pressed="true">ニンジン</button>
+              <button class="chip" type="button" data-prof="tomato">トマト</button>
+              <button class="chip" type="button" data-prof="nasu">ナス</button>
+              <button class="chip" type="button" data-prof="shiitake">シイタケ</button>
+            </div>
+            <div class="ctrl">
+              <label for="profBump">表面のでこぼこ（ノイズ） <span class="v" id="profBumpV">0.00</span></label>
+              <input type="range" id="profBump" min="0" max="0.18" step="0.005" value="0">
+            </div>
+            <div class="ctrl">
+              <label for="profRidge">縦の稜（りょう）の本数 <span class="v" id="profRidgeV">0</span></label>
+              <input type="range" id="profRidge" min="0" max="12" step="1" value="0">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      でこぼこのスライダーを動かすと、半径 r にノイズを足していることがわかります。
+      これがコードでいう「稜（りょう）」「イボ」「輪紋」の正体です。
+      きゅうりの浅い10本の筋も、ゴーヤーの大きな瘤も、
+      <b>r を角度と高さの関数で少し増減させているだけ</b>です。
+    </p>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>トマトやピーマンのように<b>肩が折り返す</b>形は、半径 r だけでは作れません。
+      「同じ高さに r が2つある」からです。だからコードのプロファイルは
+      <code>(r, y)</code> の<b>2列のテーブル</b>で持っています。
+      ピーマン.js のコメントに「これが無いと肩が折り返せず、ヘタのくぼみが作れない」と書かれているのはこの話です。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 05 ===================== -->
+<section class="chapter" id="ch05" style="--ch:var(--p-tomato)">
+  <div class="chapter-head">
+    <div class="chnum">05<small>Mesh</small></div>
+    <div>
+      <h2>三角形の向きと、面の傾き</h2>
+      <p class="sub">winding order &amp; normals — 巻き順と法線</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      3Dの立体は、突き詰めると<b>点の座標</b>と<b>点を三角形に結ぶ番号表</b>の2つです。
+      Babylon.js では前者が <code>positions</code>、後者が <code>indices</code>。
+      さらに <code>normals</code>（法線）と <code>uvs</code> を足して <code>VertexData</code> に詰めれば、
+      それがもうメッシュになります。
+    </p>
+    <figure>
+<pre><span class="k">const</span> vd = <span class="k">new</span> BABYLON.VertexData();
+vd.positions = positions;   <span class="c">// 頂点の座標 [x,y,z, x,y,z, ...]</span>
+vd.indices   = indices;     <span class="c">// 三角形 [0,1,2, 2,1,3, ...]</span>
+vd.normals   = normals;     <span class="c">// 面の向き（光の当たり方を決める）</span>
+vd.uvs       = uvs;         <span class="c">// 模様を貼る位置</span>
+vd.applyToMesh(mesh, <span class="k">false</span>);</pre>
+      <figcaption>makeMesh()。3Dモデルの正体はこの4本の配列</figcaption>
+    </figure>
+
+    <h3>三角形には表と裏がある</h3>
+    <p>
+      三角形の3点を、表から見て<b>反時計回り</b>に並べると表向き、逆に並べると裏向きになります。
+      これを<b>巻き順（winding order）</b>と言います。
+      GPUは処理を減らすため、裏向きの面を初めから描きません（背面カリング）。
+      だから巻き順を間違えると、立体が消えたり内側が見えたりします。
+    </p>
+    <p>
+      コードの <code>finalize()</code> は、これを自動で直します。やり方が上手いので見てください。
+      代表の頂点をひとつ選び、その<b>法線</b>と「中心からその頂点へ向かうベクトル」の
+      内積を取る。内積が負なら法線が内側を向いている＝巻き順が逆、と判定して、
+      三角形の2番目と3番目の番号を入れ替えます。
+    </p>
+    <figure>
+<pre><span class="k">const</span> dot = normals[k]*(positions[k]-center.x)
+          + normals[k+<span class="n">1</span>]*(positions[k+<span class="n">1</span>]-center.y)
+          + normals[k+<span class="n">2</span>]*(positions[k+<span class="n">2</span>]-center.z);
+<span class="k">if</span> (dot &lt; <span class="n">0</span>) {                       <span class="c">// 内側を向いていた</span>
+    <span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; indices.length; i += <span class="n">3</span>) {
+        <span class="k">const</span> t = indices[i+<span class="n">1</span>]; indices[i+<span class="n">1</span>] = indices[i+<span class="n">2</span>]; indices[i+<span class="n">2</span>] = t;
+    }
+}</pre>
+      <figcaption>finalize()。内積の符号だけで表裏を判定している</figcaption>
+    </figure>
+
+    <h3>法線をならすと、なめらかになる</h3>
+    <p>
+      法線は「その面がどっちを向いているか」を表す矢印で、明るさはこれで決まります。
+      面ごとに1本ずつ持つとカクカクした多面体に見え（フラットシェーディング）、
+      頂点ごとに<b>まわりの面の平均</b>を持たせるとなめらかに見えます（スムーズシェーディング）。
+      同じ形なのに、法線の作り方だけで見た目が変わります。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 向きを壊してみる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="meshMode">
+            <button class="chip" type="button" data-mmode="solid" aria-pressed="true">ふつう</button>
+            <button class="chip" type="button" data-mmode="wire">ワイヤー</button>
+            <button class="chip" type="button" data-mmode="normal">法線の色</button>
+            <button class="chip" type="button" data-mmode="facing">表裏の判定</button>
+          </div>
+          <label class="switch"><input type="checkbox" id="meshSmooth" checked>法線をならす（溶接する）</label>
+          <label class="switch"><input type="checkbox" id="meshFlip">巻き順をわざと逆にする</label>
+          <label class="switch"><input type="checkbox" id="meshCull" checked>裏面を描かない（背面カリング）</label>
+          <div class="ctrl">
+            <label for="meshSeg">1周の分割数 <span class="v" id="meshSegV">40</span></label>
+            <input type="range" id="meshSeg" min="5" max="64" step="1" value="40">
+          </div>
+          <p class="hint">「巻き順を逆」＋「裏面を描かない」で、トマトが消えます。3Dで最初に必ず出会うバグです。</p>
+        </div>
+        <div>
+          <canvas id="meshCanvas" width="560" height="440" aria-label="法線と巻き順のデモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>1周してつながる部分（u=0 と u=1）は、UVのために<b>同じ場所に頂点が2つ</b>あります。
+      放っておくと2つの法線がわずかに違い、そこだけ縦の線が入って見えます。
+      <code>weldNormals()</code> は座標を8192倍して丸めた値をキーに同じ位置の頂点を集め、
+      法線を平均して揃えます。これで縫い目が消えます。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 06 ===================== -->
+<section class="chapter" id="ch06" style="--ch:var(--p-melon)">
+  <div class="chapter-head">
+    <div class="chnum">06<small>TextureLab</small></div>
+    <div>
+      <h2>模様も、その場で描く</h2>
+      <p class="sub">UV mapping &amp; procedural textures</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      立体に模様を貼るには、<b>立体のどこが画像のどこか</b>という対応表が要ります。
+      それが <code>uvs</code> です。掃引のコードで <code>u = j/(M-1)</code>、<code>v = i/(N-1)</code> と
+      入れていたあれです。u が「一周まわる方向」、v が「下から上」。
+      地球儀の経度・緯度だと思えばだいたい合っています。
+    </p>
+    <p>
+      このプロジェクトは画像ファイルを持たないので、模様も <code>&lt;canvas&gt;</code> に
+      <b>1ピクセルずつ計算で書き込んで</b>テクスチャにします。担当が <code>TextureLab</code> です。
+      しかも1枚ではなく、同じ「高さの地図」から3枚を作って辻褄を合わせます。
+    </p>
+    <table>
+      <tr><th>名前</th><th>役割</th><th>中身</th></tr>
+      <tr><td>albedo</td><td>色そのもの</td><td>赤・緑・茶などの下地の色</td></tr>
+      <tr><td>ORM</td><td>光り方</td><td>R=陰り / G=粗さ / B=金属っぽさ を1枚に詰めたもの</td></tr>
+      <tr><td>normal</td><td>細かい凹凸</td><td>面の傾きのずれをRGBで記録したもの</td></tr>
+    </table>
+    <p>
+      normal（法線マップ）が面白いところです。実際には形を変えず、
+      <b>光の当たり方だけを嘘つく</b>ことで、細かいシワやイボがあるように見せます。
+      三角形を増やさずにディテールが出るので、非常に安上がりです。
+      作り方は、白黒の高さの地図から、となりのピクセルとの差（傾き）を計算して色にするだけです。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 模様を描いて、貼る</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="texKind">
+            <button class="chip" type="button" data-tex="stripe" aria-pressed="true">スイカの縞</button>
+            <button class="chip" type="button" data-tex="wart">きゅうりのイボ</button>
+            <button class="chip" type="button" data-tex="fiber">玉ねぎの繊維</button>
+            <button class="chip" type="button" data-tex="net">メロンの網目</button>
+          </div>
+          <canvas id="texCanvas" width="256" height="256" aria-label="生成されたテクスチャ"></canvas>
+          <div class="ctrl">
+            <label for="texAmt">模様の強さ <span class="v" id="texAmtV">1.0</span></label>
+            <input type="range" id="texAmt" min="0" max="2" step="0.05" value="1">
+          </div>
+          <div class="ctrl">
+            <label for="texFreq">細かさ <span class="v" id="texFreqV">1.0</span></label>
+            <input type="range" id="texFreq" min="0.4" max="3" step="0.05" value="1">
+          </div>
+          <label class="switch"><input type="checkbox" id="texUV">UVの格子を重ねて見る</label>
+        </div>
+        <div>
+          <canvas id="texView" width="560" height="440" aria-label="テクスチャを貼った立体"></canvas>
+          <p class="hint">縞が上下の極（へた側とお尻）で1点に集まります。u を周方向にとった結果、勝手にそうなります。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>法線マップを自分で焼くとき、上下方向の符号を間違えると
+      <b>凹みが膨らみに見えます</b>。Babylon.js の座標系では
+      <code>(下のピクセル - 上のピクセル)</code> が正解で、逆にすると
+      OpenGL系の規約になってしまい、横方向は正しいのに縦方向だけ反転した
+      「ねじれた法線」ができます。キュウリ.js・ゴーヤ.js・サツマイモ.js の
+      修正履歴に、全部この話が出てきます。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 07 ===================== -->
+<section class="chapter" id="ch07" style="--ch:var(--p-nasu)">
+  <div class="chapter-head">
+    <div class="chnum">07<small>PBR</small></div>
+    <div>
+      <h2>「濡れている」「粉をふいている」を数値で言う</h2>
+      <p class="sub">physically based rendering — 物理ベースの質感</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      形と模様が合っていても、<b>光り方を外すとプラスチックの飾りになります</b>。
+      コードのコメントに何度も出てくる警告です。
+      いまの3Dは、材質を「現実の光の振る舞い」に沿った少数の数値で表します。これがPBRです。
+    </p>
+    <ul>
+      <li><b>roughness（粗さ）</b> — 0で鏡、1で紙。ハイライトの広がりが変わります。いちばん効く数値。</li>
+      <li><b>metallic（金属っぽさ）</b> — 野菜はぜんぶ0。</li>
+      <li><b>clearCoat（透明な上塗り）</b> — 車のワックスのような層。なす・きゅうり・りんごの照りはこれ。</li>
+      <li><b>sheen（布のような照り）</b> — 産毛のある表面が縁で柔らかく光る。オクラで使用。</li>
+      <li><b>subSurface（内部散乱）</b> — 光が中に入って散って出てくる。トウモロコシの粒や玉ねぎの薄皮。</li>
+      <li><b>anisotropy（異方性）</b> — 繊維の方向にハイライトが伸びる。玉ねぎの外皮。</li>
+    </ul>
+    <p>
+      野菜ごとにどれを使うかが、そのまま「その野菜らしさ」になります。
+      なすとオクラは、どちらも同じような緑〜紫の細長い実なのに、
+      片方はクリアコート主体、片方はシーン主体。ここを取り違えると別物になります。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 同じ形を、別の野菜に見せる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="pbrRough">roughness（粗さ） <span class="v" id="pbrRoughV">0.35</span></label>
+            <input type="range" id="pbrRough" min="0.03" max="1" step="0.01" value="0.35">
+          </div>
+          <div class="ctrl">
+            <label for="pbrCoat">clearCoat（上塗りの艶） <span class="v" id="pbrCoatV">0.30</span></label>
+            <input type="range" id="pbrCoat" min="0" max="1" step="0.01" value="0.3">
+          </div>
+          <div class="ctrl">
+            <label for="pbrSss">subSurface（透け） <span class="v" id="pbrSssV">0.15</span></label>
+            <input type="range" id="pbrSss" min="0" max="1" step="0.01" value="0.15">
+          </div>
+          <div class="ctrl">
+            <label for="pbrSheen">sheen（産毛の照り） <span class="v" id="pbrSheenV">0.00</span></label>
+            <input type="range" id="pbrSheen" min="0" max="1" step="0.01" value="0">
+          </div>
+          <div class="ctrl">
+            <label for="pbrLight">光の向き <span class="v" id="pbrLightV">-35°</span></label>
+            <input type="range" id="pbrLight" min="-180" max="180" step="1" value="-35">
+          </div>
+          <div class="chips" id="pbrPreset">
+            <button class="chip" type="button" data-pbr="nasu" aria-pressed="true">ナス</button>
+            <button class="chip" type="button" data-pbr="okra">オクラ</button>
+            <button class="chip" type="button" data-pbr="imo">サツマイモ</button>
+            <button class="chip" type="button" data-pbr="corn">トウモロコシ</button>
+          </div>
+        </div>
+        <div>
+          <canvas id="pbrCanvas" width="560" height="440" aria-label="質感のデモ"></canvas>
+          <p class="hint">粗さを0.05まで下げると、途端に「野菜」から「置物」になります。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>クリアコートの強さと粗さは、テクスチャの値と<b>掛け算</b>されます。
+      リンゴ.js の修正履歴に、<code>roughness 0.26 × ORMのG(0.2〜0.6)</code> で
+      実効0.05まで下がってしまい、周りの建物が映り込んで
+      「ガラスのリンゴ」になっていた、という記録が残っています。
+      数値を単体で見ず、掛かった後の値を見ること。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 08 ===================== -->
+<section class="chapter" id="ch08" style="--ch:var(--p-okra)">
+  <div class="chapter-head">
+    <div class="chnum">08<small>Havok</small></div>
+    <div>
+      <h2>盛り付けは、手で置かない</h2>
+      <p class="sub">physics engine — 物理エンジンで自然に積む</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      ざるに野菜を8本盛る。座標を手で決めると、どうしても「並べました」という絵になります。
+      重なり方に嘘があるからです。そこで<b>物理エンジンに落としてもらう</b>。
+      重力と摩擦と反発だけ与えて、あとは転がるに任せます。Babylon.js では Havok を使います。
+    </p>
+    <p>
+      ただし、全部いっぺんに出すと弾け飛びます。生成した瞬間、
+      野菜どうしが互いにめり込んだ状態から始まるので、そのぶんの反発力が一気に解放されるからです。
+      コードは<b>0.16秒おきに1本ずつ</b>、山の頂点のすぐ上から落としています。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 1個ずつ落とす／全部いっぺんに出す</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips">
+            <button class="chip" type="button" id="phOne" aria-pressed="true">1個ずつ落とす</button>
+            <button class="chip" type="button" id="phAll">全部いっぺんに出す</button>
+            <button class="chip" type="button" id="phReset">リセット</button>
+          </div>
+          <div class="ctrl">
+            <label for="phFric">摩擦 <span class="v" id="phFricV">0.88</span></label>
+            <input type="range" id="phFric" min="0" max="1" step="0.01" value="0.88">
+          </div>
+          <div class="ctrl">
+            <label for="phRest">反発 <span class="v" id="phRestV">0.02</span></label>
+            <input type="range" id="phRest" min="0" max="0.8" step="0.01" value="0.02">
+          </div>
+          <p class="hint">反発を0.5まで上げると、ざるから飛び出します。実物の野菜は跳ねません。</p>
+        </div>
+        <div>
+          <canvas id="phCanvas" width="560" height="380" aria-label="ざるに野菜が落ちる物理デモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>物理エンジンは<b>メートル単位で作られています</b>。
+      このプロジェクトはcm単位なので、そのまま実際の重力 <code>981</code> を入れると、
+      1ステップあたりのめり込みが許容量を超えて押し戻され続け、野菜がプルプル震えます。
+      コードでは重力を <code>480</code> まで落として回避しています。
+      「正しい物理」より「破綻しない物理」を採る、という判断です。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ===================== 図鑑 ===================== -->
+<section class="chapter" id="zukan" style="--ch:var(--p-corn)">
+  <div class="chapter-head">
+    <div class="chnum">18<small>FILES</small></div>
+    <div>
+      <h2>どのファイルで、何が学べるか</h2>
+      <p class="sub">18本それぞれに、そこでしか出てこない技術がある</p>
+    </div>
+  </div>
+  <div class="body" style="max-width:none">
+    <p style="max-width:70ch">
+      左の色帯は、そのファイルのコードに実際に書かれている果皮の色です。
+      同じ枠組みなのに、担当する「難所」が1本ずつ違います。
+    </p>
+  </div>
+  <div class="catalog" id="catalog"></div>
+</section>
+
+<!-- ===================== 用語 ===================== -->
+<section class="chapter" id="terms" style="--ch:var(--p-onion)">
+  <div class="chapter-head">
+    <div class="chnum" style="color:var(--ink)">用語<small style="opacity:.6">GLOSSARY</small></div>
+    <div>
+      <h2>コードに出てくる言葉</h2>
+      <p class="sub">最初の1周で引っかかりやすいものだけ</p>
+    </div>
+  </div>
+  <div class="body">
+    <table>
+      <tr><th>語</th><th>意味</th></tr>
+      <tr><td>メッシュ</td><td>頂点と三角形でできた立体そのもの。</td></tr>
+      <tr><td>頂点 / positions</td><td>点の座標。x,y,z の3つずつ一列に並べる。</td></tr>
+      <tr><td>indices</td><td>どの点とどの点で三角形を作るかの番号表。</td></tr>
+      <tr><td>法線 / normal</td><td>面がどちらを向いているかの矢印。明るさを決める。</td></tr>
+      <tr><td>UV</td><td>立体の表面と画像の座標の対応。u=横、v=縦。</td></tr>
+      <tr><td>巻き順</td><td>三角形の頂点を並べる向き。表裏を決める。</td></tr>
+      <tr><td>掃引 / sweep</td><td>断面を並べてつなぎ、立体にすること。</td></tr>
+      <tr><td>プロファイル</td><td>形の横顔。半径や高さの表。</td></tr>
+      <tr><td>ノイズ</td><td>なめらかにつながる乱数。自然な模様のもと。</td></tr>
+      <tr><td>fBm / オクターブ</td><td>細かさを半分ずつにしたノイズを重ねる手法。</td></tr>
+      <tr><td>アルベド</td><td>影も光沢もない、素の色。</td></tr>
+      <tr><td>ORM</td><td>陰り・粗さ・金属度を R,G,B に詰めた1枚の画像。</td></tr>
+      <tr><td>PBR</td><td>現実の光の法則に沿った質感の表し方。</td></tr>
+      <tr><td>SSS / subSurface</td><td>光が中に入って散る現象。薄い部分が透ける。</td></tr>
+      <tr><td>クリアコート</td><td>表面にかかった透明な膜。ワックスの艶。</td></tr>
+      <tr><td>シード</td><td>乱数の出発点になる整数。同じなら同じ結果。</td></tr>
+      <tr><td>Havok</td><td>Babylon.js が使う物理エンジンの名前。</td></tr>
+      <tr><td>Playground</td><td>ブラウザ上で Babylon.js のコードを試せる公式サイト。</td></tr>
+    </table>
+
+    <h3>次にやること</h3>
+    <ul class="roadmap">
+      <li><span class="rn">01</span><span class="rt"><b>まず動かす</b><span>Babylon.js Playground に ニンジン.js をそのまま貼って実行する。読む前に動かす。</span></span></li>
+      <li><span class="rn">02</span><span class="rt"><b>数値をひとつ壊す</b><span>CONFIG の <code>radius</code> を10倍にしてみる。どこが効いているか、壊すといちばん早くわかる。</span></span></li>
+      <li><span class="rn">03</span><span class="rt"><b>色を変える</b><span>プリセットの色（sRGB 0〜1の3つ組）を書き換えて、白いにんじんを作ってみる。</span></span></li>
+      <li><span class="rn">04</span><span class="rt"><b>プロファイルを書き換える</b><span>半径の式をいじって、ありえない野菜を作る。ここまでできれば構造は理解できている。</span></span></li>
+      <li><span class="rn">05</span><span class="rt"><b>新しい野菜を1本書く</b><span>ニンジン.js を複製して大根にする。円錐で白くて、輪紋のかわりに横筋。</span></span></li>
+    </ul>
+  </div>
+</section>
+
+</div>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div>色の出典：プロジェクト内18本の .js に記載された sRGB 値</div>
+  </div>
+</footer>
+</main>
+
+<script>
+/* =======================================================================
+   やさいのつくりかた — インタラクティブ部
+   ライブラリ不使用。Canvas 2D の上に、プロジェクトのコードと同じ手順で
+   ミニチュアの回転体レンダラを組んである。
+   ======================================================================= */
+(function () {
+"use strict";
+
+var TAU = Math.PI * 2;
+var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+function mix(a, b, t) { return a + (b - a) * t; }
+function smooth(a, b, x) { var t = clamp((x - a) / (b - a || 1e-6), 0, 1); return t * t * (3 - 2 * t); }
+function $(s) { return document.querySelector(s); }
+function $$(s) { return Array.prototype.slice.call(document.querySelectorAll(s)); }
+
+/* --------------------------------------------------------------
+   1. Rng — プロジェクトの Rng をそのまま移植
+   -------------------------------------------------------------- */
+function Rng(seed) { this.s = seed >>> 0; }
+Rng.prototype.next = function () {
+    this.s = (this.s + 0x6D2B79F5) | 0;
+    var t = Math.imul(this.s ^ (this.s >>> 15), 1 | this.s);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+};
+Rng.prototype.range = function (a, b) { return a + (b - a) * this.next(); };
+Rng.prototype.gauss = function (m, sd) {
+    var u = Math.max(1e-9, this.next()), v = this.next();
+    return m + sd * Math.sqrt(-2 * Math.log(u)) * Math.cos(TAU * v);
+};
+
+/* --------------------------------------------------------------
+   2. Noise — 2D値ノイズ / u方向に折り返す周期版 / fBm
+   -------------------------------------------------------------- */
+var Noise = {
+    h2: function (x, y, seed) {
+        var h = Math.imul(x | 0, 374761393) ^ Math.imul(y | 0, 668265263) ^ Math.imul(seed | 0, 1274126177);
+        h = Math.imul(h ^ (h >>> 13), 1274126177); h ^= h >>> 16;
+        return (h >>> 0) / 4294967295;
+    },
+    v2: function (x, y, seed) {
+        var xi = Math.floor(x), yi = Math.floor(y);
+        var xf = x - xi, yf = y - yi;
+        var u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+        var a = this.h2(xi, yi, seed), b = this.h2(xi + 1, yi, seed);
+        var c = this.h2(xi, yi + 1, seed), d = this.h2(xi + 1, yi + 1, seed);
+        return mix(mix(a, b, u), mix(c, d, u), v);
+    },
+    // u 方向だけ折り返す（一周してつながる）
+    v2u: function (x, y, px, seed) {
+        var xi = Math.floor(x), yi = Math.floor(y);
+        var xf = x - xi, yf = y - yi;
+        var u = xf * xf * (3 - 2 * xf), v = yf * yf * (3 - 2 * yf);
+        var p = Math.max(1, px | 0);
+        var x0 = xi % p; if (x0 < 0) x0 += p;
+        var x1 = (xi + 1) % p; if (x1 < 0) x1 += p;
+        var a = this.h2(x0, yi, seed), b = this.h2(x1, yi, seed);
+        var c = this.h2(x0, yi + 1, seed), d = this.h2(x1, yi + 1, seed);
+        return mix(mix(a, b, u), mix(c, d, u), v);
+    },
+    fbm: function (x, y, seed, oct) {
+        var s = 0, a = 0.5, f = 1, n = 0;
+        for (var o = 0; o < oct; o++) { s += a * this.v2(x * f, y * f, seed + o * 131); n += a; f *= 2; a *= 0.5; }
+        return s / n;
+    },
+    fbmu: function (x, y, period, seed, oct) {
+        var s = 0, a = 0.5, f = 1, n = 0;
+        for (var o = 0; o < oct; o++) {
+            s += a * this.v2u(x * f, y * f, (period * f) | 0, seed + o * 131);
+            n += a; f *= 2; a *= 0.5;
+        }
+        return s / n;
+    }
+};
+
+/* --------------------------------------------------------------
+   3. プロファイル → 回転体
+   -------------------------------------------------------------- */
+function sampleProfile(ctrl, t) {
+    var n = ctrl.length;
+    if (t <= ctrl[0].t) return ctrl[0].r;
+    if (t >= ctrl[n - 1].t) return ctrl[n - 1].r;
+    var i = 0;
+    while (i < n - 2 && ctrl[i + 1].t < t) i++;
+    var p0 = ctrl[Math.max(0, i - 1)], p1 = ctrl[i], p2 = ctrl[i + 1], p3 = ctrl[Math.min(n - 1, i + 2)];
+    var u = (t - p1.t) / ((p2.t - p1.t) || 1e-6);
+    var r = 0.5 * ((2 * p1.r) + (-p0.r + p2.r) * u
+        + (2 * p0.r - 5 * p1.r + 4 * p2.r - p3.r) * u * u
+        + (-p0.r + 3 * p1.r - 3 * p2.r + p3.r) * u * u * u);
+    return Math.max(0.001, r);
+}
+
+function makeShape(ctrl, o) {
+    o = o || {};
+    var bump = o.bump || 0, ridge = o.ridge || 0, ridgeAmp = o.ridgeAmp == null ? 0.07 : o.ridgeAmp;
+    var seed = o.seed || 7, height = o.height || 1.7, rs = o.rscale || 1;
+    function radius(t, a) {
+        var r = sampleProfile(ctrl, t) * rs;
+        if (ridge > 0) r *= 1 + ridgeAmp * Math.cos(ridge * a);
+        if (bump > 0) r *= 1 + bump * (Noise.fbmu(a / TAU * 8, t * 9, 8, seed, 3) - 0.5) * 2.4;
+        return r;
+    }
+    return {
+        radius: radius,
+        height: height,
+        pos: function (t, a, out) {
+            var r = radius(t, a);
+            out[0] = r * Math.cos(a); out[1] = (t - 0.5) * height; out[2] = r * Math.sin(a);
+            return out;
+        }
+    };
+}
+
+// N段 × M分割。継ぎ目のため列は M+1（u=0 と u=1 の頂点を別に持つ）
+function buildMesh(shape, N, M) {
+    var cols = M + 1, cnt = N * cols;
+    var P = new Float32Array(cnt * 3), Nn = new Float32Array(cnt * 3), UV = new Float32Array(cnt * 2);
+    var tmpA = [0, 0, 0], tmpB = [0, 0, 0], tmpC = [0, 0, 0];
+    var dt = 0.5 / N, da = 0.5 / M;
+    for (var i = 0; i < N; i++) {
+        var t = i / (N - 1);
+        for (var j = 0; j < cols; j++) {
+            var u = j / M, a = u * TAU, k = i * cols + j;
+            shape.pos(t, a, tmpA);
+            P[k * 3] = tmpA[0]; P[k * 3 + 1] = tmpA[1]; P[k * 3 + 2] = tmpA[2];
+            UV[k * 2] = u; UV[k * 2 + 1] = t;
+            // 法線は数値微分。周方向と軸方向の接ベクトルの外積
+            shape.pos(clamp(t + dt, 0, 1), a, tmpB);
+            shape.pos(clamp(t - dt, 0, 1), a, tmpC);
+            var ax = tmpB[0] - tmpC[0], ay = tmpB[1] - tmpC[1], az = tmpB[2] - tmpC[2];
+            shape.pos(t, a + da, tmpB); shape.pos(t, a - da, tmpC);
+            var bx = tmpB[0] - tmpC[0], by = tmpB[1] - tmpC[1], bz = tmpB[2] - tmpC[2];
+            var nx = ay * bz - az * by, ny = az * bx - ax * bz, nz = ax * by - ay * bx;
+            var L = Math.hypot(nx, ny, nz) || 1;
+            Nn[k * 3] = nx / L; Nn[k * 3 + 1] = ny / L; Nn[k * 3 + 2] = nz / L;
+        }
+    }
+    return { N: N, M: M, cols: cols, P: P, Nn: Nn, UV: UV, count: cnt };
+}
+
+/* --------------------------------------------------------------
+   4. ミニレンダラ（画家のアルゴリズム）
+   -------------------------------------------------------------- */
+var CAM = { dist: 3.5, f: 1.65 };
+
+function srgbToLin(c) { return c * c; }
+function tone(x) { return Math.pow(clamp(x / (1 + x) * 1.45, 0, 1), 0.4545); }
+
+function shadePixel(nx, ny, nz, px, py, pz, alb, m, L) {
+    // 視線
+    var vx = -px, vy = -py, vz = -CAM.dist - pz;
+    var vl = Math.hypot(vx, vy, vz) || 1; vx /= vl; vy /= vl; vz /= vl;
+    var ndl = nx * L[0] + ny * L[1] + nz * L[2]; if (ndl < 0) ndl = 0;
+    var ndv = nx * vx + ny * vy + nz * vz; if (ndv < 0) ndv = 0;
+    // 補助光（反対側から弱く）
+    var f = -nx * L[0] * 0.8 + ny * 0.35 - nz * L[2] * 0.8; if (f < 0) f = 0;
+    // ハーフベクトル
+    var hx = L[0] + vx, hy = L[1] + vy, hz = L[2] + vz;
+    var hl = Math.hypot(hx, hy, hz) || 1; hx /= hl; hy /= hl; hz /= hl;
+    var ndh = nx * hx + ny * hy + nz * hz; if (ndh < 0) ndh = 0;
+
+    var rough = m.rough;
+    var ex = mix(5, 800, (1 - rough) * (1 - rough));
+    var spec = Math.pow(ndh, ex) * (0.05 + 0.85 * (1 - rough));
+    var coat = m.coat > 0 ? Math.pow(ndh, 1600) * m.coat * 2.2 : 0;
+    var fres = Math.pow(1 - ndv, 4.2);
+    var sheen = m.sheen > 0 ? fres * m.sheen * 0.75 : 0;
+    var sss = m.sss > 0 ? Math.pow(1 - ndv, 2.1) * m.sss * (0.35 + 0.65 * Math.max(0, -(nx * L[0] + nz * L[2]))) : 0;
+    var amb = 0.12 + 0.21 * (ny * 0.5 + 0.5);
+    var key = ndl * 1.02 + f * 0.20;
+
+    var sc = m.sssCol || [1, 0.55, 0.4];
+    var shc = m.sheenCol || [0.82, 0.86, 0.66];
+    var r = srgbToLin(alb[0]) * (amb + key) + spec + coat + sss * sc[0] * 0.7 + sheen * shc[0];
+    var g = srgbToLin(alb[1]) * (amb + key) + spec + coat + sss * sc[1] * 0.7 + sheen * shc[1];
+    var b = srgbToLin(alb[2]) * (amb + key) + spec + coat + sss * sc[2] * 0.7 + sheen * shc[2];
+    return "rgb(" + (tone(r) * 255 | 0) + "," + (tone(g) * 255 | 0) + "," + (tone(b) * 255 | 0) + ")";
+}
+
+var faceBuf = [];
+
+function renderMesh(ctx, W, H, mesh, o) {
+    var rot = o.rot || 0, mode = o.mode || "solid";
+    var smoothN = o.smooth !== false, flip = !!o.flip, cull = o.cull !== false;
+    var mat = o.mat || { rough: 0.4, coat: 0.2, sss: 0.1, sheen: 0 };
+    var alb = o.albedo || function () { return [0.8, 0.25, 0.2]; };
+    var L = o.light || [-0.42, 0.72, -0.55];
+    var Ll = Math.hypot(L[0], L[1], L[2]); L = [L[0] / Ll, L[1] / Ll, L[2] / Ll];
+
+    var S = Math.min(W, H), cx = W / 2, cy = H / 2 + (o.yShift || 0);
+    var cs = Math.cos(rot), sn = Math.sin(rot);
+    var P = mesh.P, Nn = mesh.Nn, UV = mesh.UV, cols = mesh.cols, N = mesh.N, M = mesh.M;
+    var cnt = mesh.count;
+
+    var vx = new Float32Array(cnt * 3), vn = new Float32Array(cnt * 3);
+    var sx = new Float32Array(cnt), sy = new Float32Array(cnt);
+    for (var k = 0; k < cnt; k++) {
+        var x = P[k * 3], y = P[k * 3 + 1], z = P[k * 3 + 2];
+        var rx = x * cs + z * sn, rz = -x * sn + z * cs;
+        vx[k * 3] = rx; vx[k * 3 + 1] = y; vx[k * 3 + 2] = rz;
+        var a = Nn[k * 3], b = Nn[k * 3 + 1], c = Nn[k * 3 + 2];
+        vn[k * 3] = a * cs + c * sn; vn[k * 3 + 1] = b; vn[k * 3 + 2] = -a * sn + c * cs;
+        var d = rz + CAM.dist, sc2 = CAM.f * S / Math.max(0.4, d);
+        sx[k] = cx + rx * sc2; sy[k] = cy - y * sc2;
+    }
+
+    faceBuf.length = 0;
+    for (var i = 0; i < N - 1; i++) {
+        for (var j = 0; j < M; j++) {
+            var iA = i * cols + j, iB = iA + 1, iC = iA + cols, iD = iC + 1;
+            var order = flip ? [iA, iB, iD, iC] : [iA, iC, iD, iB];
+            var ax = sx[order[0]], ay = sy[order[0]];
+            var bx = sx[order[1]], by = sy[order[1]];
+            var cx2 = sx[order[2]], cy2 = sy[order[2]];
+            // スクリーン座標は y が下向きなので、正の面積が表向きになる
+            var area = (bx - ax) * (cy2 - ay) - (by - ay) * (cx2 - ax);
+            var back = area < 0;
+            if (cull && back && mode !== "facing") continue;
+
+            var z0 = (vx[iA * 3 + 2] + vx[iB * 3 + 2] + vx[iC * 3 + 2] + vx[iD * 3 + 2]) * 0.25;
+            var pts = [
+                sx[order[0]], sy[order[0]], sx[order[1]], sy[order[1]],
+                sx[order[2]], sy[order[2]], sx[order[3]], sy[order[3]]
+            ];
+            var col;
+            if (mode === "wire") {
+                col = null;
+            } else if (mode === "facing") {
+                col = back ? "#DA130E" : "#528530";
+            } else {
+                var nx, ny, nz;
+                if (smoothN) {
+                    nx = (vn[iA * 3] + vn[iB * 3] + vn[iC * 3] + vn[iD * 3]) * 0.25;
+                    ny = (vn[iA * 3 + 1] + vn[iB * 3 + 1] + vn[iC * 3 + 1] + vn[iD * 3 + 1]) * 0.25;
+                    nz = (vn[iA * 3 + 2] + vn[iB * 3 + 2] + vn[iC * 3 + 2] + vn[iD * 3 + 2]) * 0.25;
+                } else {
+                    var ux = vx[iC * 3] - vx[iA * 3], uy = vx[iC * 3 + 1] - vx[iA * 3 + 1], uz = vx[iC * 3 + 2] - vx[iA * 3 + 2];
+                    var wx = vx[iB * 3] - vx[iA * 3], wy = vx[iB * 3 + 1] - vx[iA * 3 + 1], wz = vx[iB * 3 + 2] - vx[iA * 3 + 2];
+                    nx = uy * wz - uz * wy; ny = uz * wx - ux * wz; nz = ux * wy - uy * wx;
+                }
+                var nl = Math.hypot(nx, ny, nz) || 1; nx /= nl; ny /= nl; nz /= nl;
+                if (back) { nx = -nx; ny = -ny; nz = -nz; }
+                if (mode === "normal") {
+                    col = "rgb(" + ((nx * 0.5 + 0.5) * 255 | 0) + "," + ((ny * 0.5 + 0.5) * 255 | 0) + "," + ((nz * 0.5 + 0.5) * 255 | 0) + ")";
+                } else {
+                    var u0 = (UV[iA * 2] + UV[iD * 2]) * 0.5, v0 = (UV[iA * 2 + 1] + UV[iD * 2 + 1]) * 0.5;
+                    var c3 = alb(u0, v0);
+                    var mx = (vx[iA * 3] + vx[iD * 3]) * 0.5;
+                    var my = (vx[iA * 3 + 1] + vx[iD * 3 + 1]) * 0.5;
+                    var mz = (vx[iA * 3 + 2] + vx[iD * 3 + 2]) * 0.5;
+                    col = shadePixel(nx, ny, nz, mx, my, mz, c3, mat, L);
+                }
+            }
+            faceBuf.push({ z: z0, p: pts, c: col });
+        }
+    }
+    faceBuf.sort(function (a, b) { return b.z - a.z; });
+
+    if (mode === "wire") {
+        ctx.strokeStyle = "rgba(26,35,28,.55)"; ctx.lineWidth = 0.7;
+        ctx.beginPath();
+        for (var q = 0; q < faceBuf.length; q++) {
+            var p = faceBuf[q].p;
+            ctx.moveTo(p[0], p[1]); ctx.lineTo(p[2], p[3]); ctx.lineTo(p[4], p[5]); ctx.lineTo(p[6], p[7]); ctx.closePath();
+        }
+        ctx.stroke();
+    } else {
+        for (var q2 = 0; q2 < faceBuf.length; q2++) {
+            var fq = faceBuf[q2], pp = fq.p;
+            ctx.fillStyle = fq.c;
+            ctx.strokeStyle = fq.c;
+            ctx.lineWidth = 0.6;
+            ctx.beginPath();
+            ctx.moveTo(pp[0], pp[1]); ctx.lineTo(pp[2], pp[3]); ctx.lineTo(pp[4], pp[5]); ctx.lineTo(pp[6], pp[7]);
+            ctx.closePath(); ctx.fill(); ctx.stroke();
+        }
+    }
+    return { sx: sx, sy: sy, cols: cols, N: N, M: M };
+}
+
+/* --------------------------------------------------------------
+   5. キャンバスの下ごしらえ（高DPI対応 + 画面内でだけ描く）
+   -------------------------------------------------------------- */
+function setupCanvas(cv) {
+    var ctx = cv.getContext("2d");
+    var w = parseInt(cv.getAttribute("width"), 10);
+    var h = parseInt(cv.getAttribute("height"), 10);
+    function fit() {
+        var dpr = Math.min(2, window.devicePixelRatio || 1);
+        var cw = cv.clientWidth || w;
+        var scale = cw / w;
+        cv.width = Math.round(w * scale * dpr);
+        cv.height = Math.round(h * scale * dpr);
+        cv.style.height = Math.round(h * scale) + "px";
+        ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+    }
+    fit();
+    window.addEventListener("resize", fit);
+    return { ctx: ctx, W: w, H: h, fit: fit };
+}
+
+var loops = [];
+function addLoop(cv, fn) {
+    var o = { cv: cv, fn: fn, on: true };
+    loops.push(o);
+    if ("IntersectionObserver" in window) {
+        var io = new IntersectionObserver(function (es) { o.on = es[0].isIntersecting; }, { rootMargin: "120px" });
+        io.observe(cv);
+    }
+    return o;
+}
+var lastT = 0, lastRun = 0;
+function spin(now, k) { return reduce ? 0.7 : now * k; }
+function tick(now) {
+    var dt = Math.min(0.05, (now - lastT) / 1000 || 0.016); lastT = now;
+    // 動きを減らす設定のときは回転を止め、描き直しも間引く
+    if (reduce && now - lastRun < 70) { requestAnimationFrame(tick); return; }
+    lastRun = now;
+    for (var i = 0; i < loops.length; i++) if (loops[i].on) loops[i].fn(dt, now / 1000);
+    requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+/* --------------------------------------------------------------
+   6. 共通プロファイルのプリセット（t は下から上）
+   -------------------------------------------------------------- */
+var PROFILES = {
+    carrot: [{ t: 0, r: 0.02 }, { t: 0.18, r: 0.14 }, { t: 0.45, r: 0.26 }, { t: 0.75, r: 0.38 }, { t: 0.95, r: 0.45 }, { t: 1, r: 0.44 }],
+    tomato: [{ t: 0, r: 0.05 }, { t: 0.12, r: 0.34 }, { t: 0.35, r: 0.48 }, { t: 0.6, r: 0.48 }, { t: 0.86, r: 0.38 }, { t: 0.97, r: 0.22 }, { t: 1, r: 0.10 }],
+    nasu: [{ t: 0, r: 0.06 }, { t: 0.1, r: 0.28 }, { t: 0.3, r: 0.33 }, { t: 0.6, r: 0.30 }, { t: 0.85, r: 0.22 }, { t: 0.97, r: 0.12 }, { t: 1, r: 0.06 }],
+    shiitake: [{ t: 0, r: 0.10 }, { t: 0.3, r: 0.11 }, { t: 0.55, r: 0.13 }, { t: 0.72, r: 0.45 }, { t: 0.86, r: 0.50 }, { t: 0.97, r: 0.42 }, { t: 1, r: 0.12 }]
+};
+function cloneProfile(p) { return p.map(function (o) { return { t: o.t, r: o.r }; }); }
+
+var MATS = {
+    nasu: { rough: 0.24, coat: 0.45, sss: 0.10, sheen: 0, col: [0.16, 0.06, 0.24], sssCol: [0.7, 0.3, 0.9] },
+    okra: { rough: 0.62, coat: 0.05, sss: 0.18, sheen: 0.55, col: [0.32, 0.52, 0.19], sheenCol: [0.72, 0.80, 0.55], sssCol: [0.5, 0.8, 0.3] },
+    imo: { rough: 0.82, coat: 0.0, sss: 0.04, sheen: 0.10, col: [0.55, 0.22, 0.24], sssCol: [0.9, 0.5, 0.4] },
+    corn: { rough: 0.30, coat: 0.35, sss: 0.55, sheen: 0, col: [0.92, 0.74, 0.24], sssCol: [1.0, 0.75, 0.25] },
+    tomato: { rough: 0.19, coat: 0.40, sss: 0.30, sheen: 0, col: [0.855, 0.075, 0.055], sssCol: [1.0, 0.25, 0.15] }
+};
+
+/* ======================================================================
+   HERO — 点からトマトが組み上がる
+   ====================================================================== */
+(function () {
+    var cv = $("#heroCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var ctrl = cloneProfile(PROFILES.tomato);
+    var shape = makeShape(ctrl, { bump: 0.035, ridge: 6, ridgeAmp: 0.022, seed: 3, height: 1.6 });
+    var mesh = buildMesh(shape, 34, 44);
+    var stageNames = [
+        "① 横顔（プロファイル）を決める",
+        "② 高さごとにリングを並べる",
+        "③ 頂点を三角形でつなぐ",
+        "④ 面の向きから明るさを出す",
+        "⑤ 模様を計算で描いて貼る",
+        "⑥ 光り方を与えて完成"
+    ];
+    var stageEl = $("#heroStage"), countEl = $("#heroCount");
+    var t0 = 0, started = false, stage = 0;
+    var DUR = [1.5, 1.5, 1.6, 1.6, 1.6, 4.2];
+
+    function albedo(u, v) {
+        var base = MATS.tomato.col;
+        var lob = 0.5 + 0.5 * Math.cos(u * TAU * 6);
+        var sh = smooth(0.72, 1.0, v);
+        var n = Noise.fbmu(u * 8, v * 10, 8, 5, 3);
+        var spot = smooth(0.62, 0.72, Noise.fbmu(u * 60, v * 70, 60, 11, 2));
+        var r = base[0] * (0.86 + 0.2 * n) - 0.10 * lob;
+        var g = base[1] + 0.20 * sh + 0.05 * n;
+        var b = base[2] + 0.05 * n;
+        r = mix(r, 0.95, spot * 0.5); g = mix(g, 0.82, spot * 0.5); b = mix(b, 0.72, spot * 0.5);
+        // 肩は黄色寄り
+        g += 0.32 * smooth(0.82, 1.0, v); r = mix(r, 0.9, smooth(0.9, 1.0, v) * 0.3);
+        return [clamp(r, 0, 1), clamp(g, 0, 1), clamp(b, 0, 1)];
+    }
+    function white() { return [0.86, 0.86, 0.84]; }
+
+    function restart() { t0 = performance.now() / 1000; started = true; stage = 0; }
+    restart();
+    if (reduce) { started = true; }
+
+    var btn = $("#heroReplay");
+    if (btn) btn.addEventListener("click", restart);
+
+    function drawDots(rot) {
+        var S = Math.min(c.W, c.H), cx = c.W / 2, cy = c.H / 2;
+        ctx.fillStyle = "#1A231C";
+        for (var i = 0; i < ctrl.length; i++) {
+            var t = ctrl[i].t, r = ctrl[i].r;
+            for (var s = -1; s <= 1; s += 2) {
+                var x = r * s * Math.cos(rot), z = r * s * Math.sin(rot);
+                var d = z + CAM.dist, sc = CAM.f * S / d;
+                ctx.beginPath();
+                ctx.arc(cx + x * sc, cy - (t - 0.5) * 1.6 * sc, 4, 0, TAU); ctx.fill();
+            }
+        }
+        // 曲線
+        ctx.strokeStyle = "rgba(218,19,14,.75)"; ctx.lineWidth = 1.6;
+        for (var s2 = -1; s2 <= 1; s2 += 2) {
+            ctx.beginPath();
+            for (var k = 0; k <= 60; k++) {
+                var tt = k / 60, rr = sampleProfile(ctrl, tt) * s2;
+                var xx = rr * Math.cos(rot), zz = rr * Math.sin(rot);
+                var dd = zz + CAM.dist, sc2 = CAM.f * S / dd;
+                var px = cx + xx * sc2, py = cy - (tt - 0.5) * 1.6 * sc2;
+                if (k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+        }
+        var axL = 0.95 * 1.6 * 0.5 * (CAM.f * S / CAM.dist);
+        ctx.strokeStyle = "rgba(26,35,28,.3)"; ctx.lineWidth = 1; ctx.setLineDash([4, 4]);
+        ctx.beginPath(); ctx.moveTo(cx, cy - axL); ctx.lineTo(cx, cy + axL); ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    function drawRings(rot) {
+        var S = Math.min(c.W, c.H), cx = c.W / 2, cy = c.H / 2;
+        var cs = Math.cos(rot), sn = Math.sin(rot);
+        ctx.strokeStyle = "rgba(26,35,28,.5)"; ctx.lineWidth = 1;
+        for (var i = 0; i < mesh.N; i += 2) {
+            ctx.beginPath();
+            for (var j = 0; j <= mesh.M; j++) {
+                var k = i * mesh.cols + j;
+                var x = mesh.P[k * 3], y = mesh.P[k * 3 + 1], z = mesh.P[k * 3 + 2];
+                var rx = x * cs + z * sn, rz = -x * sn + z * cs;
+                var d = rz + CAM.dist, sc = CAM.f * S / d;
+                var px = cx + rx * sc, py = cy - y * sc;
+                if (j === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+        }
+    }
+
+    addLoop(cv, function (dt, now) {
+        ctx.clearRect(0, 0, c.W, c.H);
+        var el = reduce ? 99 : (performance.now() / 1000 - t0);
+        var acc = 0, st = 5;
+        for (var i = 0; i < DUR.length; i++) { acc += DUR[i]; if (el < acc) { st = i; break; } }
+        if (el >= acc) { st = 5; }
+        var rot = spin(now, 0.32);
+        if (st !== stage) { stage = st; if (stageEl) stageEl.textContent = stageNames[st]; }
+        if (countEl) countEl.textContent = (st === 0 ? ctrl.length * 2 + " 個の制御点"
+            : mesh.count.toLocaleString() + " 頂点 / " + ((mesh.N - 1) * mesh.M * 2).toLocaleString() + " 三角形");
+
+        if (st === 0) { drawDots(rot); return; }
+        if (st === 1) { drawRings(rot); return; }
+        if (st === 2) { renderMesh(ctx, c.W, c.H, mesh, { rot: rot, mode: "wire" }); return; }
+        if (st === 3) {
+            renderMesh(ctx, c.W, c.H, mesh, { rot: rot, albedo: white, mat: { rough: 0.85, coat: 0, sss: 0, sheen: 0 } });
+            return;
+        }
+        if (st === 4) {
+            renderMesh(ctx, c.W, c.H, mesh, { rot: rot, albedo: albedo, mat: { rough: 0.9, coat: 0, sss: 0, sheen: 0 } });
+            return;
+        }
+        renderMesh(ctx, c.W, c.H, mesh, { rot: rot, albedo: albedo, mat: MATS.tomato });
+    });
+})();
+
+/* ======================================================================
+   02 — シード
+   ====================================================================== */
+(function () {
+    var cv = $("#seedCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var input = $("#seedInput"), out = $("#seedNumbers");
+
+    function drawOne(x, w, h, seed) {
+        var rng = new Rng(seed);
+        var len = rng.gauss(1.0, 0.12), fat = rng.gauss(1.0, 0.16);
+        var bend = rng.gauss(0, 0.10), taper = rng.range(0.8, 1.4);
+        var ctrl = cloneProfile(PROFILES.carrot);
+        for (var i = 0; i < ctrl.length; i++) ctrl[i].r *= fat * Math.pow(ctrl[i].t + 0.05, taper * 0.18);
+        var H = h * 0.78 * len, base = h * 0.90;
+        ctx.beginPath();
+        for (var s = 0; s < 2; s++) {
+            var dir = s === 0 ? 1 : -1;
+            for (var k = 0; k <= 40; k++) {
+                var t = s === 0 ? k / 40 : 1 - k / 40;
+                var r = sampleProfile(ctrl, t) * w * 0.95
+                    * (1 + 0.05 * (Noise.v2(t * 7, seed % 97, seed) - 0.5) * 2);
+                var px = x + dir * r + bend * Math.sin(t * 2.2) * w * 0.7;
+                var py = base - t * H;
+                if (s === 0 && k === 0) ctx.moveTo(px, py); else ctx.lineTo(px, py);
+            }
+        }
+        ctx.closePath();
+        var g = ctx.createLinearGradient(x - w, 0, x + w, 0);
+        g.addColorStop(0, "#B84E13"); g.addColorStop(0.42, "#E2691C"); g.addColorStop(1, "#9E4210");
+        ctx.fillStyle = g; ctx.fill();
+        // 輪紋
+        ctx.strokeStyle = "rgba(120,45,10,.30)"; ctx.lineWidth = 1;
+        ctx.save(); ctx.clip();
+        for (var m = 0; m < 22; m++) {
+            var tt = m / 22 + 0.02 * (Noise.v2(m, seed % 31, seed) - 0.5);
+            ctx.beginPath();
+            ctx.moveTo(x - w, base - tt * H); ctx.lineTo(x + w, base - tt * H - w * 0.18);
+            ctx.stroke();
+        }
+        ctx.restore();
+        // 葉
+        ctx.strokeStyle = "#3E6B22"; ctx.lineWidth = 2.4;
+        for (var lf = 0; lf < 4; lf++) {
+            var a = -1.6 + (lf - 1.5) * 0.36 + rng.range(-0.1, 0.1);
+            ctx.beginPath();
+            ctx.moveTo(x + bend * Math.sin(2.2) * w * 0.7, base - H);
+            ctx.quadraticCurveTo(x + Math.cos(a) * w * 0.9, base - H - h * 0.10,
+                x + Math.cos(a) * w * 1.5, base - H - h * 0.17);
+            ctx.stroke();
+        }
+    }
+
+    function render() {
+        var seed = (parseInt(input.value, 10) || 0) >>> 0;
+        ctx.clearRect(0, 0, c.W, c.H);
+        var n = 5, w = c.W / n;
+        for (var i = 0; i < n; i++) drawOne(w * (i + 0.5), w * 0.30, c.H, (seed + i * 7919) >>> 0);
+        var rng = new Rng(seed), s = [];
+        for (var k = 0; k < 4; k++) s.push(rng.next().toFixed(6));
+        out.textContent = "rng.next() → " + s.join("  /  ");
+    }
+    input.addEventListener("input", render);
+    $$("[data-seedbtn]").forEach(function (b) {
+        b.addEventListener("click", function () {
+            if (b.dataset.seedbtn === "next") input.value = (parseInt(input.value, 10) || 0) + 1;
+            render();
+        });
+    });
+    render();
+})();
+
+/* ======================================================================
+   03 — ノイズ
+   ====================================================================== */
+(function () {
+    var cv = $("#noiseCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var pal = "gray";
+    var sScale = $("#nzScale"), sOct = $("#nzOct"), sCon = $("#nzCon");
+    var W = 256, H = 128;
+    var img = ctx.createImageData(W, H);
+
+    var PALS = {
+        gray: function (v) { return [v * 255, v * 255, v * 255]; },
+        potato: function (v) {
+            return [mix(140, 214, v), mix(104, 176, v), mix(66, 128, v)];
+        },
+        suika: function (v) {
+            var k = smooth(0.42, 0.56, v);
+            return [mix(31, 138, k), mix(74, 186, k), mix(27, 74, k)];
+        }
+    };
+
+    function render() {
+        var sc = +sScale.value, oct = +sOct.value, con = +sCon.value;
+        $("#nzScaleV").textContent = sc;
+        $("#nzOctV").textContent = oct;
+        $("#nzConV").textContent = con.toFixed(2);
+        var f = PALS[pal], d = img.data;
+        for (var y = 0; y < H; y++) {
+            for (var x = 0; x < W; x++) {
+                var v = Noise.fbmu(x / W * sc * 2, y / H * sc, sc * 2, 1234, oct);
+                v = clamp((v - 0.5) * con + 0.5, 0, 1);
+                var rgb = f(v), i = (y * W + x) * 4;
+                d[i] = rgb[0]; d[i + 1] = rgb[1]; d[i + 2] = rgb[2]; d[i + 3] = 255;
+            }
+        }
+        var off = document.createElement("canvas");
+        off.width = W; off.height = H;
+        off.getContext("2d").putImageData(img, 0, 0);
+        ctx.imageSmoothingEnabled = true;
+        ctx.clearRect(0, 0, c.W, c.H);
+        ctx.drawImage(off, 0, 0, c.W, c.H);
+    }
+    [sScale, sOct, sCon].forEach(function (s) { s.addEventListener("input", render); });
+    $$("#nzPal .chip").forEach(function (b) {
+        b.addEventListener("click", function () {
+            pal = b.dataset.pal;
+            $$("#nzPal .chip").forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+            render();
+        });
+    });
+    render();
+})();
+
+/* ======================================================================
+   04 — プロファイル編集 + 回転体プレビュー
+   ====================================================================== */
+(function () {
+    var cvE = $("#profCanvas"), cvV = $("#profView"); if (!cvE || !cvV) return;
+    var e = setupCanvas(cvE), v = setupCanvas(cvV);
+    var ctrl = cloneProfile(PROFILES.carrot);
+    var mesh = null, dirty = true, drag = -1;
+    var bump = 0, ridge = 0;
+
+    var padY = 40, maxR = 0;
+    function layout() { maxR = e.W * 0.36; }
+    layout();
+    function toScreen(p) {
+        return { x: e.W / 2 + p.r * maxR, y: e.H - padY - p.t * (e.H - padY * 2) };
+    }
+    function fromScreen(x, y) {
+        return {
+            r: clamp((x - e.W / 2) / maxR, 0.005, 1),
+            t: clamp((e.H - padY - y) / (e.H - padY * 2), 0, 1)
+        };
+    }
+
+    function drawEditor() {
+        var ctx = e.ctx;
+        ctx.clearRect(0, 0, e.W, e.H);
+        // 方眼
+        ctx.strokeStyle = "rgba(175,192,163,.55)"; ctx.lineWidth = 1;
+        ctx.beginPath();
+        for (var gx = 0; gx <= e.W; gx += 20) { ctx.moveTo(gx, 0); ctx.lineTo(gx, e.H); }
+        for (var gy = 0; gy <= e.H; gy += 20) { ctx.moveTo(0, gy); ctx.lineTo(e.W, gy); }
+        ctx.stroke();
+        // 軸
+        ctx.strokeStyle = "rgba(26,35,28,.45)"; ctx.setLineDash([5, 5]); ctx.lineWidth = 1.2;
+        ctx.beginPath(); ctx.moveTo(e.W / 2, 10); ctx.lineTo(e.W / 2, e.H - 10); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle = "#7B8A7F"; ctx.font = "11px ui-monospace,monospace";
+        ctx.fillText("回転軸", e.W / 2 + 6, 20);
+        ctx.fillText("r →", e.W / 2 + maxR - 22, e.H - padY + 18);
+        ctx.fillText("y", e.W / 2 - 22, 24);
+
+        // 曲線（左右対称）
+        var pathR = [], pathL = [];
+        for (var k = 0; k <= 80; k++) {
+            var t = k / 80, r = sampleProfile(ctrl, t);
+            var s = toScreen({ t: t, r: r }), s2 = toScreen({ t: t, r: -r });
+            pathR.push(s); pathL.push(s2);
+        }
+        var ctx2 = ctx;
+        ctx2.beginPath();
+        pathR.forEach(function (p, i) { i ? ctx2.lineTo(p.x, p.y) : ctx2.moveTo(p.x, p.y); });
+        for (var q = pathL.length - 1; q >= 0; q--) ctx2.lineTo(pathL[q].x, pathL[q].y);
+        ctx2.closePath();
+        ctx2.fillStyle = "rgba(226,105,28,.14)"; ctx2.fill();
+        ctx2.strokeStyle = "#E2691C"; ctx2.lineWidth = 2; ctx2.stroke();
+
+        // 制御点
+        for (var i2 = 0; i2 < ctrl.length; i2++) {
+            var sp = toScreen(ctrl[i2]);
+            ctx.beginPath(); ctx.arc(sp.x, sp.y, drag === i2 ? 9 : 7, 0, TAU);
+            ctx.fillStyle = drag === i2 ? "#DA130E" : "#1A231C"; ctx.fill();
+            ctx.strokeStyle = "#F0F2EA"; ctx.lineWidth = 2; ctx.stroke();
+        }
+    }
+
+    function rebuild() {
+        var shape = makeShape(ctrl, { bump: bump, ridge: ridge, ridgeAmp: 0.075, seed: 21, height: 1.7 });
+        mesh = buildMesh(shape, 32, 40);
+        dirty = false;
+    }
+
+    function pointer(ev) {
+        var rect = cvE.getBoundingClientRect();
+        var scale = e.W / rect.width;
+        return { x: (ev.clientX - rect.left) * scale, y: (ev.clientY - rect.top) * scale };
+    }
+    cvE.addEventListener("pointerdown", function (ev) {
+        var p = pointer(ev), best = -1, bd = 26 * 26;
+        for (var i = 0; i < ctrl.length; i++) {
+            var s = toScreen(ctrl[i]);
+            var d = (s.x - p.x) * (s.x - p.x) + (s.y - p.y) * (s.y - p.y);
+            if (d < bd) { bd = d; best = i; }
+        }
+        if (best >= 0) { drag = best; cvE.setPointerCapture(ev.pointerId); drawEditor(); }
+    });
+    cvE.addEventListener("pointermove", function (ev) {
+        if (drag < 0) return;
+        ev.preventDefault();
+        var p = pointer(ev), q = fromScreen(p.x, p.y);
+        var lo = drag === 0 ? 0 : ctrl[drag - 1].t + 0.02;
+        var hi = drag === ctrl.length - 1 ? 1 : ctrl[drag + 1].t - 0.02;
+        ctrl[drag].t = clamp(q.t, lo, hi);
+        ctrl[drag].r = q.r;
+        if (drag === 0) ctrl[drag].t = 0;
+        if (drag === ctrl.length - 1) ctrl[drag].t = 1;
+        dirty = true; drawEditor();
+    });
+    function endDrag(ev) { if (drag >= 0) { drag = -1; drawEditor(); } }
+    cvE.addEventListener("pointerup", endDrag);
+    cvE.addEventListener("pointercancel", endDrag);
+
+    $$("#profPresets .chip").forEach(function (b) {
+        b.addEventListener("click", function () {
+            ctrl = cloneProfile(PROFILES[b.dataset.prof]);
+            $$("#profPresets .chip").forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+            dirty = true; drawEditor();
+        });
+    });
+    $("#profBump").addEventListener("input", function () {
+        bump = +this.value; $("#profBumpV").textContent = bump.toFixed(3); dirty = true;
+    });
+    $("#profRidge").addEventListener("input", function () {
+        ridge = +this.value; $("#profRidgeV").textContent = ridge; dirty = true;
+    });
+
+    rebuild(); drawEditor();
+    addLoop(cvV, function (dt, now) {
+        if (dirty) rebuild();
+        v.ctx.clearRect(0, 0, v.W, v.H);
+        renderMesh(v.ctx, v.W, v.H, mesh, {
+            rot: spin(now, 0.4),
+            albedo: function (u, t) {
+                return [mix(0.72, 0.90, t), mix(0.30, 0.42, t), mix(0.08, 0.14, t)];
+            },
+            mat: { rough: 0.48, coat: 0.12, sss: 0.10, sheen: 0, sssCol: [1, 0.5, 0.25] }
+        });
+    });
+    window.addEventListener("resize", function () { layout(); drawEditor(); });
+})();
+
+/* ======================================================================
+   05 — 巻き順と法線
+   ====================================================================== */
+(function () {
+    var cv = $("#meshCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var mode = "solid", smoothN = true, flip = false, cull = true, seg = 40;
+    var mesh = null;
+    function rebuild() {
+        var shape = makeShape(PROFILES.tomato, { ridge: 6, ridgeAmp: 0.03, height: 1.6 });
+        mesh = buildMesh(shape, Math.max(8, Math.round(seg * 0.8)), seg);
+    }
+    rebuild();
+
+    $$("#meshMode .chip").forEach(function (b) {
+        b.addEventListener("click", function () {
+            mode = b.dataset.mmode;
+            $$("#meshMode .chip").forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+        });
+    });
+    $("#meshSmooth").addEventListener("change", function () { smoothN = this.checked; });
+    $("#meshFlip").addEventListener("change", function () { flip = this.checked; });
+    $("#meshCull").addEventListener("change", function () { cull = this.checked; });
+    $("#meshSeg").addEventListener("input", function () {
+        seg = +this.value; $("#meshSegV").textContent = seg; rebuild();
+    });
+
+    addLoop(cv, function (dt, now) {
+        ctx.clearRect(0, 0, c.W, c.H);
+        renderMesh(ctx, c.W, c.H, mesh, {
+            rot: spin(now, 0.4), mode: mode, smooth: smoothN, flip: flip, cull: cull,
+            albedo: function () { return MATS.tomato.col; },
+            mat: { rough: 0.28, coat: 0.25, sss: 0.18, sheen: 0, sssCol: [1, 0.3, 0.2] }
+        });
+        if (mode === "facing") {
+            ctx.font = "12px ui-monospace,monospace";
+            ctx.fillStyle = "#528530"; ctx.fillText("■ 表向き（描かれる）", 14, 22);
+            ctx.fillStyle = "#DA130E"; ctx.fillText("■ 裏向き（本来は描かれない）", 14, 40);
+        }
+        if (cull && flip && mode !== "facing") {
+            ctx.font = "13px system-ui,sans-serif";
+            ctx.fillStyle = "#7B8A7F";
+            ctx.textAlign = "center";
+            ctx.fillText("全部の面が裏を向いたので、何も描かれません", c.W / 2, c.H / 2);
+            ctx.textAlign = "left";
+        }
+    });
+})();
+
+/* ======================================================================
+   06 — テクスチャ
+   ====================================================================== */
+(function () {
+    var cvT = $("#texCanvas"), cvV = $("#texView"); if (!cvT || !cvV) return;
+    var t = setupCanvas(cvT), v = setupCanvas(cvV);
+    var TS = 256;
+    var buf = document.createElement("canvas"); buf.width = TS; buf.height = TS;
+    var bctx = buf.getContext("2d");
+    var img = bctx.createImageData(TS, TS);
+    var data = img.data;
+    var kind = "stripe", amt = 1, freq = 1, showUV = false, needBake = true;
+    function scheduleBake() { needBake = true; }
+    var mesh = buildMesh(makeShape(PROFILES.tomato, { height: 1.7 }), 34, 44);
+
+    function px(u, v2) {
+        var r, g, b;
+        if (kind === "stripe") {
+            var warp = (Noise.fbmu(u * 10 * freq, v2 * 4 * freq, 10 * freq, 5, 4) - 0.5) * 0.9 * amt;
+            var s = Math.cos((u * 10 + warp) * TAU * 0.6 * freq);
+            var fingers = Noise.fbmu(u * 26 * freq, v2 * 9 * freq, 26 * freq, 9, 4) - 0.5;
+            var k = smooth(-0.12, 0.30, s + fingers * 1.5 * amt);
+            r = mix(0.12, 0.55, k); g = mix(0.29, 0.73, k); b = mix(0.10, 0.30, k);
+        } else if (kind === "wart") {
+            var base = Noise.fbmu(u * 12 * freq, v2 * 14 * freq, 12 * freq, 3, 3);
+            var cell = 0, dots = 14 * freq;
+            var cu = Math.floor(u * dots), cv2 = Math.floor(v2 * dots);
+            for (var oy = -1; oy <= 1; oy++) for (var ox = -1; ox <= 1; ox++) {
+                var hx = Noise.h2(cu + ox, cv2 + oy, 31), hy = Noise.h2(cu + ox, cv2 + oy, 57);
+                var dx = (cu + ox + hx) / dots - u, dy = (cv2 + oy + hy) / dots - v2;
+                var d = Math.hypot(dx, dy) * dots;
+                cell = Math.max(cell, 1 - smooth(0.12, 0.42, d));
+            }
+            var w = cell * amt;
+            r = mix(0.16 + 0.10 * base, 0.86, w * 0.75);
+            g = mix(0.40 + 0.14 * base, 0.90, w * 0.55);
+            b = mix(0.11 + 0.06 * base, 0.78, w * 0.7);
+        } else if (kind === "fiber") {
+            var f2 = 0;
+            for (var i = 0; i < 3; i++) {
+                var fq = 90 * freq * (1 + i * 0.7);
+                f2 += (0.6 / (i + 1)) * Math.pow(Math.abs(Math.sin(u * fq * Math.PI + Noise.fbmu(u * 6, v2 * 3, 6, 13 + i, 2) * 7)), 12);
+            }
+            f2 = clamp(f2 * amt, 0, 1);
+            var tone2 = 0.72 + 0.2 * Noise.fbmu(u * 5, v2 * 5, 5, 21, 3);
+            r = mix(0.80 * tone2, 0.44, f2); g = mix(0.63 * tone2, 0.30, f2); b = mix(0.36 * tone2, 0.14, f2);
+        } else { // net
+            var n1 = Noise.fbmu(u * 9 * freq, v2 * 7 * freq, 9 * freq, 41, 4);
+            var ridge2 = 1 - Math.abs(n1 - 0.5) * 2.6;
+            var net = clamp((ridge2 - 0.55) / 0.45, 0, 1) * amt;
+            var g0 = 0.55 + 0.12 * Noise.fbmu(u * 4, v2 * 4, 4, 3, 3);
+            r = mix(g0 * 0.85, 0.90, net); g = mix(g0 * 0.86, 0.88, net); b = mix(g0 * 0.55, 0.76, net);
+        }
+        return [clamp(r, 0, 1), clamp(g, 0, 1), clamp(b, 0, 1)];
+    }
+
+    function bake() {
+        for (var y = 0; y < TS; y++) {
+            for (var x = 0; x < TS; x++) {
+                var u = x / TS, vv = 1 - y / TS;
+                var col = px(u, vv);
+                if (showUV) {
+                    var ck = ((Math.floor(u * 12) + Math.floor(vv * 12)) & 1) === 0 ? 1 : 0;
+                    col = [mix(col[0], ck, 0.28), mix(col[1], ck, 0.28), mix(col[2], ck, 0.28)];
+                }
+                var i = (y * TS + x) * 4;
+                data[i] = col[0] * 255; data[i + 1] = col[1] * 255; data[i + 2] = col[2] * 255; data[i + 3] = 255;
+            }
+        }
+        bctx.putImageData(img, 0, 0);
+        t.ctx.clearRect(0, 0, t.W, t.H);
+        t.ctx.imageSmoothingEnabled = true;
+        t.ctx.drawImage(buf, 0, 0, t.W, t.H);
+    }
+
+    function sample(u, vv) {
+        var x = clamp(Math.floor(u * TS), 0, TS - 1);
+        var y = clamp(Math.floor((1 - vv) * TS), 0, TS - 1);
+        var i = (y * TS + x) * 4;
+        return [data[i] / 255, data[i + 1] / 255, data[i + 2] / 255];
+    }
+
+    $$("#texKind .chip").forEach(function (b) {
+        b.addEventListener("click", function () {
+            kind = b.dataset.tex;
+            $$("#texKind .chip").forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+            scheduleBake();
+        });
+    });
+    $("#texAmt").addEventListener("input", function () { amt = +this.value; $("#texAmtV").textContent = amt.toFixed(2); scheduleBake(); });
+    $("#texFreq").addEventListener("input", function () { freq = +this.value; $("#texFreqV").textContent = freq.toFixed(2); scheduleBake(); });
+    $("#texUV").addEventListener("change", function () { showUV = this.checked; scheduleBake(); });
+    bake(); needBake = false;
+
+    addLoop(cvV, function (dt, now) {
+        if (needBake) { bake(); needBake = false; }
+        v.ctx.clearRect(0, 0, v.W, v.H);
+        renderMesh(v.ctx, v.W, v.H, mesh, {
+            rot: spin(now, 0.35), albedo: sample,
+            mat: { rough: 0.38, coat: 0.22, sss: 0.08, sheen: 0.05 }
+        });
+    });
+})();
+
+/* ======================================================================
+   07 — PBR
+   ====================================================================== */
+(function () {
+    var cv = $("#pbrCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var mesh = buildMesh(makeShape(PROFILES.nasu, { bump: 0.02, seed: 4, height: 1.9 }), 34, 44);
+    var m = { rough: 0.24, coat: 0.45, sss: 0.10, sheen: 0, col: MATS.nasu.col.slice(), sssCol: [0.7, 0.3, 0.9], sheenCol: [0.82, 0.86, 0.66] };
+    var ang = -35;
+    var ids = { rough: "pbrRough", coat: "pbrCoat", sss: "pbrSss", sheen: "pbrSheen" };
+
+    function sync() {
+        $("#pbrRoughV").textContent = m.rough.toFixed(2);
+        $("#pbrCoatV").textContent = m.coat.toFixed(2);
+        $("#pbrSssV").textContent = m.sss.toFixed(2);
+        $("#pbrSheenV").textContent = m.sheen.toFixed(2);
+        $("#pbrLightV").textContent = ang + "°";
+        $("#pbrRough").value = m.rough; $("#pbrCoat").value = m.coat;
+        $("#pbrSss").value = m.sss; $("#pbrSheen").value = m.sheen;
+    }
+    Object.keys(ids).forEach(function (k) {
+        $("#" + ids[k]).addEventListener("input", function () { m[k] = +this.value; sync(); });
+    });
+    $("#pbrLight").addEventListener("input", function () { ang = +this.value; sync(); });
+    $$("#pbrPreset .chip").forEach(function (b) {
+        b.addEventListener("click", function () {
+            var p = MATS[b.dataset.pbr];
+            m.rough = p.rough; m.coat = p.coat; m.sss = p.sss; m.sheen = p.sheen;
+            m.col = p.col.slice(); m.sssCol = p.sssCol || [1, 0.5, 0.4];
+            m.sheenCol = p.sheenCol || [0.82, 0.86, 0.66];
+            $$("#pbrPreset .chip").forEach(function (o) { o.setAttribute("aria-pressed", o === b ? "true" : "false"); });
+            sync();
+        });
+    });
+    sync();
+
+    addLoop(cv, function (dt, now) {
+        ctx.clearRect(0, 0, c.W, c.H);
+        var a = ang * Math.PI / 180;
+        renderMesh(ctx, c.W, c.H, mesh, {
+            rot: spin(now, 0.3),
+            light: [Math.sin(a) * 0.8, 0.62, -Math.cos(a) * 0.8],
+            albedo: function (u, v) {
+                var n = Noise.fbmu(u * 10, v * 12, 10, 17, 3);
+                return [clamp(m.col[0] * (0.86 + 0.28 * n), 0, 1),
+                clamp(m.col[1] * (0.86 + 0.28 * n), 0, 1),
+                clamp(m.col[2] * (0.86 + 0.28 * n), 0, 1)];
+            },
+            mat: m
+        });
+    });
+})();
+
+/* ======================================================================
+   08 — 物理（簡易2D）
+   ====================================================================== */
+(function () {
+    var cv = $("#phCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var ARC0 = 0.12 * Math.PI, ARC1 = 0.88 * Math.PI;
+    var bowl = { x: c.W / 2, y: c.H * 0.14, r: c.H * 0.74 };
+    bowl.yLimit = bowl.r * Math.sin(ARC0);   // ここより上は縁の外なので壁がない
+    var items = [], queue = 0, timer = 0, fric = 0.88, rest = 0.02;
+    var COLORS = ["#528530", "#3E6B22", "#6E9B3C", "#2B6F1C", "#7FA544"];
+
+    function reset() { items = []; queue = 0; timer = 0; }
+    function spawn(n, burst) {
+        var rng = new Rng(Date.now() & 0xffff);
+        for (var i = 0; i < n; i++) {
+            var r = rng.range(15, 23);
+            var x = burst ? bowl.x + rng.range(-14, 14) : bowl.x + rng.range(-70, 70);
+            var y = burst ? bowl.y + bowl.r * 0.55 + rng.range(-14, 14) : bowl.y + 20;
+            items.push({
+                x: x, y: y, vx: 0, vy: 0, r: r,
+                a: rng.range(0, TAU), va: rng.range(-2, 2),
+                el: rng.range(1.5, 2.4), col: COLORS[items.length % COLORS.length]
+            });
+        }
+    }
+    function step(dt) {
+        dt = Math.min(dt, 1 / 50);
+        var g = 1500;
+        for (var it = 0; it < 3; it++) {
+            var h = dt / 3;
+            for (var i = 0; i < items.length; i++) {
+                var p = items[i];
+                p.vy += g * h;
+                p.x += p.vx * h; p.y += p.vy * h;
+                p.a += p.va * h; p.va *= 0.985;
+                // ざる（円弧）
+                var dx = p.x - bowl.x, dy = p.y - bowl.y;
+                var d = Math.hypot(dx, dy);
+                if (d > bowl.r - p.r && dy > bowl.yLimit) {
+                    var nx = dx / (d || 1), ny = dy / (d || 1);
+                    var pen = d - (bowl.r - p.r);
+                    p.x -= nx * pen; p.y -= ny * pen;
+                    var vn = p.vx * nx + p.vy * ny;
+                    if (vn > 0) {
+                        p.vx -= (1 + rest) * vn * nx; p.vy -= (1 + rest) * vn * ny;
+                        var tx = -ny, ty = nx, vt = p.vx * tx + p.vy * ty;
+                        p.vx -= vt * fric * tx * 0.5; p.vy -= vt * fric * ty * 0.5;
+                        p.va += vt * 0.004;
+                    }
+                }
+            }
+            // 相互衝突
+            for (var a2 = 0; a2 < items.length; a2++) {
+                for (var b2 = a2 + 1; b2 < items.length; b2++) {
+                    var A = items[a2], B = items[b2];
+                    var ddx = B.x - A.x, ddy = B.y - A.y;
+                    var dd = Math.hypot(ddx, ddy), mind = A.r + B.r;
+                    if (dd < mind && dd > 0.0001) {
+                        var nx2 = ddx / dd, ny2 = ddy / dd, ov = (mind - dd) * 0.5;
+                        A.x -= nx2 * ov; A.y -= ny2 * ov; B.x += nx2 * ov; B.y += ny2 * ov;
+                        var rvn = (B.vx - A.vx) * nx2 + (B.vy - A.vy) * ny2;
+                        if (rvn < 0) {
+                            var j2 = -(1 + rest) * rvn * 0.5;
+                            A.vx -= j2 * nx2; A.vy -= j2 * ny2;
+                            B.vx += j2 * nx2; B.vy += j2 * ny2;
+                            A.va -= rvn * 0.002; B.va += rvn * 0.002;
+                        }
+                    }
+                }
+            }
+            for (var z = 0; z < items.length; z++) {
+                items[z].vx *= 0.997; items[z].vy *= 0.997;
+                if (items[z].y > c.H + 200) { items.splice(z, 1); z--; }
+            }
+        }
+    }
+    function draw() {
+        ctx.clearRect(0, 0, c.W, c.H);
+        // ざる
+        ctx.strokeStyle = "#B39A64"; ctx.lineWidth = 9; ctx.lineCap = "round";
+        ctx.beginPath(); ctx.arc(bowl.x, bowl.y, bowl.r, ARC0, ARC1); ctx.stroke();
+        ctx.strokeStyle = "rgba(120,100,60,.35)"; ctx.lineWidth = 1.4;
+        for (var k = 0; k < 14; k++) {
+            var a = ARC0 + (ARC1 - ARC0) * (k / 13);
+            ctx.beginPath();
+            ctx.moveTo(bowl.x + Math.cos(a) * (bowl.r - 5), bowl.y + Math.sin(a) * (bowl.r - 5));
+            ctx.lineTo(bowl.x + Math.cos(a) * (bowl.r * 0.62), bowl.y + Math.sin(a) * (bowl.r * 0.62));
+            ctx.stroke();
+        }
+        for (var i = 0; i < items.length; i++) {
+            var p = items[i];
+            ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.a);
+            ctx.fillStyle = p.col;
+            ctx.beginPath(); ctx.ellipse(0, 0, p.r * p.el * 0.62, p.r * 0.72, 0, 0, TAU); ctx.fill();
+            ctx.fillStyle = "rgba(255,255,255,.22)";
+            ctx.beginPath(); ctx.ellipse(-p.r * 0.25, -p.r * 0.22, p.r * 0.30, p.r * 0.15, -0.5, 0, TAU); ctx.fill();
+            ctx.restore();
+        }
+        ctx.font = "12px ui-monospace,monospace"; ctx.fillStyle = "#7B8A7F";
+        ctx.fillText(items.length + " 個", 12, 20);
+    }
+
+    $("#phOne").addEventListener("click", function () { reset(); queue = 9; timer = 0; });
+    $("#phAll").addEventListener("click", function () { reset(); spawn(9, true); });
+    $("#phReset").addEventListener("click", reset);
+    $("#phFric").addEventListener("input", function () { fric = +this.value; $("#phFricV").textContent = fric.toFixed(2); });
+    $("#phRest").addEventListener("input", function () { rest = +this.value; $("#phRestV").textContent = rest.toFixed(2); });
+
+    queue = 9;
+    addLoop(cv, function (dt) {
+        if (queue > 0) {
+            timer -= dt;
+            if (timer <= 0) { spawn(1, false); queue--; timer = 0.35; }
+        }
+        step(dt); draw();
+    });
+})();
+
+/* ======================================================================
+   図鑑
+   ====================================================================== */
+(function () {
+    var host = $("#catalog"); if (!host) return;
+    var LIST = [
+        ["トマト", "トマト.js", "#DA130E", "肩のくぼみと、萼片を1枚ずつ立体で作るがく。半径だけでなく (r, y) の2列テーブルが要る形の代表。"],
+        ["キュウリ", "キュウリ.js", "#5C8C2E", "浅い縦の稜とイボ。法線マップの上下の符号を間違えた記録が残っていて、教材として一番わかりやすい。"],
+        ["ナス", "ナス.js", "#3A2450", "クリアコートの加減がすべて。強すぎると黒ガラス、弱いとゴム。艶の調整の練習台。"],
+        ["ピーマン", "ピーマン.js", "#2B6F1C", "縦に3本の深い溝と、そのあいだの丸い「片」。ヘタは星形のがく。ほぼ鏡面。"],
+        ["オクラ", "オクラ.js", "#528530", "丸めた正五角形の断面と産毛。sheen（布のような照り）を使う唯一に近い例。"],
+        ["ゴーヤ", "ゴーヤ.js", "#3F7A2A", "大きな瘤はジオメトリ、細かい粒は法線マップ。凹凸を2階層に分ける考え方。"],
+        ["ニンジン", "ニンジン.js", "#E2691C", "円錐＋輪紋＋側根痕。構造がいちばん素直なので、最初に読むならこれ。"],
+        ["ジャガイモ", "ジャガイモ.js", "#8A6B3F", "極（頭とお尻）でUVが潰れる問題への対処が全編にわたる。3Dノイズを使う理由がわかる。"],
+        ["サツマイモ", "サツマイモ.js", "#A03A5B", "紡錘形と根跡の縦の列。艶消しの表面を、粗さの分布だけで作る例。"],
+        ["トウモロコシ", "トウモロコシ.js", "#D9A227", "粒を実体のメッシュとして作り、芯に植えて結合する。模様で済ませない判断の見本。"],
+        ["シイタケ", "シイタケ.js", "#6B4A2E", "ひだ（ラメラ）を実体で立てる。裏返っても嘘にならない作り方。"],
+        ["エリンギ", "エリンギ.js", "#C9BFA6", "主役は柄。柄が上へ広がってそのまま傘になる、垂生のひだ。"],
+        ["玉ねぎ", "玉ねぎ.js", "#E8D3A8", "異方性・シーン・透過の3つで乾いた薄紙を出す。PBRの合わせ技の教科書。"],
+        ["スイカ", "スイカ.js", "#1F4A1B", "縞が極で1点に集まるのは、u を周方向にとった結果。UVの意味がわかる回。"],
+        ["メロン", "メロン.js", "#B3A667", "網目に視差マッピング。法線マップのアルファに高さを入れる小技つき。"],
+        ["リンゴ", "リンゴ.js", "#C0342B", "5裂の断面と2つのくぼみ。クリアコートが掛け算で効く落とし穴の記録あり。"],
+        ["ブドウ", "ブドウ.js", "#5B2A6E", "粒を数十個配置して重なりを解消する反復計算。房の作り方。"],
+        ["バナナ", "バナナ.js", "#E3C13F", "断面が5稜の多角形。回転体ではなく、曲がった軸に沿った掃引の例。"]
+    ];
+    var frag = document.createDocumentFragment();
+    LIST.forEach(function (v) {
+        var d = document.createElement("article");
+        d.className = "card";
+        d.style.setProperty("--sw", v[2]);
+        d.innerHTML = '<h4></h4><p class="fn"></p><p class="d"></p>';
+        d.querySelector("h4").textContent = v[0];
+        d.querySelector(".fn").textContent = v[1];
+        d.querySelector(".d").textContent = v[3];
+        frag.appendChild(d);
+    });
+    host.appendChild(frag);
+})();
+
+})();
+
+</script>
+</body>
+</html>

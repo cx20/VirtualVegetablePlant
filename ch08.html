@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>盛り付けは、手で置かない — やさいのつくりかた</title>
+<meta name="description" content="盛り付けは、手で置かない">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+<script src="assets/havok-lab.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html" aria-current="page">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-okra)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第08章</p>
+<section class="chapter" id="ch08" style="--ch:var(--p-okra)">
+  <div class="chapter-head">
+    <div class="chnum">08<small>Havok</small></div>
+    <div>
+      <h2>盛り付けは、手で置かない</h2>
+      <p class="sub">physics engine — 物理エンジンで自然に積む</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>ざるに野菜を盛るとき、座標を手で決めると「並べました」という嘘くさい絵になります。</li>
+        <li>そこで<b>物理エンジン</b>に落としてもらう。重力と摩擦と反発だけ与えて、あとは任せます。</li>
+        <li>ただし全部いっぺんに出すと山にならないので、<b>0.26秒おきに1本ずつ</b>落とします。</li>
+      </ul>
+    </div>
+
+    <p>
+      ざるに野菜を8本盛る。座標を手で決めると、どうしても「並べました」という絵になります。
+      重なり方に嘘があるからです。そこで<b>物理エンジンに落としてもらう</b>。
+      重力と摩擦と反発だけ与えて、あとは転がるに任せます。Babylon.js では <b>Havok</b> を使います。
+    </p>
+    <p>
+      ただし、全部いっぺんに出すとうまくいきません。生成した瞬間、
+      野菜どうしが<b>互いにめり込んだ状態から始まる</b>からです。
+      物理エンジンはそのめり込みを押しのけようとしますが、
+      全員が同時に押し合うので行き場がなく、結果は<b>中央に押し固められた不自然な塊</b>になります
+      （めり込んだまま噛み合って止まる個体も出ます）。
+      物によっては器の外まで弾き出されます。
+      だからサンプルは<b>0.26秒おきに1本ずつ</b>、山の頂点のすぐ上から落としています。
+      1本ぶんのめり込みなら、次が来るまでに必ず解けるからです。
+    </p>
+
+    <h3>この実験だけは、本物の Havok が動きます</h3>
+    <p>
+      ほかの章の実験は、しくみが分かるように自前で書いた簡易版です。
+      でもこの章の主役は物理エンジンそのものなので、下のデモは
+      <b>Babylon.js と Havok を本当に読み込んで動かしています</b>。
+      使っている API も数値も、18本のサンプルからそのまま持ってきたものです。
+      そのぶんダウンロードが大きい（合計10MBほど）ので、ボタンを押すまで読み込みません。
+    </p>
+    <figure>
+<pre><span class="k">const</span> havok = <span class="k">await</span> HavokPhysics();          <span class="c">// WASM の読み込みを待つ</span>
+<span class="c">// 第1引数 false = 固定タイムステップ。true だとフレーム落ちのたびに
+// ステップ幅が変わり、接触が解けたり深く食い込んだりを繰り返す</span>
+<span class="k">const</span> hk = <span class="k">new</span> BABYLON.HavokPlugin(<span class="k">false</span>, havok);
+scene.enablePhysics(<span class="k">new</span> V3(<span class="n">0</span>, -<span class="n">620</span>, <span class="n">0</span>), hk);   <span class="c">// 重力は cm/s^2</span>
+hk.setTimeStep(<span class="n">1</span> / <span class="n">120</span>);</pre>
+      <figcaption>ニンジン.js の物理初期化。下のデモもまったく同じ手順で動いている</figcaption>
+    </figure>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 本物の Havok で盛り付ける</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <button class="btn" id="hkStart" type="button">3Dデモを読み込む（約10MB）</button>
+          <div id="hkPanel" hidden>
+            <div class="chips">
+              <button class="chip" type="button" id="hkOne">1個ずつ落とす</button>
+              <button class="chip" type="button" id="hkAll">全部いっぺんに出す</button>
+              <button class="chip" type="button" id="hkReset">やり直す</button>
+            </div>
+            <div class="ctrl">
+              <label for="hkFric">摩擦 <span class="v" id="hkFricV">0.88</span></label>
+              <input type="range" id="hkFric" min="0" max="1" step="0.01" value="0.88">
+            </div>
+            <div class="ctrl">
+              <label for="hkRest">反発 <span class="v" id="hkRestV">0.02</span></label>
+              <input type="range" id="hkRest" min="0" max="0.8" step="0.01" value="0.02">
+            </div>
+            <div class="ctrl">
+              <label for="hkGrav">重力 <span class="v" id="hkGravV">620 cm/s²</span></label>
+              <input type="range" id="hkGrav" min="200" max="981" step="1" value="620">
+            </div>
+          </div>
+          <div class="readout">
+            状態：<b id="hkStatus">まだ読み込んでいません</b><br>
+            落とした数：<b id="hkCount">0 / 8 個</b>
+          </div>
+          <p class="hint">摩擦と反発は、次に落とす1個からではなく<b>すでに転がっている野菜にも</b>その場で効きます。</p>
+        </div>
+        <div>
+          <canvas id="hkCanvas" width="640" height="412" aria-label="Havok で野菜がざるに落ちる3Dデモ"></canvas>
+          <p class="hint">ドラッグで視点を回せます。ホイールで寄り引き。</p>
+        </div>
+      </div>
+    </div>
+
+    <h3>器のような「へこんだ形」は、箱や球では代用できない</h3>
+    <p>
+      落ちてくる野菜のほうは、多少ざっくりでも構いません。実際サンプルも
+      <b>凸包（とつほう）</b>——輪ゴムをかけたときの外形——で当たり判定を作っています。
+      でもざるはそうはいきません。中がへこんでいるので、箱や球で近似すると
+      野菜が中に入れず、フタの上に乗ってしまいます。
+    </p>
+    <p>
+      そこでざるだけは<b>三角形メッシュそのもの</b>を当たり判定にします
+      （<code>PhysicsShapeMesh</code>）。計算は重いのですが、ざるは動かないので許されます。
+      <b>動くものは凸包、動かないものはメッシュ</b>。これは物理エンジン全般の定石です。
+    </p>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>物理エンジンは<b>メートル単位で作られています</b>。
+      このプロジェクトはcm単位なので、そのまま実際の重力 <code>981</code> を入れると、
+      1ステップあたりのめり込みが許容量を超えて押し戻され続け、野菜がプルプル震えます。
+      デモの重力スライダーを最大まで上げると、実際に震えはじめます。
+      サンプルでは重力を <code>620</code> まで落として回避しています。
+      「正しい物理」より「破綻しない物理」を採る、という判断です。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「1個ずつ落とす」で盛りつけたあと、「全部いっぺんに出す」を押して、山ではなく塊になることを見比べる。</li>
+        <li>反発を0.5まで上げてから「やり直す」。実物の野菜は跳ねません。</li>
+        <li>摩擦を0にすると、どんな盛り方になるか観察する。</li>
+        <li>重力を981まで上げて、野菜が細かく震えはじめるところを探す。</li>
+        <li>視点をドラッグして真横から見る。手で並べたのでは作れない重なり方になっているはず。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch07.html"><span class="dir">← まえの章</span><span class="ttl">07 「濡れている」「粉をふいている」を数値で言う</span></a>
+    <a class="next" href="ch09.html"><span class="dir">つぎの章 →</span><span class="ttl">09 部品を作って、組み合わせる</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

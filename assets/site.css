@@ -1,0 +1,521 @@
+/* =========================================================
+   トークン
+   色はすべてプロジェクトの .js から実際に使われている値を拾って
+   sRGB 0-1 → 16進に直したもの。飾りではなく出典のある色。
+   ========================================================= */
+:root{
+  --paper:#F0F2EA;
+  --paper-2:#E7EBDF;
+  --paper-3:#DDE3D3;
+  --grid:#C6D2BC;
+  --grid-strong:#AFC0A3;
+
+  --ink:#1A231C;
+  --ink-2:#4C5A50;
+  --ink-3:#7B8A7F;
+
+  /* 顔料（出典つき） */
+  --p-tomato:#DA130E;   /* トマト.js skinBody   [0.855,0.075,0.055] */
+  --p-leaf:#2B6F1C;     /* ピーマン.js skinMid  [0.170,0.435,0.108] */
+  --p-okra:#528530;     /* オクラ.js podMid     [0.320,0.520,0.190] */
+  --p-nasu:#3A2450;     /* ナス.js 果皮の紫 */
+  --p-corn:#D9A227;     /* トウモロコシ.js 粒 */
+  --p-potato:#8A6B3F;   /* ジャガイモ.js 泥と皮 */
+  --p-melon:#B3A667;    /* メロン.js 網目 */
+  --p-carrot:#E2691C;   /* ニンジン.js 皮層 */
+  --p-suika:#1F4A1B;    /* スイカ.js 濃緑の縞 */
+  --p-onion:#E8D3A8;    /* 玉ねぎ.js 外皮 */
+
+  --accent:var(--p-tomato);
+
+  --font-display:"Hiragino Mincho ProN","HiraMinProN-W6","Yu Mincho","YuMincho","Noto Serif JP",serif;
+  --font-body:"Hiragino Kaku Gothic ProN","Yu Gothic","YuGothic","Meiryo",system-ui,sans-serif;
+  --font-mono:ui-monospace,"SFMono-Regular",Menlo,Consolas,"Noto Sans Mono",monospace;
+
+  --rule:1px solid var(--grid-strong);
+  --maxw:1160px;
+}
+
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+
+body{
+  margin:0;
+  font-family:var(--font-body);
+  color:var(--ink);
+  background-color:var(--paper);
+  /* 方眼紙。この教材の主題そのものが「座標を並べて形を作る」なので、
+     背景が飾りではなく作業台になる */
+  background-image:
+    linear-gradient(var(--grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid) 1px, transparent 1px),
+    linear-gradient(var(--grid-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--grid-strong) 1px, transparent 1px);
+  background-size:8px 8px, 8px 8px, 64px 64px, 64px 64px;
+  background-position:-1px -1px,-1px -1px,-1px -1px,-1px -1px;
+  line-height:1.85;
+  font-size:16px;
+  -webkit-text-size-adjust:100%;
+}
+
+a{color:var(--accent);text-decoration:none;border-bottom:1px solid rgba(218,19,14,.3)}
+a:hover{border-bottom-color:var(--accent)}
+:focus-visible{outline:2px solid var(--p-tomato);outline-offset:3px}
+
+/* =========================================================
+   ヘッダ / ナビ
+   ========================================================= */
+.topbar{
+  position:sticky;top:0;z-index:50;
+  background:rgba(240,242,234,.93);
+  backdrop-filter:blur(6px);
+  border-bottom:var(--rule);
+}
+.topbar-in{
+  max-width:var(--maxw);margin:0 auto;padding:9px 20px;
+  display:flex;align-items:center;gap:18px;
+}
+.brand{
+  font-family:var(--font-display);font-size:17px;letter-spacing:.06em;
+  white-space:nowrap;color:var(--ink);border:0;
+}
+.brand .dot{color:var(--p-tomato)}
+.navlinks{
+  display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;margin-left:auto;
+}
+.navlinks::-webkit-scrollbar{display:none}
+.navlinks a{
+  font-family:var(--font-mono);font-size:11.5px;letter-spacing:.08em;
+  color:var(--ink-2);border:0;padding:5px 9px;border-radius:2px;white-space:nowrap;
+}
+.navlinks a:hover{background:var(--paper-3);color:var(--ink)}
+
+/* =========================================================
+   ヒーロー
+   ========================================================= */
+.hero{max-width:var(--maxw);margin:0 auto;padding:52px 20px 30px}
+.hero-grid{display:grid;grid-template-columns:1fr 1fr;gap:40px;align-items:center}
+.eyebrow{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;
+  color:var(--ink-3);text-transform:uppercase;margin:0 0 14px;
+}
+h1{
+  font-family:var(--font-display);font-weight:600;
+  font-size:clamp(34px,5.4vw,58px);line-height:1.24;margin:0 0 20px;
+  letter-spacing:.02em;
+}
+h1 .accent{
+  color:var(--p-tomato);
+  /* 「育つ」を強調する下線。定規で引いた線＝実験ノートの語彙 */
+  box-shadow:inset 0 -.14em 0 rgba(218,19,14,.18);
+}
+.lede{font-size:16.5px;color:var(--ink-2);margin:0 0 26px;max-width:44ch}
+.hero-cta{display:flex;gap:12px;flex-wrap:wrap;align-items:center}
+.btn{
+  font-family:var(--font-body);font-size:14px;
+  padding:10px 20px;border:1px solid var(--ink);background:var(--ink);color:var(--paper);
+  border-radius:2px;cursor:pointer;transition:.15s;
+}
+.btn:hover{background:var(--p-tomato);border-color:var(--p-tomato)}
+.btn.ghost{background:transparent;color:var(--ink)}
+.btn.ghost:hover{background:var(--paper-3);color:var(--ink);border-color:var(--ink)}
+a.btn{border-bottom:1px solid var(--ink)}
+a.btn:hover{border-bottom-color:var(--p-tomato)}
+
+.stage{
+  position:relative;background:var(--paper-2);
+  border:var(--rule);border-radius:2px;padding:14px;
+}
+.stage canvas{display:block;width:100%;height:auto;border-radius:1px}
+.stage-caption{
+  display:flex;justify-content:space-between;align-items:baseline;gap:10px;
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-3);
+  letter-spacing:.06em;margin-top:10px;
+}
+.stage-caption b{color:var(--ink);font-weight:500;font-family:var(--font-body);font-size:12.5px}
+
+/* =========================================================
+   共通レイアウト
+   ========================================================= */
+.wrap{max-width:var(--maxw);margin:0 auto;padding:0 20px}
+.chapter{padding:64px 0;border-top:var(--rule)}
+.chapter-head{display:flex;gap:20px;align-items:flex-start;margin-bottom:26px}
+.chnum{
+  flex:none;width:56px;height:56px;border-radius:2px;
+  display:grid;place-items:center;
+  font-family:var(--font-mono);font-size:19px;letter-spacing:.02em;
+  color:#fff;background:var(--ch,#333);
+}
+.chnum small{display:block;font-size:8.5px;letter-spacing:.14em;opacity:.75;margin-top:-2px}
+.chapter h2{
+  font-family:var(--font-display);font-weight:600;
+  font-size:clamp(23px,3.2vw,31px);margin:0 0 6px;line-height:1.4;letter-spacing:.02em;
+}
+.chapter-head .sub{
+  font-family:var(--font-mono);font-size:11.5px;color:var(--ink-3);letter-spacing:.05em;margin:0;
+}
+.body{max-width:70ch}
+.body p{margin:0 0 18px}
+.body h3{
+  font-family:var(--font-display);font-size:18.5px;font-weight:600;
+  margin:34px 0 12px;letter-spacing:.02em;
+}
+.body ul,.body ol{margin:0 0 18px;padding-left:1.3em}
+.body li{margin-bottom:7px}
+code{
+  font-family:var(--font-mono);font-size:.88em;
+  background:var(--paper-3);padding:1px 5px;border-radius:2px;
+}
+
+/* コードブロック */
+pre{
+  font-family:var(--font-mono);font-size:12.5px;line-height:1.75;
+  background:#1A231C;color:#D8E2D6;padding:16px 18px;border-radius:2px;
+  overflow-x:auto;margin:0 0 20px;
+}
+pre .c{color:#7E9481}      /* コメント */
+pre .k{color:#E9A0A0}      /* キーワード */
+pre .n{color:#E4C07A}      /* 数値 */
+pre .s{color:#A8D08D}      /* 文字列 */
+figure{margin:0 0 22px}
+figcaption{
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-3);
+  letter-spacing:.04em;margin-top:8px;
+}
+
+/* 注意ボックス（元コードの【対策】に対応） */
+.trap{
+  border-left:3px solid var(--p-tomato);
+  background:rgba(218,19,14,.045);
+  padding:14px 18px;margin:0 0 22px;border-radius:0 2px 2px 0;
+}
+.trap .label{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--p-tomato);display:block;margin-bottom:5px;
+}
+.trap p{margin:0;font-size:14.5px;color:var(--ink-2)}
+.trap p+p{margin-top:8px}
+
+.note{
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:14px 18px;margin:0 0 22px;font-size:14.5px;color:var(--ink-2);
+}
+.note b{color:var(--ink)}
+
+/* 実験パネル */
+.lab{
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:18px;margin:0 0 24px;max-width:none;
+}
+.lab-title{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;
+  color:var(--ink-3);margin:0 0 14px;display:flex;align-items:center;gap:9px;
+}
+.lab-title::before{
+  content:"";width:9px;height:9px;border-radius:50%;background:var(--ch,#333);flex:none;
+}
+.lab-cols{display:grid;gap:20px}
+.lab-cols.two{grid-template-columns:minmax(0,1fr) minmax(0,1fr)}
+.lab-cols.side{grid-template-columns:minmax(0,300px) minmax(0,1fr)}
+.lab canvas{
+  display:block;width:100%;height:auto;background:var(--paper);
+  border:1px solid var(--grid-strong);border-radius:2px;touch-action:none;
+}
+.controls{display:flex;flex-direction:column;gap:12px}
+.ctrl{display:flex;flex-direction:column;gap:5px}
+.ctrl label{
+  font-family:var(--font-mono);font-size:11px;color:var(--ink-2);
+  display:flex;justify-content:space-between;gap:8px;letter-spacing:.03em;
+}
+.ctrl label .v{color:var(--ink-3)}
+input[type=range]{
+  -webkit-appearance:none;appearance:none;width:100%;height:2px;
+  background:var(--grid-strong);border-radius:2px;outline:none;
+}
+input[type=range]::-webkit-slider-thumb{
+  -webkit-appearance:none;width:15px;height:15px;border-radius:50%;
+  background:var(--ch,#333);cursor:pointer;border:2px solid var(--paper-2);
+}
+input[type=range]::-moz-range-thumb{
+  width:15px;height:15px;border-radius:50%;background:var(--ch,#333);
+  cursor:pointer;border:2px solid var(--paper-2);
+}
+input[type=number],select{
+  font-family:var(--font-mono);font-size:13px;padding:6px 8px;
+  border:1px solid var(--grid-strong);background:var(--paper);
+  color:var(--ink);border-radius:2px;
+}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{
+  font-family:var(--font-mono);font-size:11.5px;padding:6px 11px;
+  border:1px solid var(--grid-strong);background:var(--paper);
+  color:var(--ink-2);border-radius:2px;cursor:pointer;transition:.12s;
+}
+.chip:hover{border-color:var(--ink-3)}
+.chip[aria-pressed=true]{background:var(--ch,#333);color:#fff;border-color:var(--ch,#333)}
+.switch{
+  display:flex;align-items:center;gap:9px;font-size:13.5px;color:var(--ink-2);cursor:pointer;
+}
+.switch input{width:16px;height:16px;accent-color:var(--ch,#333);cursor:pointer}
+.readout{
+  font-family:var(--font-mono);font-size:11.5px;color:var(--ink-2);
+  background:var(--paper);border:1px solid var(--grid-strong);
+  padding:9px 11px;border-radius:2px;line-height:1.7;word-break:break-all;
+}
+.hint{font-family:var(--font-mono);font-size:11px;color:var(--ink-3);margin:8px 0 0}
+
+/* 図鑑 */
+.catalog{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(215px,1fr));gap:14px;margin-top:8px;
+}
+.card{
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:15px 16px;position:relative;overflow:hidden;
+}
+.card::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--sw,#666);
+}
+.card h4{
+  font-family:var(--font-display);font-size:17px;margin:0 0 3px;font-weight:600;letter-spacing:.03em;
+}
+.card .fn{
+  font-family:var(--font-mono);font-size:10.5px;color:var(--ink-3);
+  margin:0 0 9px;letter-spacing:.02em;
+}
+.card p{font-size:13.5px;color:var(--ink-2);margin:0;line-height:1.7}
+
+/* 用語表 */
+table{border-collapse:collapse;width:100%;font-size:14px;margin:0 0 22px}
+th,td{border-bottom:1px solid var(--grid-strong);padding:10px 12px;text-align:left;vertical-align:top}
+th{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;
+  color:var(--ink-3);font-weight:400;
+}
+td:first-child{font-family:var(--font-mono);font-size:12.5px;white-space:nowrap;color:var(--ink)}
+
+/* ロードマップ */
+.roadmap{list-style:none;padding:0;margin:0;counter-reset:step}
+.roadmap li{
+  display:flex;gap:16px;padding:13px 0;border-bottom:1px solid var(--grid-strong);align-items:baseline;
+}
+.roadmap .rn{
+  font-family:var(--font-mono);font-size:12px;color:var(--ink-3);
+  flex:none;width:34px;letter-spacing:.04em;
+}
+.roadmap .rt{flex:1}
+.roadmap .rt b{font-weight:600}
+.roadmap .rt span{display:block;font-size:13.5px;color:var(--ink-2)}
+
+footer{
+  border-top:var(--rule);margin-top:20px;padding:36px 0 60px;
+  font-size:13px;color:var(--ink-3);
+}
+footer .wrap{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}
+footer b{color:var(--ink-2);font-weight:500}
+
+@media (max-width:860px){
+  .hero-grid{grid-template-columns:1fr;gap:28px}
+  .lab-cols.two,.lab-cols.side{grid-template-columns:1fr}
+  .chapter{padding:48px 0}
+  .chnum{width:46px;height:46px;font-size:16px}
+  .chapter-head{gap:14px}
+  body{font-size:15.5px}
+}
+
+/* =========================================================
+   ここから下は「複数ページ版」で追加したもの
+   ========================================================= */
+
+/* パンくず / 章ページの見出し */
+.crumbs{
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.1em;
+  color:var(--ink-3);padding:26px 0 0;
+}
+.crumbs a{color:var(--ink-3);border-bottom:1px solid rgba(0,0,0,.12)}
+.crumbs a:hover{color:var(--ink);border-bottom-color:var(--ink-3)}
+.crumbs .sep{margin:0 8px;opacity:.5}
+
+/* 章ページでは章の上罫線を消し、余白を詰める */
+.page .chapter{border-top:0;padding-top:26px}
+
+/* 章のはじめの「3行まとめ」 */
+.recap{
+  border:var(--rule);border-left:5px solid var(--ch,#333);
+  background:var(--paper-2);border-radius:2px;
+  padding:16px 20px;margin:0 0 26px;max-width:none;
+}
+.recap .label{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;
+  color:var(--ink-3);display:block;margin-bottom:9px;
+}
+.recap ul{margin:0;padding-left:1.2em}
+.recap li{margin-bottom:5px;font-size:14.5px;color:var(--ink-2)}
+.recap li:last-child{margin-bottom:0}
+.recap li b{color:var(--ink)}
+
+/* 章のおわりの「やってみよう」 */
+.try{
+  border:1px dashed var(--grid-strong);border-radius:2px;
+  background:rgba(255,255,255,.45);
+  padding:16px 20px;margin:28px 0 0;
+}
+.try .label{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;
+  color:var(--ch,#333);display:block;margin-bottom:9px;
+}
+.try ol{margin:0;padding-left:1.3em}
+.try li{margin-bottom:7px;font-size:14.5px;color:var(--ink-2)}
+.try li:last-child{margin-bottom:0}
+
+/* 前後の章へ */
+.pager{
+  display:grid;grid-template-columns:1fr 1fr;gap:14px;
+  border-top:var(--rule);margin-top:10px;padding:26px 0 8px;
+}
+.pager a{
+  border:var(--rule);border-radius:2px;background:var(--paper-2);
+  padding:14px 16px;display:block;color:var(--ink);
+}
+.pager a:hover{border-color:var(--ink-3);background:var(--paper-3)}
+.pager .dir{
+  display:block;font-family:var(--font-mono);font-size:10.5px;
+  letter-spacing:.16em;color:var(--ink-3);margin-bottom:4px;
+}
+.pager .ttl{font-family:var(--font-display);font-size:16px;letter-spacing:.02em}
+.pager .next{text-align:right}
+.pager .none{border:1px dashed var(--grid-strong);background:transparent;opacity:.45}
+
+/* トップページの章カード一覧 */
+.hub{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(268px,1fr));
+  gap:14px;margin:0 0 10px;
+}
+.hubcard{
+  position:relative;display:block;overflow:hidden;
+  background:var(--paper-2);border:var(--rule);border-radius:2px;
+  padding:17px 18px 17px 22px;color:var(--ink);
+  transition:.14s;
+}
+.hubcard::before{
+  content:"";position:absolute;left:0;top:0;bottom:0;width:5px;background:var(--ch,#666);
+}
+.hubcard:hover{background:var(--paper-3);border-color:var(--ink-3);transform:translateY(-1px)}
+.hubcard .no{
+  font-family:var(--font-mono);font-size:10.5px;letter-spacing:.16em;
+  color:var(--ink-3);display:block;margin-bottom:6px;
+}
+.hubcard h3{
+  font-family:var(--font-display);font-weight:600;font-size:17.5px;
+  margin:0 0 7px;letter-spacing:.02em;line-height:1.45;
+}
+.hubcard p{margin:0;font-size:13.5px;color:var(--ink-2);line-height:1.72}
+.hubcard .tags{
+  margin-top:10px;font-family:var(--font-mono);font-size:10.5px;
+  color:var(--ink-3);letter-spacing:.04em;
+}
+
+/* 「まず動かす」ページの手順 */
+.steps{list-style:none;padding:0;margin:0 0 26px;counter-reset:st}
+.steps>li{
+  counter-increment:st;position:relative;
+  padding:0 0 22px 52px;border-left:1px solid var(--grid-strong);
+  margin-left:16px;
+}
+.steps>li:last-child{border-left-color:transparent;padding-bottom:0}
+.steps>li::before{
+  content:counter(st,decimal-leading-zero);
+  position:absolute;left:-17px;top:-2px;width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;background:var(--ch,#333);color:#fff;
+  font-family:var(--font-mono);font-size:12px;
+}
+.steps h3{margin:0 0 8px!important;font-size:17px}
+.steps p{margin:0 0 10px}
+
+/* 用語集の検索窓 */
+.termsearch{
+  width:100%;font-family:var(--font-body);font-size:15px;padding:11px 13px;
+  border:1px solid var(--grid-strong);background:var(--paper);
+  color:var(--ink);border-radius:2px;margin:0 0 18px;
+}
+tr.hide{display:none}
+
+@media (max-width:860px){
+  .pager{grid-template-columns:1fr}
+  .pager .next{text-align:left}
+}
+
+/* いま開いている章をナビで示す */
+.navlinks a[aria-current="page"]{
+  background:var(--paper-3);color:var(--ink);
+  box-shadow:inset 0 -2px 0 var(--accent);
+}
+
+/* 章が増えてナビが横にはみ出すので、少しだけ詰める */
+.navlinks a{font-size:11px;padding:5px 7px}
+
+/* 実験パネルは本文（70ch）より広げる。
+   スライダーとキャンバスを並べると、本文幅では窮屈になるため。 */
+@media (min-width:1040px){
+  .body .lab{width:min(920px,calc(100vw - 56px))}
+}
+
+/* flex の中の要素は既定で「中身の幅」より縮まない。
+   min-width:0 を入れないと、章が増えたぶんナビが横に押し広げて
+   ページ全体が横スクロールしてしまう（スマホで顕著）。 */
+.navlinks{min-width:0;flex:1 1 auto}
+
+/* 08章の Havok デモ（Babylon.js の WebGL キャンバス） */
+#hkCanvas{aspect-ratio:14/9;cursor:grab}
+#hkCanvas:active{cursor:grabbing}
+#hkPanel{display:flex;flex-direction:column;gap:12px}
+#hkPanel[hidden]{display:none}
+#hkStart{align-self:flex-start}
+.chip:disabled,input:disabled{opacity:.45;cursor:not-allowed}
+
+/* 図鑑のカードをリンクにする */
+a.card{
+  display:block;color:inherit;text-decoration:none;
+  border:var(--rule);transition:.14s;
+}
+a.card:hover{
+  border-color:var(--ink-3);background:var(--paper-3);transform:translateY(-1px);
+}
+a.card .more{
+  display:block;margin-top:11px;
+  font-family:var(--font-mono);font-size:11px;letter-spacing:.06em;color:var(--ink-3);
+}
+a.card:hover .more{color:var(--accent)}
+
+/* ソースビューア */
+.filechips{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 18px}
+.viewer{
+  border:var(--rule);border-radius:2px;background:var(--paper-2);padding:12px;
+}
+.viewer-bar{
+  display:flex;justify-content:space-between;align-items:baseline;gap:12px;
+  flex-wrap:wrap;margin:0 0 10px;
+}
+.viewer-bar b{font-family:var(--font-mono);font-size:13px;color:var(--ink)}
+.viewer-bar .d{font-size:13px;color:var(--ink-2);flex:1 1 260px;min-width:0}
+.viewer-bar .meta{font-family:var(--font-mono);font-size:11px;color:var(--ink-3)}
+
+/* 行番号つきのコード表示。
+   行番号は別の <pre> に出す。コード側に混ぜると全選択で一緒にコピーされる */
+.codewrap{
+  display:grid;grid-template-columns:auto minmax(0,1fr);
+  overflow:auto;max-height:min(72vh,760px);
+  background:#1A231C;border-radius:2px;
+}
+.codewrap pre{
+  margin:0;background:transparent;border-radius:0;overflow:visible;
+  padding:14px 0;font-size:12.5px;line-height:1.75;
+}
+.codewrap .gutter{
+  position:sticky;left:0;z-index:1;
+  background:#151D17;color:#56695A;text-align:right;
+  padding-left:14px;padding-right:12px;
+  -webkit-user-select:none;user-select:none;
+}
+.codewrap .code{padding-left:16px;padding-right:22px;color:#D8E2D6}
+.codewrap .code code{font:inherit;background:none;padding:0}

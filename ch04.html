@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>横顔を1本描けば、立体になる — やさいのつくりかた</title>
+<meta name="description" content="横顔を1本描けば、立体になる">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html" aria-current="page">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-carrot)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第04章</p>
+<section class="chapter" id="ch04" style="--ch:var(--p-carrot)">
+  <div class="chapter-head">
+    <div class="chnum">04<small>Profile</small></div>
+    <div>
+      <h2>横顔を1本描けば、立体になる</h2>
+      <p class="sub">profile &amp; sweep — プロファイルと掃引</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>野菜の形は、<b>たった1本の折れ線</b>（横顔＝プロファイル）から作られています。</li>
+        <li>それを軸のまわりに1周させると立体になります。ろくろと同じ、数学でいう<b>回転体</b>です。</li>
+        <li>でこぼこ・稜・イボは、その半径 r を<b>角度と高さで少し増減させているだけ</b>です。</li>
+      </ul>
+    </div>
+
+    <p>
+      ここがこのプロジェクトの中心です。野菜の形は、たった1本の折れ線から作られています。
+      縦軸に高さ <code>y</code>、横軸に半径 <code>r</code> をとった<b>横顔（プロファイル）</b>。
+      それを軸のまわりに1周ぐるっと回すと、立体ができます。ろくろで茶碗をひくのと同じ理屈で、
+      数学では<b>回転体</b>と言います。
+    </p>
+    <p>
+      具体的には、高さを何十段かに分け、それぞれの高さで半径 r の円（リング）を作り、
+      リングどうしを四角形でつないでいきます。これを<b>掃引（sweep）</b>と呼びます。
+    </p>
+    <figure>
+<pre><span class="c">// リング列の掃引。両端はキャップで閉じる</span>
+<span class="k">function</span> sweep(name, rings, centers, colsFn, scene) {
+    <span class="k">const</span> N = rings.length, M = rings[<span class="n">0</span>].length;   <span class="c">// N段 × M分割</span>
+    <span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt; N; i++) {
+        <span class="k">for</span> (<span class="k">let</span> j = <span class="n">0</span>; j &lt; M; j++) {
+            <span class="k">const</span> k = i * M + j, p = rings[i][j];
+            positions[k*<span class="n">3</span>] = p.x; positions[k*<span class="n">3</span>+<span class="n">1</span>] = p.y; positions[k*<span class="n">3</span>+<span class="n">2</span>] = p.z;
+            uvs[k*<span class="n">2</span>] = j / (M-<span class="n">1</span>);        <span class="c">// u = 周方向</span>
+            uvs[k*<span class="n">2</span>+<span class="n">1</span>] = i / (N-<span class="n">1</span>);      <span class="c">// v = 下から上</span>
+        }
+    }
+    ...
+}</pre>
+      <figcaption>スイカ.js / トマト.js ほか。2重ループで頂点を並べているだけ</figcaption>
+    </figure>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 横顔を動かすと、立体が変わる</p>
+      <div class="lab-cols two">
+        <div>
+          <canvas id="profCanvas" width="440" height="520" aria-label="プロファイル編集キャンバス。点をドラッグできます"></canvas>
+          <p class="hint">● をドラッグしてください。左半分だけ描けば、右は自動で対称になります。</p>
+        </div>
+        <div>
+          <canvas id="profView" width="440" height="520" aria-label="回転体のプレビュー"></canvas>
+          <div class="controls" style="margin-top:12px">
+            <div class="chips" id="profPresets">
+              <button class="chip" type="button" data-prof="carrot" aria-pressed="true">ニンジン</button>
+              <button class="chip" type="button" data-prof="tomato">トマト</button>
+              <button class="chip" type="button" data-prof="nasu">ナス</button>
+              <button class="chip" type="button" data-prof="shiitake">シイタケ</button>
+            </div>
+            <div class="ctrl">
+              <label for="profBump">表面のでこぼこ（ノイズ） <span class="v" id="profBumpV">0.00</span></label>
+              <input type="range" id="profBump" min="0" max="0.18" step="0.005" value="0">
+            </div>
+            <div class="ctrl">
+              <label for="profRidge">縦の稜（りょう）の本数 <span class="v" id="profRidgeV">0</span></label>
+              <input type="range" id="profRidge" min="0" max="12" step="1" value="0">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <p>
+      でこぼこのスライダーを動かすと、半径 r にノイズを足していることがわかります。
+      これがコードでいう「稜（りょう）」「イボ」「輪紋」の正体です。
+      きゅうりの浅い10本の筋も、ゴーヤーの大きな瘤も、
+      <b>r を角度と高さの関数で少し増減させているだけ</b>です。
+    </p>
+    <div class="note">
+      <b>縦横比も、横顔が決めている。</b>
+      左の方眼は<b>タテとヨコが同じ目盛り</b>です。だから半径 r と高さは同じ単位で、
+      この2つの比がそのまま「背が高い野菜か、平たい野菜か」になります。
+      プリセットを切り替えると方眼に対する大きさが変わるのは、そのためです。
+      トマトを縦長のまま作ると、どんなに色と質感を作り込んでも卵にしか見えません。
+      <b>形の似ていなさは、たいてい縦横比のせい</b>です。
+    </div>
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>トマトやピーマンのように<b>肩が折り返す</b>形は、半径 r だけでは作れません。
+      「同じ高さに r が2つある」からです。だからコードのプロファイルは
+      <code>(r, y)</code> の<b>2列のテーブル</b>で持っています。
+      ピーマン.js のコメントに「これが無いと肩が折り返せず、ヘタのくぼみが作れない」と書かれているのはこの話です。</p>
+    </div>
+  
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>プリセットを「トマト」にして、点をドラッグしてナスに近づけてみる。</li>
+        <li>稜の本数を6にして、トマトらしい房のふくらみを作る。</li>
+        <li>自分の好きな野菜（大根・かぼちゃなど）の横顔を、紙に描いてから再現してみる。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch03.html"><span class="dir">← まえの章</span><span class="ttl">03 でこぼこを、なめらかな乱数で作る</span></a>
+    <a class="next" href="ch05.html"><span class="dir">つぎの章 →</span><span class="ttl">05 三角形の向きと、面の傾き</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

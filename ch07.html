@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「濡れている」「粉をふいている」を数値で言う — やさいのつくりかた</title>
+<meta name="description" content="「濡れている」「粉をふいている」を数値で言う">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html" aria-current="page">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-nasu)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第07章</p>
+<section class="chapter" id="ch07" style="--ch:var(--p-nasu)">
+  <div class="chapter-head">
+    <div class="chnum">07<small>PBR</small></div>
+    <div>
+      <h2>「濡れている」「粉をふいている」を数値で言う</h2>
+      <p class="sub">physically based rendering — 物理ベースの質感</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>形と模様が合っていても、<b>光り方を外すとプラスチックの飾り</b>になります。</li>
+        <li>いまの3Dは、材質を現実の光の振る舞いに沿った少数の数値で表します（PBR）。</li>
+        <li>いちばん効くのは <b>roughness（粗さ）</b>。0で鏡、1で紙です。</li>
+      </ul>
+    </div>
+
+    <p>
+      形と模様が合っていても、<b>光り方を外すとプラスチックの飾りになります</b>。
+      コードのコメントに何度も出てくる警告です。
+      いまの3Dは、材質を「現実の光の振る舞い」に沿った少数の数値で表します。これがPBRです。
+    </p>
+    <ul>
+      <li><b>roughness（粗さ）</b> — 0で鏡、1で紙。ハイライトの広がりが変わります。いちばん効く数値。</li>
+      <li><b>metallic（金属っぽさ）</b> — 野菜はぜんぶ0。</li>
+      <li><b>clearCoat（透明な上塗り）</b> — 車のワックスのような層。なす・きゅうり・りんごの照りはこれ。</li>
+      <li><b>sheen（布のような照り）</b> — 産毛のある表面が縁で柔らかく光る。オクラで使用。</li>
+      <li><b>subSurface（内部散乱）</b> — 光が中に入って散って出てくる。トウモロコシの粒や玉ねぎの薄皮。</li>
+      <li><b>anisotropy（異方性）</b> — 繊維の方向にハイライトが伸びる。玉ねぎの外皮。</li>
+    </ul>
+    <p>
+      野菜ごとにどれを使うかが、そのまま「その野菜らしさ」になります。
+      なすとオクラは、どちらも同じような緑〜紫の細長い実なのに、
+      片方はクリアコート主体、片方はシーン主体。ここを取り違えると別物になります。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 同じ形を、別の野菜に見せる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="pbrRough">roughness（粗さ） <span class="v" id="pbrRoughV">0.35</span></label>
+            <input type="range" id="pbrRough" min="0.03" max="1" step="0.01" value="0.35">
+          </div>
+          <div class="ctrl">
+            <label for="pbrCoat">clearCoat（上塗りの艶） <span class="v" id="pbrCoatV">0.30</span></label>
+            <input type="range" id="pbrCoat" min="0" max="1" step="0.01" value="0.3">
+          </div>
+          <div class="ctrl">
+            <label for="pbrSss">subSurface（透け） <span class="v" id="pbrSssV">0.15</span></label>
+            <input type="range" id="pbrSss" min="0" max="1" step="0.01" value="0.15">
+          </div>
+          <div class="ctrl">
+            <label for="pbrSheen">sheen（産毛の照り） <span class="v" id="pbrSheenV">0.00</span></label>
+            <input type="range" id="pbrSheen" min="0" max="1" step="0.01" value="0">
+          </div>
+          <div class="ctrl">
+            <label for="pbrLight">光の向き <span class="v" id="pbrLightV">-35°</span></label>
+            <input type="range" id="pbrLight" min="-180" max="180" step="1" value="-35">
+          </div>
+          <div class="chips" id="pbrPreset">
+            <button class="chip" type="button" data-pbr="nasu" aria-pressed="true">ナス</button>
+            <button class="chip" type="button" data-pbr="okra">オクラ</button>
+            <button class="chip" type="button" data-pbr="imo">サツマイモ</button>
+            <button class="chip" type="button" data-pbr="corn">トウモロコシ</button>
+          </div>
+        </div>
+        <div>
+          <canvas id="pbrCanvas" width="560" height="440" aria-label="質感のデモ"></canvas>
+          <p class="hint">粗さを0.05まで下げると、途端に「野菜」から「置物」になります。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>クリアコートの強さと粗さは、テクスチャの値と<b>掛け算</b>されます。
+      リンゴ.js の修正履歴に、<code>roughness 0.26 × ORMのG(0.2〜0.6)</code> で
+      実効0.05まで下がってしまい、周りの建物が映り込んで
+      「ガラスのリンゴ」になっていた、という記録が残っています。
+      数値を単体で見ず、掛かった後の値を見ること。</p>
+    </div>
+  
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>粗さを0.05まで下げて、野菜が「置物」になる瞬間を見る。</li>
+        <li>ナスのプリセットから、クリアコートだけを0にする。何に見えるか。</li>
+        <li>オクラのプリセットで sheen を0にして、産毛の有無を比べる。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch06.html"><span class="dir">← まえの章</span><span class="ttl">06 模様も、その場で描く</span></a>
+    <a class="next" href="ch08.html"><span class="dir">つぎの章 →</span><span class="ttl">08 盛り付けは、手で置かない</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

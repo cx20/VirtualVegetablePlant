@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>曲がったものを作る — やさいのつくりかた</title>
+<meta name="description" content="曲がったものを作る">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html" aria-current="page">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-potato)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第10章</p>
+<section class="chapter" id="ch10" style="--ch:var(--p-potato)">
+  <div class="chapter-head">
+    <div class="chnum">10<small>Spine</small></div>
+    <div>
+      <h2>曲がったものを作る</h2>
+      <p class="sub">sweep along a spine — 軸に沿った掃引</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>回転体（04章）は<b>まっすぐな軸</b>しか作れません。バナナもきゅうりも、実物は曲がっています。</li>
+        <li>そこで先に<b>軸（スパイン）そのものを曲げた線として決め</b>、その各点に断面を置いていきます。</li>
+        <li>断面は必ず<b>軸に垂直</b>に置くこと。水平に置くと、曲がった内側でつぶれます。</li>
+      </ul>
+    </div>
+
+    <p>
+      04章の回転体は、まっすぐな棒のまわりに横顔を回して作りました。
+      でもバナナは曲がっています。きゅうりも少し曲がっています。ゴーヤも。
+      まっすぐ作ってから全体を曲げる、という手もありますが、それだと断面がゆがみます。
+    </p>
+    <p>
+      正しいやり方は逆で、<b>先に軸を決める</b>。
+      バナナ.js のコメントに「Spine … 軸。果柄と果実で曲率の向きが逆になる」とあります。
+      軸は3D空間のなかの1本の曲線で、それを何十個かの点に分けます。
+      そして各点で、<b>その点での進行方向に垂直な平面</b>のうえに断面（円や多角形）を置く。
+      あとは、となりの断面どうしを四角形でつなげば立体になります。
+    </p>
+
+    <figure>
+<pre><span class="c">// 軸のうえの点 S(t) と、そこでの向き（接線）を求める</span>
+<span class="k">const</span> S = spine(t);            <span class="c">// 軸の位置</span>
+<span class="k">const</span> T = tangent(t);          <span class="c">// 進む向き（接線）</span>
+<span class="k">const</span> N = perpendicular(T);    <span class="c">// T に垂直な向き（2本）</span>
+<span class="k">const</span> B = cross(T, N);
+
+<span class="c">// 断面の点を、その平面のうえに置く</span>
+p = S + N * (r * Math.cos(a)) + B * (r * Math.sin(a));</pre>
+      <figcaption>掃引の中心にある3行。N と B が「断面を置く平面」を決めている</figcaption>
+    </figure>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 軸を曲げる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="spPreset">
+            <button class="chip" type="button" data-v="banana" aria-pressed="true">バナナ</button>
+            <button class="chip" type="button" data-v="kyuri">キュウリ</button>
+            <button class="chip" type="button" data-v="goya">ゴーヤ</button>
+          </div>
+          <div class="ctrl">
+            <label for="spBend">曲がりの強さ <span class="v" id="spBendV">0.85</span></label>
+            <input type="range" id="spBend" min="0" max="1.6" step="0.01" value="0.85">
+          </div>
+          <div class="ctrl">
+            <label for="spRidge">断面の稜（りょう）の数 <span class="v" id="spRidgeV">5 本</span></label>
+            <input type="range" id="spRidge" min="0" max="10" step="1" value="5">
+          </div>
+          <div class="ctrl">
+            <label for="spTwist">ねじれ <span class="v" id="spTwistV">0.00</span></label>
+            <input type="range" id="spTwist" min="0" max="1.5" step="0.01" value="0">
+          </div>
+          <label class="switch"><input type="checkbox" id="spShowSpine" checked>軸（スパイン）を赤線で表示</label>
+          <p class="hint">稜を0にすると断面が円になり、とたんに「曲がったソーセージ」になります。バナナは5稜。</p>
+        </div>
+        <div>
+          <canvas id="spineCanvas" width="560" height="440" aria-label="曲がった軸に沿った掃引のデモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>実物は「一様に曲がって」いない</h3>
+    <p>
+      バナナ.js に、こう書いてあります。「曲率は一様ではなく、中央より両端が強い」。
+      同じ半径の円弧にすると、きれいすぎて作り物に見えます。
+      実際のコードでは、軸の曲がり具合を場所ごとに変えています。
+      さらに果柄（へたの部分）では<b>曲がる向きが逆</b>になります。ここを直線にすると、
+      いかにも「くっつけました」という形になります。
+    </p>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>断面を「水平のまま」置くと失敗します。軸が斜めになっているところでは、
+      断面が斜めに切られた形になり、<b>曲がりの内側だけがつぶれます</b>。
+      必ず接線に垂直な平面のうえに置くこと。
+      もうひとつ、垂直な向き N の取り方を場所ごとに勝手に決めると、
+      となりの断面との間で<b>勝手にねじれます</b>（テクスチャがよじれて分かります）。
+      ひとつ前の断面の向きを引き継いでいくのが定石です。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>曲がりを0にして、まっすぐな棒に戻す。04章の回転体と同じものになることを確かめる。</li>
+        <li>ねじれを0.8まで上げて、模様のよじれ方を見る。</li>
+        <li>キュウリのプリセットで稜を10本にする。実物のきゅうりの縦すじは何本か、本物を見て数えてみる。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch09.html"><span class="dir">← まえの章</span><span class="ttl">09 部品を作って、組み合わせる</span></a>
+    <a class="next" href="ch11.html"><span class="dir">つぎの章 →</span><span class="ttl">11 見せ方を決める（光と露出）</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

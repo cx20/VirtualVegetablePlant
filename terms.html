@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>コードに出てくる言葉 — やさいのつくりかた</title>
+<meta name="description" content="コードに出てくる言葉">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html" aria-current="page">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-onion)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>用語集</p>
+<section class="chapter" id="terms" style="--ch:var(--p-onion)">
+  <div class="chapter-head">
+    <div class="chnum" style="color:var(--ink)">用語<small style="opacity:.6">GLOSSARY</small></div>
+    <div>
+      <h2>コードに出てくる言葉</h2>
+      <p class="sub">最初の1周で引っかかりやすいものだけ</p>
+    </div>
+  </div>
+  <div class="body">
+    <input type="search" class="termsearch" id="termFilter" placeholder="言葉で絞り込む（例：法線、シード、UV）">
+    <table id="termTable">
+      <tr><th>語</th><th>意味</th></tr>
+      <tr><td>メッシュ</td><td>頂点と三角形でできた立体そのもの。</td></tr>
+      <tr><td>頂点 / positions</td><td>点の座標。x,y,z の3つずつ一列に並べる。</td></tr>
+      <tr><td>indices</td><td>どの点とどの点で三角形を作るかの番号表。</td></tr>
+      <tr><td>法線 / normal</td><td>面がどちらを向いているかの矢印。明るさを決める。</td></tr>
+      <tr><td>UV</td><td>立体の表面と画像の座標の対応。u=横、v=縦。</td></tr>
+      <tr><td>巻き順</td><td>三角形の頂点を並べる向き。表裏を決める。</td></tr>
+      <tr><td>掃引 / sweep</td><td>断面を並べてつなぎ、立体にすること。</td></tr>
+      <tr><td>プロファイル</td><td>形の横顔。半径や高さの表。</td></tr>
+      <tr><td>ノイズ</td><td>なめらかにつながる乱数。自然な模様のもと。</td></tr>
+      <tr><td>fBm / オクターブ</td><td>細かさを半分ずつにしたノイズを重ねる手法。</td></tr>
+      <tr><td>アルベド</td><td>影も光沢もない、素の色。</td></tr>
+      <tr><td>ORM</td><td>陰り・粗さ・金属度を R,G,B に詰めた1枚の画像。</td></tr>
+      <tr><td>PBR</td><td>現実の光の法則に沿った質感の表し方。</td></tr>
+      <tr><td>SSS / subSurface</td><td>光が中に入って散る現象。薄い部分が透ける。</td></tr>
+      <tr><td>クリアコート</td><td>表面にかかった透明な膜。ワックスの艶。</td></tr>
+      <tr><td>シード</td><td>乱数の出発点になる整数。同じなら同じ結果。</td></tr>
+      <tr><td>Havok</td><td>Babylon.js が使う物理エンジンの名前。</td></tr>
+      <tr><td>Playground</td><td>ブラウザ上で Babylon.js のコードを試せる公式サイト。</td></tr>
+    </table>
+
+    <h3>次にやること</h3>
+    <ul class="roadmap">
+      <li><span class="rn">01</span><span class="rt"><b>まず動かす</b><span>Babylon.js Playground に ニンジン.js をそのまま貼って実行する。読む前に動かす。</span></span></li>
+      <li><span class="rn">02</span><span class="rt"><b>数値をひとつ壊す</b><span>CONFIG の <code>radius</code> を10倍にしてみる。どこが効いているか、壊すといちばん早くわかる。</span></span></li>
+      <li><span class="rn">03</span><span class="rt"><b>色を変える</b><span>プリセットの色（sRGB 0〜1の3つ組）を書き換えて、白いにんじんを作ってみる。</span></span></li>
+      <li><span class="rn">04</span><span class="rt"><b>プロファイルを書き換える</b><span>半径の式をいじって、ありえない野菜を作る。ここまでできれば構造は理解できている。</span></span></li>
+      <li><span class="rn">05</span><span class="rt"><b>新しい野菜を1本書く</b><span>ニンジン.js を複製して大根にする。円錐で白くて、輪紋のかわりに横筋。</span></span></li>
+    </ul>
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="view.html"><span class="dir">← まえの章</span><span class="ttl">SRC サンプルのソースを読む</span></a>
+    <span class="next none"></span>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模様も、その場で描く — やさいのつくりかた</title>
+<meta name="description" content="模様も、その場で描く">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html" aria-current="page">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-melon)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第06章</p>
+<section class="chapter" id="ch06" style="--ch:var(--p-melon)">
+  <div class="chapter-head">
+    <div class="chnum">06<small>TextureLab</small></div>
+    <div>
+      <h2>模様も、その場で描く</h2>
+      <p class="sub">UV mapping &amp; procedural textures</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>立体に模様を貼るには「立体のどこが画像のどこか」の対応表が要ります。これが<b>UV</b>です。</li>
+        <li>画像ファイルを持たないので、模様も <code>&lt;canvas&gt;</code> に<b>1ピクセルずつ計算で描き</b>ます。</li>
+        <li>色（albedo）・光り方（ORM）・凹凸（normal）の<b>3枚</b>を、同じ元データから作ります。</li>
+      </ul>
+    </div>
+
+    <p>
+      立体に模様を貼るには、<b>立体のどこが画像のどこか</b>という対応表が要ります。
+      それが <code>uvs</code> です。掃引のコードで <code>u = j/(M-1)</code>、<code>v = i/(N-1)</code> と
+      入れていたあれです。u が「一周まわる方向」、v が「下から上」。
+      地球儀の経度・緯度だと思えばだいたい合っています。
+    </p>
+    <p>
+      このプロジェクトは画像ファイルを持たないので、模様も <code>&lt;canvas&gt;</code> に
+      <b>1ピクセルずつ計算で書き込んで</b>テクスチャにします。担当が <code>TextureLab</code> です。
+      しかも1枚ではなく、同じ「高さの地図」から3枚を作って辻褄を合わせます。
+    </p>
+    <table>
+      <tr><th>名前</th><th>役割</th><th>中身</th></tr>
+      <tr><td>albedo</td><td>色そのもの</td><td>赤・緑・茶などの下地の色</td></tr>
+      <tr><td>ORM</td><td>光り方</td><td>R=陰り / G=粗さ / B=金属っぽさ を1枚に詰めたもの</td></tr>
+      <tr><td>normal</td><td>細かい凹凸</td><td>面の傾きのずれをRGBで記録したもの</td></tr>
+    </table>
+    <p>
+      normal（法線マップ）が面白いところです。実際には形を変えず、
+      <b>光の当たり方だけを嘘つく</b>ことで、細かいシワやイボがあるように見せます。
+      三角形を増やさずにディテールが出るので、非常に安上がりです。
+      作り方は、白黒の高さの地図から、となりのピクセルとの差（傾き）を計算して色にするだけです。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 模様を描いて、貼る</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="texKind">
+            <button class="chip" type="button" data-tex="stripe" aria-pressed="true">スイカの縞</button>
+            <button class="chip" type="button" data-tex="wart">きゅうりのイボ</button>
+            <button class="chip" type="button" data-tex="fiber">玉ねぎの繊維</button>
+            <button class="chip" type="button" data-tex="net">メロンの網目</button>
+          </div>
+          <canvas id="texCanvas" width="256" height="256" aria-label="生成されたテクスチャ"></canvas>
+          <div class="ctrl">
+            <label for="texAmt">模様の強さ <span class="v" id="texAmtV">1.0</span></label>
+            <input type="range" id="texAmt" min="0" max="2" step="0.05" value="1">
+          </div>
+          <div class="ctrl">
+            <label for="texFreq">細かさ <span class="v" id="texFreqV">1.0</span></label>
+            <input type="range" id="texFreq" min="0.4" max="3" step="0.05" value="1">
+          </div>
+          <label class="switch"><input type="checkbox" id="texUV">UVの格子を重ねて見る</label>
+        </div>
+        <div>
+          <canvas id="texView" width="560" height="440" aria-label="テクスチャを貼った立体"></canvas>
+          <p class="hint">縞が上下の極（へた側とお尻）で1点に集まります。u を周方向にとった結果、勝手にそうなります。</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>法線マップを自分で焼くとき、上下方向の符号を間違えると
+      <b>凹みが膨らみに見えます</b>。Babylon.js の座標系では
+      <code>(下のピクセル - 上のピクセル)</code> が正解で、逆にすると
+      OpenGL系の規約になってしまい、横方向は正しいのに縦方向だけ反転した
+      「ねじれた法線」ができます。キュウリ.js・ゴーヤ.js・サツマイモ.js の
+      修正履歴に、全部この話が出てきます。</p>
+    </div>
+  
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「UVの格子を重ねて見る」を入れて、上下の極で格子が1点に集まることを確かめる。</li>
+        <li>スイカの縞で「細かさ」を上げると、何本の縞になるか数える。</li>
+        <li>きゅうりのイボを、強さ0にしてみる。イボが無いと何に見えるか。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch05.html"><span class="dir">← まえの章</span><span class="ttl">05 三角形の向きと、面の傾き</span></a>
+    <a class="next" href="ch07.html"><span class="dir">つぎの章 →</span><span class="ttl">07 「濡れている」「粉をふいている」を数値で言う</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

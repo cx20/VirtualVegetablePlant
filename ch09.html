@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>部品を作って、組み合わせる — やさいのつくりかた</title>
+<meta name="description" content="部品を作って、組み合わせる">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html" aria-current="page">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-corn)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第09章</p>
+<section class="chapter" id="ch09" style="--ch:var(--p-corn)">
+  <div class="chapter-head">
+    <div class="chnum">09<small>Parts</small></div>
+    <div>
+      <h2>部品を作って、組み合わせる</h2>
+      <p class="sub">instancing &amp; merging — 粒・ひだ・房</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>回転体（04章）は「1本の横顔を回す」ので、<b>粒やひだのような部品の集まりは作れません</b>。</li>
+        <li>そこで部品を1個だけ作り、位置を変えて<b>何百個も並べ、最後にひとつに合体</b>させます。</li>
+        <li>ブドウの房のように詰め込むものは、まず適当に置いて、<b>めり込みを押し返してほぐし</b>ます。</li>
+      </ul>
+    </div>
+
+    <p>
+      トウモロコシの粒、シイタケのひだ、ブドウの房。この3つは、これまでのやり方では作れません。
+      どれも<b>同じような部品がたくさん集まってできている</b>からです。
+      円柱にでこぼこ（ノイズ）を足しても、粒には見えません。トウモロコシ.js のコメントに
+      「円柱に変位をかけるとゴルフボールになる」と書いてあるのはこの話です。
+    </p>
+
+    <h3>やり方は「1個作って、たくさん置いて、合体」</h3>
+    <ol>
+      <li>粒を<b>1個だけ</b>ちゃんと作る（形も法線もUVも）</li>
+      <li>場所と向きと大きさを変えながら、<b>何百個ぶんの座標を並べる</b></li>
+      <li>ぜんぶを<b>1つのメッシュに合体</b>する（マージ）</li>
+    </ol>
+    <p>
+      3番目がなぜ要るのか。GPUに「これを描いて」と頼む回数を<b>ドローコール</b>といいます。
+      粒が600個で600回頼むと、1回あたりの準備の手間だけで重くなります。
+      合体して1回にまとめれば、頂点の数は同じでも一気に速くなります。
+      形がぜんぶ同じで色だけ違う場合は、<b>インスタンス</b>という仕組みで
+      「同じ形をここに600個置いて」と1回で頼むこともできます（ブドウ.js の粒はこの方式です）。
+    </p>
+
+    <h3>粒は、列ごとに半分ずらして噛み合わせる</h3>
+    <p>
+      とうもろこしの粒は、まっすぐな格子には並んでいません。
+      縦の列をなしていて、<b>となりの列とは半ピッチずれて噛み合っています</b>。
+      レンガの積み方と同じです。ずらさないと、たちまち作り物のビーズになります。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 粒を並べる（円柱を切り開いた展開図）</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="knCols">列の数 <span class="v" id="knColsV">16 列</span></label>
+            <input type="range" id="knCols" min="6" max="26" step="1" value="16">
+          </div>
+          <div class="ctrl">
+            <label for="knRows">段の数 <span class="v" id="knRowsV">11 段</span></label>
+            <input type="range" id="knRows" min="5" max="20" step="1" value="11">
+          </div>
+          <div class="ctrl">
+            <label for="knShift">となりの列とのずれ <span class="v" id="knShiftV">0.50</span></label>
+            <input type="range" id="knShift" min="0" max="0.5" step="0.01" value="0.5">
+          </div>
+          <div class="ctrl">
+            <label for="knSize">粒の大きさ <span class="v" id="knSizeV">1.00</span></label>
+            <input type="range" id="knSize" min="0.7" max="1.25" step="0.01" value="1">
+          </div>
+          <div class="readout">
+            粒の数：<b id="knCount">176 粒</b><br>
+            見え方：<b id="knGap">ちょうど接している</b>
+          </div>
+          <p class="hint">ずれを0にすると、とたんに「工業製品」になります。0.5がとうもろこしです。</p>
+        </div>
+        <div>
+          <canvas id="kernelCanvas" width="560" height="360" aria-label="とうもろこしの粒の並び方"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>房は「ばらまいてから、ほぐす」</h3>
+    <p>
+      ブドウの房は、格子では並びません。かといって完全にランダムに置くと、粒どうしがめり込みます。
+      そこで<b>リラクゼーション</b>（緩和）という手を使います。
+      考え方はとても単純で、
+    </p>
+    <ul>
+      <li>まず、房の形のなかに<b>適当にばらまく</b></li>
+      <li>めり込んでいる2粒を見つけたら、<b>めり込んだぶんの半分ずつ、互いに押し返す</b></li>
+      <li>これを何回もくり返す</li>
+    </ul>
+    <p>
+      押し返すだけなので、いつかは重ならなくなります。
+      物理エンジン（08章）を使わずに、自然な詰まり方が作れる安上がりな方法です。
+      ブドウ.js のコメントに「配置 → 重なり解消リラクゼーション → インスタンス化」とあるのが、まさにこれです。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 重なりをほぐす</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="pkCount">粒の数 <span class="v" id="pkCountV">38 粒</span></label>
+            <input type="range" id="pkCount" min="15" max="60" step="1" value="38">
+          </div>
+          <div class="chips">
+            <button class="chip" type="button" id="pkStep">1回ほぐす</button>
+            <button class="chip" type="button" id="pkRun" aria-pressed="false">自動でほぐす</button>
+            <button class="chip" type="button" id="pkReset">まきなおす</button>
+          </div>
+          <div class="readout">
+            重なっている組：<b id="pkOverlap">— 組</b><br>
+            ほぐした回数：<b id="pkIter">0 回</b>
+          </div>
+          <p class="hint">赤く縁取られた粒が、まだめり込んでいる粒です。0組になれば完成。</p>
+        </div>
+        <div>
+          <canvas id="packCanvas" width="480" height="420" aria-label="ブドウの粒の重なりをほぐすデモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>シイタケの<b>ひだ</b>を、模様（テクスチャの縞）で済ませてはいけません。
+      ざるに盛れば必ず何本かは裏返って、ひだが正面に来ます。
+      そのとき縞で描いたひだは「線を引いた円盤」になり、一発で嘘だとわかります。
+      シイタケ.js は、ひだを<b>実体のメッシュとして1枚ずつ立てて</b>います。
+      「正面から見ると同じに見えるが、別の角度で崩れる」——これが手抜きの見つかり方です。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>列のずれを0にして、とうもろこしに見えなくなることを確かめる。</li>
+        <li>粒の大きさを0.8にする。すき間が空くと何に見えるか。</li>
+        <li>粒の数を60にして「自動でほぐす」。何回で0組になるか数える。</li>
+        <li>粒の数を60、房を狭くしたつもりで想像する。ほぐしても0にならない場合、何が足りないか考える。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch08.html"><span class="dir">← まえの章</span><span class="ttl">08 盛り付けは、手で置かない</span></a>
+    <a class="next" href="ch10.html"><span class="dir">つぎの章 →</span><span class="ttl">10 曲がったものを作る</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>でこぼこを、なめらかな乱数で作る — やさいのつくりかた</title>
+<meta name="description" content="でこぼこを、なめらかな乱数で作る">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html" aria-current="page">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-suika)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第03章</p>
+<section class="chapter" id="ch03" style="--ch:var(--p-suika)">
+  <div class="chapter-head">
+    <div class="chnum">03<small>Noise</small></div>
+    <div>
+      <h2>でこぼこを、なめらかな乱数で作る</h2>
+      <p class="sub">value noise &amp; fBm — 値ノイズとフラクタルノイズ</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>乱数をそのまま並べると<b>砂嵐</b>になります。となりと何の関係もない値だからです。</li>
+        <li>自然の模様は「近いところは似ていて、遠いところは違う」。これを作るのが<b>ノイズ</b>です。</li>
+        <li>細かさを半分ずつにして<b>重ねる</b>（fBm）と、遠目にはムラ、近くではざらつきが出ます。</li>
+      </ul>
+    </div>
+
+    <p>
+      乱数をそのまま並べると砂嵐になります。となりのピクセルと何の関係もない値が出るからです。
+      でも自然の模様は違います。じゃがいもの皮のムラも、すいかの縞も、
+      <b>近いところは似ていて、遠いところは違う</b>。この性質を作るのがノイズです。
+    </p>
+
+    <h3>作り方は3行で言える</h3>
+    <ol>
+      <li>方眼紙の<b>交点にだけ</b>乱数を置く（格子点）</li>
+      <li>マスの中の点は、まわり4つの値を<b>なめらかに混ぜて</b>決める</li>
+      <li>マス目を細かくしたものを重ねる（オクターブ）</li>
+    </ol>
+    <p>
+      2番目の「なめらかに混ぜる」に <code>t*t*(3-2*t)</code> という式が出てきます。
+      これは <b>smoothstep</b> と呼ばれる関数で、0から1へ移るときに端で速度が0になります。
+      ただの直線で混ぜるとマスの境目に折れ線が見えてしまうので、この一手間が要ります。
+    </p>
+    <p>
+      3番目の重ね合わせが効きます。大きなうねりの上に半分の大きさを半分の強さで、
+      その上にさらに半分を——と重ねると、遠目には大きなムラ、近づくと細かいざらつきという
+      自然物そっくりの模様になります。この重ね方を<b>fBm</b>（フラクタルブラウン運動）と言い、
+      コードでは <code>fbm3()</code> や <code>fbm2u()</code> という名前で出てきます。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — ノイズを重ねる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="nzScale">マス目の細かさ <span class="v" id="nzScaleV">6</span></label>
+            <input type="range" id="nzScale" min="1" max="24" step="1" value="6">
+          </div>
+          <div class="ctrl">
+            <label for="nzOct">重ねる回数（オクターブ） <span class="v" id="nzOctV">1</span></label>
+            <input type="range" id="nzOct" min="1" max="6" step="1" value="1">
+          </div>
+          <div class="ctrl">
+            <label for="nzCon">コントラスト <span class="v" id="nzConV">1.0</span></label>
+            <input type="range" id="nzCon" min="0.3" max="3" step="0.05" value="1">
+          </div>
+          <div class="chips" id="nzPal">
+            <button class="chip" type="button" data-pal="gray" aria-pressed="true">白黒</button>
+            <button class="chip" type="button" data-pal="potato">ジャガイモ</button>
+            <button class="chip" type="button" data-pal="suika">スイカ</button>
+          </div>
+          <p class="hint">回数を1のままにすると、ぼんやりした雲にしかなりません。3〜4に上げた瞬間に「素材」に見えます。</p>
+        </div>
+        <div>
+          <canvas id="noiseCanvas" width="512" height="256" aria-label="ノイズのパターン"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>野菜の表面を1周する模様は、<b>一周してぴったりつながらないと縫い目が出ます</b>。
+      そのためコードのノイズには「周期版」があります（<code>v2u()</code> の <code>px</code> 引数）。
+      格子の番号を <code>x % px</code> で折り返して、右端の乱数と左端の乱数を同じにする、という仕掛けです。</p>
+    </div>
+  
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「重ねる回数」を1のまま、細かさだけ最大にしてみる。素材に見えないことを確かめる。</li>
+        <li>回数を4にして、細かさを6に戻す。どちらが自然に見えるか比べる。</li>
+        <li>スイカのパレットで、縞に見える設定を自分で探す。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch02.html"><span class="dir">← まえの章</span><span class="ttl">02 同じ種からは、同じ野菜が生える</span></a>
+    <a class="next" href="ch04.html"><span class="dir">つぎの章 →</span><span class="ttl">04 横顔を1本描けば、立体になる</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

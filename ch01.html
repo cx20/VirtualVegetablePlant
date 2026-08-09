@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「作る」と「読み込む」はどう違うのか — やさいのつくりかた</title>
+<meta name="description" content="「作る」と「読み込む」はどう違うのか">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html" aria-current="page">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-leaf)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第01章</p>
+<section class="chapter" id="ch01" style="--ch:var(--p-leaf)">
+  <div class="chapter-head">
+    <div class="chnum">01<small>CONFIG</small></div>
+    <div>
+      <h2>「作る」と「読み込む」はどう違うのか</h2>
+      <p class="sub">procedural generation — 手続き的生成</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>ふつうの3Dは、誰かが作った<b>モデルファイルを読み込んで</b>表示します。</li>
+        <li>このプロジェクトは逆で、<b>実行した瞬間に座標を計算で作ります</b>。これを手続き的生成といいます。</li>
+        <li>だから1個ずつ形が違い、あとから自由に変えられ、しかもデータが軽い。</li>
+      </ul>
+    </div>
+
+    <p>
+      ゲームや映画の3Dは、ふつう誰かが専用ソフトで作ったモデルファイルを読み込んで表示します。
+      ファイルの中には「頂点1番は(3.2, 1.1, 0.4)」といった座標が何万個も保存されていて、
+      プログラムはそれを並べて画面に出すだけです。
+    </p>
+    <p>
+      このプロジェクトは逆のことをしています。ファイルを読まず、
+      <b>プログラムを実行した瞬間に座標を計算で作る</b>。これを手続き的生成（プロシージャル生成）と呼びます。
+      野菜のような自然物と相性がよく、いいことが3つあります。
+    </p>
+    <ul>
+      <li><b>1個も同じにならない</b> — 数値を少し揺らすだけで、形の違う個体がいくらでも出てきます。実物のきゅうりが1本ずつ違うのと同じです。</li>
+      <li><b>あとから変えられる</b> — 「もう少し太く」がスライダー1本で通ります。モデルファイルなら作り直しです。</li>
+      <li><b>軽い</b> — 18本ぜんぶ合わせても、写真1枚より小さいテキストです。</li>
+    </ul>
+    <p>
+      その代わり、形を言葉ではなく<b>数式で説明できないと作れません</b>。
+      「トマトってどんな形?」に「肩がへこんでいて、縦に浅い筋が6本あって、上から見ると少しつぶれた丸」と
+      答えられるかどうかが勝負になります。だからこのプロジェクトのコードは、コメントの半分が
+      野菜の観察記録です。
+    </p>
+
+    <h3>18本すべてが同じ9層でできている</h3>
+    <p>
+      トマトもシイタケも玉ねぎも、ファイルの構造はまったく同じです。上から順に読めば、
+      どの野菜でも同じ場所に同じ役割のコードがあります。このサイトの章立ても、この層に対応させてあります。
+    </p>
+    <figure>
+<pre><span class="c">// 構成:
+//    0. CONFIG      … 品種プリセット（桃太郎 / フルーツトマト / ミニ）
+//    1. Rng         … シード付き擬似乱数
+//    2. Noise       … 3D値ノイズ / 2D周期ノイズ
+//    3. Mesh utils  … 巻き順の自動判定・法線の溶接・掃引
+//    4. Profile     … 果実の断面（r, y の2列テーブル）・房の稜・肩のくぼみ
+//    5. TextureLab  … 果皮のアルベド・ORM・法線、竹の網代
+//    6. Tomato      … 果実 + がく（萼片を1枚ずつ立体で）+ 果梗
+//    7. Basket      … ざる
+//    8. Scene / 物理（Havok で1個ずつ落とす）
+//    9. GUI</span></pre>
+      <figcaption>トマト.js の冒頭。18本すべてがこの並びで書かれている</figcaption>
+    </figure>
+    <div class="note">
+      <b>読む順番のおすすめ。</b>
+      最初の1本は<b>ニンジン.js</b>がいちばん素直です（円錐に溝を彫るだけ）。
+      次に<b>キュウリ.js</b>、慣れたら<b>トマト.js</b>。
+      <b>シイタケ.js</b>と<b>トウモロコシ.js</b>は構造が複雑なので後回しでかまいません。
+    </div>
+  
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>ニンジン.js の先頭のコメント（構成 0〜9）を読んで、他のファイルにも同じ並びがあるか確かめる。</li>
+        <li>手続き的生成のいいところ3つを、自分の言葉で1行ずつ書いてみる。</li>
+        <li>身のまわりで「数式で説明できそうな形」を3つ探す（例：ソフトクリーム、ネジ、松ぼっくり）。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="start.html"><span class="dir">← まえの章</span><span class="ttl">00 まず動かしてみる</span></a>
+    <a class="next" href="ch02.html"><span class="dir">つぎの章 →</span><span class="ttl">02 同じ種からは、同じ野菜が生える</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>
