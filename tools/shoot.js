@@ -30,6 +30,7 @@ const http = require("http");
 const { spawn } = require("child_process");
 
 const ROOT = path.resolve(__dirname, "..");
+const SAMPLES = path.join(ROOT, "samples");
 const OUT = path.join(ROOT, "assets/thumbs");
 const PORT = +(process.env.SHOOT_PORT || 8777);
 const DBG = +(process.env.SHOOT_DBG_PORT || 9333);
@@ -53,7 +54,7 @@ const SETTLE_MOVE = 0.02;      // 1回ぶんの間にこれ以下しか動かな
 
 const only = process.argv[2];
 const files = fs
-  .readdirSync(ROOT)
+  .readdirSync(SAMPLES)
   .filter((f) => f.endsWith(".js") && !f.startsWith("_"))
   .filter((f) => !only || f.includes(only));
 
@@ -395,8 +396,8 @@ const server = http.createServer((req, res) => {
   }
   if (u.pathname === "/sample") {
     const name = u.searchParams.get("f") || "";
-    const p = path.join(ROOT, name);
-    if (!fs.existsSync(p) || path.dirname(p) !== ROOT) { res.writeHead(404); return res.end(); }
+    const p = path.join(SAMPLES, name);
+    if (!fs.existsSync(p) || path.dirname(p) !== SAMPLES) { res.writeHead(404); return res.end(); }
     // Playground 用の行なので、素の <script> では構文エラーになる。落とす
     const code = fs.readFileSync(p, "utf8").replace(/^export default createScene;\s*$/m, "");
     res.writeHead(200, { "content-type": "application/javascript; charset=utf-8" });
@@ -543,7 +544,7 @@ function findChrome() {
   for (const f of files) {
     const label = f.replace(/\.js$/, "");
     // ざるに盛るサンプルだけ物理を使う。1個だけのスタジオ撮りは使わない
-    const needsPhysics = fs.readFileSync(path.join(ROOT, f), "utf8").includes("HavokPhysics()");
+    const needsPhysics = fs.readFileSync(path.join(SAMPLES, f), "utf8").includes("HavokPhysics()");
     process.stdout.write("  " + label.padEnd(14, "　") + " ");
     const t0 = Date.now();
     let page = null;

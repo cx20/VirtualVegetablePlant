@@ -15,7 +15,7 @@
  *
  *  入力:
  *    ・assets/_index_original.bak.html … 01〜07章の本文の出典。消さないこと
- *    ・リポジトリ直下の *.js（23本）    … ビューア用の複製元
+ *    ・samples/*.js（23本）             … ビューア用の複製元
  *
  *  手書きで管理しているもの（このスクリプトは触りません）:
  *    ・assets/site.css / assets/labs.js / assets/havok-lab.js
@@ -30,6 +30,7 @@ const fs = require("fs");
 const path = require("path");
 
 const ROOT = path.resolve(__dirname, "..");
+const SAMPLES = path.join(ROOT, "samples");
 const SRC = fs.readFileSync(path.join(ROOT, "assets/_index_original.bak.html"), "utf8");
 
 /* ---------- 元ファイルから <section class="chapter" id="X"> を取り出す ---------- */
@@ -1774,11 +1775,11 @@ ${pagerHTML(prev, next)}
   const srcDir = path.join(ROOT, "assets/src");
   if (!fs.existsSync(srcDir)) fs.mkdirSync(srcDir, { recursive: true });
   const list = fs
-    .readdirSync(ROOT)
+    .readdirSync(SAMPLES)
     .filter((f) => f.endsWith(".js") && !f.startsWith("_"));
   let total = 0;
   for (const f of list) {
-    const code = fs.readFileSync(path.join(ROOT, f), "utf8");
+    const code = fs.readFileSync(path.join(SAMPLES, f), "utf8");
     const out =
       "window.__SRC=window.__SRC||{};\nwindow.__SRC[" +
       JSON.stringify(f) +

@@ -1502,7 +1502,7 @@ function highlightJs(src) {
         }
         // http で開かれているときは実ファイルを読む（編集がすぐ反映される）
         try {
-            fetch(encodeURIComponent(file)).then(function (r) {
+            fetch("samples/" + encodeURIComponent(file)).then(function (r) {
                 if (!r.ok) throw new Error(r.status);
                 return r.text();
             }).then(function (t) {
@@ -1520,7 +1520,7 @@ function highlightJs(src) {
         current = v;
         if (titleEl) titleEl.textContent = v[1];
         if (descEl) descEl.textContent = v[3];
-        if (rawEl) rawEl.href = encodeURIComponent(v[1]);
+        if (rawEl) rawEl.href = "samples/" + encodeURIComponent(v[1]);
         var playEl = $("#viewPlay");
         if (playEl) playEl.href = playHref(v[1]);
         $$("#viewChips .chip").forEach(function (b) {
