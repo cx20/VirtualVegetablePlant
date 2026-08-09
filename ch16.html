@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>「似ているのに別物」を作り分ける — やさいのつくりかた</title>
+<meta name="description" content="「似ているのに別物」を作り分ける">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 再帰</a>
+      <a href="ch13.html">13 螺旋</a>
+      <a href="ch14.html">14 頂点色</a>
+      <a href="ch15.html">15 毛</a>
+      <a href="ch16.html" aria-current="page">16 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-onion)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第16章</p>
+<section class="chapter" id="ch16" style="--ch:var(--p-onion)">
+  <div class="chapter-head">
+    <div class="chnum">16<small>Variants</small></div>
+    <div>
+      <h2>「似ているのに別物」を作り分ける</h2>
+      <p class="sub">differential design — 差分でつくる</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>ブロッコリーとカリフラワーは、<b>ほぼ同じプログラム</b>です。違うのは数値だけ。</li>
+        <li>でも<b>色を白くしただけでは絶対に似ません</b>。変えるべきは色ではなく構造です。</li>
+        <li>実物を2つ並べて「何が違うか」を書き出す作業が、手続き的生成の設計そのものです。</li>
+      </ul>
+    </div>
+
+    <p>
+      カリフラワー.js は、ブロッコリー.js の骨格（散房花序の再帰 → 花蕾ドーム → 粒）を
+      そのまま使っています。茎も、ざるも、物理も、GUIも共通です。
+      にもかかわらず、冒頭にはこう書いてあります。
+      <b>「同じ設定のまま色を白くしても絶対に似ません」</b>。
+    </p>
+    <p>
+      これは手続き的生成の一番おいしいところであり、一番むずかしいところでもあります。
+      数値を変えるだけで別の野菜になる。でも<b>どの数値を変えるかは、実物を見ないと分からない</b>。
+      カリフラワー.js が実際に変えたのは、次の4か所です。
+    </p>
+
+    <table>
+      <tr><th>変えたところ</th><th>ブロッコリー</th><th>カリフラワー</th><th>なぜ</th></tr>
+      <tr><td>房のあいだ</td><td>areaKeep 0.975<br>domeSwell 1.09</td><td>areaKeep 1.00<br>domeSwell 1.22</td>
+        <td>ブロッコリーは房と房が枝まで裂けている。カリフラワーは押し合って固まっていて、境目は浅い溝でしかない</td></tr>
+      <tr><td>粒のかたち</td><td>budAspect 1.28</td><td>budAspect 0.52</td>
+        <td>ブロッコリーは球状の蕾が1個ずつ外へ伸びる。カリフラワーは粒が法線方向へ潰れて繋がっている</td></tr>
+      <tr><td>谷の暗さ</td><td>強さ 1.02 / 下限 0.20</td><td>強さ 0.48 / 下限 0.56</td>
+        <td>白いので谷に落ちても光が回り込む。同じ遮蔽だと白い塊に墨を流したようになる</td></tr>
+      <tr><td>据わり方</td><td>切り口で立つ</td><td>葉柄の上に座る</td>
+        <td>葉が輪になって外へ張り出しているので、その上に載る。物理の凸包にも葉柄を入れる</td></tr>
+    </table>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 1項目ずつカリフラワーに近づける</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <label class="switch"><input type="checkbox" id="diffSwell">房を裂かず、大きく重ねる</label>
+          <label class="switch"><input type="checkbox" id="diffFuse">粒を潰して融合させる</label>
+          <label class="switch"><input type="checkbox" id="diffAo">谷の暗さをゆるめる</label>
+          <label class="switch"><input type="checkbox" id="diffCol">色を白くする</label>
+          <div class="readout" id="diffOut"></div>
+          <p class="hint">「色を白くする」だけを入れてみてください。白いブロッコリーにしかなりません。
+          （このミニチュアでは areaKeep と domeSwell を1本のつまみにまとめてあります）</p>
+        </div>
+        <div>
+          <canvas id="diffCanvas" width="480" height="440" aria-label="ブロッコリーからカリフラワーへの差分デモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>差分は3種類ある</h3>
+    <p>
+      23本のサンプルを見渡すと、「似ているものを作り分ける」やり方は3つに分けられます。
+    </p>
+    <ul>
+      <li><b>別の野菜にする</b> — ブロッコリー → カリフラワー。骨格を残して構造の数値を変える。
+        ファイルは別々にする（共通部分をライブラリにまとめてしまうと、実物と見比べて直す作業がやりにくくなる）。</li>
+      <li><b>品種を切り替える</b> — 同じファイルのなかの <code>PRESETS</code>。
+        サクランボ.js には佐藤錦・ナポレオン・紅秀峰の3つが入っています。</li>
+      <li><b>状態を切り替える</b> — 枝豆.js の「生／塩ゆで」。形は同じで、色と質感だけが変わる。</li>
+    </ul>
+
+    <h3>品種の差は、たいてい「色の分布」</h3>
+    <p>
+      サクランボの3品種は、形の数値もわずかに違いますが、効いているのはほとんど色です。
+      しかも「赤の濃さ」ではなく<b>赤がどこまで回り込んでいるか</b>です。
+    </p>
+    <figure>
+<pre>satonishiki: { blushFloor: <span class="n">0.30</span>, blushSpread: <span class="n">1.15</span> },  <span class="c">// 日陰に黄色が残る</span>
+napoleon:    { blushFloor: <span class="n">0.16</span>, blushSpread: <span class="n">1.45</span> },  <span class="c">// 色づきが浅く黄色が広い</span>
+benishuho:   { blushFloor: <span class="n">0.74</span>, blushSpread: <span class="n">1.70</span> }   <span class="c">// 全体が濃い赤。黄色はほぼ残らない</span></pre>
+      <figcaption>サクランボ.js。blushFloor は「日陰側にどれだけ赤が残るか」の下限</figcaption>
+    </figure>
+    <p>
+      サクランボ.js は、<b>日向側（u = 0.5）から赤が回り込む</b>という1つの仕組みで
+      3品種ぜんぶを作っています。「品種ごとにテクスチャを描く」のではなく、
+      <b>共通の仕組みに、品種ごとの数値を入れる</b>。これが手続き的生成の考え方です。
+    </p>
+
+    <h3>状態の差は、色・艶・付着物</h3>
+    <p>
+      枝豆.js の「塩ゆで」は、形をまったく変えません。変わるのはこれだけです。
+    </p>
+    <ul>
+      <li>色が冴える（くすみを取って彩度を上げる）</li>
+      <li>粗さを 0.74 倍にして濡れた艶を出す。ただし<b>鏡面にはしない</b>（緑のプラスチックになる）</li>
+      <li>白い粉（ブルーム）を 0.35 倍に落とす。茹でると落ちるので</li>
+      <li>産毛のアルファを 0.7 倍。濡れた毛は寝て束になる</li>
+      <li>塩の粒を乗せる</li>
+    </ul>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>色から手をつけると、必ず失敗します。</b>
+      「カリフラワーはブロッコリーの白いやつ」「ナポレオンは佐藤錦の色違い」——
+      こう考えているうちは似ません。実物を並べて、
+      まず<b>シルエットの違い</b>、次に<b>表面の粒立ちの違い</b>、
+      最後に色、の順で見てください。
+      このサイトのサンプルのコメントに残っている失敗は、
+      ほとんどが「構造の違いを色でごまかそうとした」記録です。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>「色を白くする」だけを入れて、白いブロッコリーにしかならないことを確かめる。</li>
+        <li>4つ全部を入れてから、ひとつずつ戻す。いちばん効いているのはどれか。</li>
+        <li>自分でスーパーへ行き、ブロッコリーとカリフラワーの写真を撮って並べる。違いを5つ書き出す。</li>
+        <li>サクランボ.js の benishuho の blushFloor を 0.10 にして実行し、何品種に見えるか確かめる。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch15.html"><span class="dir">← まえの章</span><span class="ttl">15 毛は、薄い殻を重ねて生やす</span></a>
+    <a class="next" href="zukan.html"><span class="dir">つぎの章 →</span><span class="ttl">23 どのファイルで、何が学べるか</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

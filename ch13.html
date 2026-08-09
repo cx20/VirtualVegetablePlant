@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>螺旋は、描かない — やさいのつくりかた</title>
+<meta name="description" content="螺旋は、描かない">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 再帰</a>
+      <a href="ch13.html" aria-current="page">13 螺旋</a>
+      <a href="ch14.html">14 頂点色</a>
+      <a href="ch15.html">15 毛</a>
+      <a href="ch16.html">16 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-corn)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第13章</p>
+<section class="chapter" id="ch13" style="--ch:var(--p-corn)">
+  <div class="chapter-head">
+    <div class="chnum">13<small>Phyllotaxis</small></div>
+    <div>
+      <h2>螺旋は、描かない</h2>
+      <p class="sub">phyllotaxis — 葉序・黄金角・フィボナッチ</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>ロマネスコやひまわりの螺旋は、<b>螺旋を描いて作るのではありません</b>。</li>
+        <li>1個置くごとに <b>137.5°</b> ずつ回すだけ。すると螺旋が<b>勝手に</b>見えてきます。</li>
+        <li>しかもその本数は 8・13・21 ……と<b>フィボナッチ数</b>になります。狙って作った数ではありません。</li>
+      </ul>
+    </div>
+
+    <p>
+      ロマネスコの写真を見ると、螺旋が右回りと左回りに走っているのが分かります。
+      数えると8本だったり13本だったり21本だったりします。
+      これをプログラムで作ろうとして、螺旋を線として描き始めると、まず失敗します。
+      <b>螺旋は、作った結果として出てくるものであって、作るものではありません。</b>
+    </p>
+    <p>
+      やっているのは、たった1行です。
+    </p>
+    <figure>
+<pre><span class="k">const</span> th = th0 + i * <span class="n">2.3999632</span>;   <span class="c">// i 番目の子の方位。2.3999632 rad = 137.5°</span></pre>
+      <figcaption>ロマネスコ.js / ブロッコリー.js / カリフラワー.js に共通して出てくる定数</figcaption>
+    </figure>
+    <p>
+      1個置くたびに137.5°回す。それだけです。この角度を<b>黄金角</b>といいます。
+      植物が葉や種をつける角度で、<b>葉序（ようじょ）</b>と呼ばれる仕組みです。
+    </p>
+
+    <h3>なぜ137.5°なのか</h3>
+    <p>
+      植物にとって、あとから出る葉は先に出た葉の真上に来ると困ります。日陰になるからです。
+      では「いちばん重ならない角度」は何度か。
+      たとえば90°だと、4個置くと元に戻ってしまい、4方向にしか葉が出ません。
+      120°なら3方向。<b>分数で表せる角度は、必ずどこかで重なります。</b>
+    </p>
+    <p>
+      だから、いちばん<b>分数で表しにくい</b>数を使えばいい。
+      それが黄金比 φ = (1+√5)/2 で、360° ÷ φ² ≒ <b>137.507°</b>。
+      これが「もっとも重ならない角度」になります。
+    </p>
+
+    <h3>螺旋の本数がフィボナッチ数になる理由</h3>
+    <p>
+      i 番目と i+m 番目が同じ方向に並んで見えるのは、
+      m 個ぶん回した角 m×137.5° が、<b>ちょうど1周の整数倍に近い</b>ときです。
+      そういう m を小さいほうから探すと、1, 2, 3, 5, 8, 13, 21, 34 ……
+      つまりフィボナッチ数が出てきます。
+      この m が、そのまま<b>目に見える螺旋（斜列）の本数</b>です。
+      下の実験で角度を少しずらすと、本数がフィボナッチ数から外れ、
+      同時に見た目が「植物らしくなくなる」のが分かります。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 角度をずらしてみる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="phylPre">
+            <button class="chip" type="button" data-a="137.5" aria-pressed="true">137.5°（黄金角）</button>
+            <button class="chip" type="button" data-a="137.0">137.0°</button>
+            <button class="chip" type="button" data-a="120">120°</button>
+            <button class="chip" type="button" data-a="90">90°</button>
+          </div>
+          <div class="ctrl">
+            <label for="phylAng">回す角度 <span class="v" id="phylAngV">137.5°</span></label>
+            <input type="range" id="phylAng" min="130" max="145" step="0.1" value="137.5">
+          </div>
+          <div class="ctrl">
+            <label for="phylN">置く数 <span class="v" id="phylNV">140 個</span></label>
+            <input type="range" id="phylN" min="40" max="600" step="10" value="140">
+          </div>
+          <label class="switch"><input type="checkbox" id="phylLink" checked>斜列を線でつなぐ</label>
+          <div class="readout" id="phylOut"></div>
+          <p class="hint">137.5 から 0.5 ずらすだけで、螺旋がほどけて「腕」が見えはじめます。</p>
+        </div>
+        <div>
+          <canvas id="phylCanvas" width="460" height="460" aria-label="黄金角で並べた点の配置"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>球の上に均等に置く — フィボナッチ格子</h3>
+    <p>
+      同じ考え方は、球の表面に点を均等にばらまくのにも使えます。
+      緯度・経度で等分すると<b>極のあたりだけ混み合います</b>（06章のUVと同じ問題です）。
+      そこで、高さ方向を等間隔に切って、方位を137.5°ずつ回す。
+      すると、どこでも同じ密度で並びます。
+    </p>
+    <figure>
+<pre><span class="c">// フィボナッチ球。等面積で並ぶので密度が極でも崩れない</span>
+<span class="k">const</span> lz = <span class="n">1</span> - <span class="n">2</span> * (k + <span class="n">0.5</span>) / M;
+<span class="k">const</span> lr = Math.sqrt(Math.max(<span class="n">0</span>, <span class="n">1</span> - lz * lz));
+<span class="k">const</span> th = k * <span class="n">2.3999632</span> + spin;
+<span class="k">const</span> d = vec(lr * Math.cos(th), lr * Math.sin(th), lz);</pre>
+      <figcaption>ブロッコリー.js。蕾の粒2〜4万個も、房の位置も、これで並べている</figcaption>
+    </figure>
+
+    <h3>おまけ — 螺旋の格子は「まっすぐ」にできる</h3>
+    <p>
+      ロマネスコには都合のいい性質があります。
+      <b>対数極座標</b> (x, y) = (θ/2π, ln f / ln λ) という座標に取り替えると、
+      葉序の格子は<b>どの階層でも、まったく同じ形の格子</b>になります。
+      螺旋が、ただの斜めの格子になるのです。
+      だから1枚のテクスチャを、大きさの違う何千個の円錐すべてに貼り回せます。
+      ロマネスコ.js が数万個の小塔を実時間で組めているのは、ここのおかげです。
+    </p>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>粒の半径を「格子の目盛」で決めてはいけません。</b>
+      黄金角の格子では、いちばん近い節点は「1つ隣」ではなく、
+      <b>フィボナッチ数だけ離れた節点</b>です。しかもその距離は5〜6目盛にもなります。
+      目盛を基準に「半径0.6」と決めると、粒がぽつぽつ散った点描になります。
+      ロマネスコ.js は、最初に最近接距離 <code>DMIN</code> を総当たりで求めてから、
+      それを基準に粒の大きさを決めています。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>137.5°のまま「斜列を線でつなぐ」を入れて、赤・青・黄の線がどう走っているか見る。</li>
+        <li>角度を135.0°にする。螺旋がほどけて放射状の腕になることを確かめる。</li>
+        <li>置く数を40から600まで動かす。本数が 5/8/13 → 13/21/34 → 34/55/89 と、フィボナッチ数を1つずつ繰り上がっていくのを見る。</li>
+        <li>ひまわり・松ぼっくり・パイナップルの写真で、螺旋の本数を数えてみる。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch12.html"><span class="dir">← まえの章</span><span class="ttl">12 くり返しが、形をつくる</span></a>
+    <a class="next" href="ch14.html"><span class="dir">つぎの章 →</span><span class="ttl">14 模様を貼らずに、頂点で塗る</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

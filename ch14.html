@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>模様を貼らずに、頂点で塗る — やさいのつくりかた</title>
+<meta name="description" content="模様を貼らずに、頂点で塗る">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/labs.js" defer></script>
+</head>
+<body>
+<header class="topbar">
+  <div class="topbar-in">
+    <a class="brand" href="index.html">やさいのつくりかた<span class="dot">.</span></a>
+    <nav class="navlinks" aria-label="章">
+      <a href="index.html">目次</a>
+      <a href="start.html">00 はじめ</a>
+      <a href="ch01.html">01 生成</a>
+      <a href="ch02.html">02 乱数</a>
+      <a href="ch03.html">03 ノイズ</a>
+      <a href="ch04.html">04 かたち</a>
+      <a href="ch05.html">05 面</a>
+      <a href="ch06.html">06 模様</a>
+      <a href="ch07.html">07 質感</a>
+      <a href="ch08.html">08 物理</a>
+      <a href="ch09.html">09 部品</a>
+      <a href="ch10.html">10 曲がり</a>
+      <a href="ch11.html">11 光</a>
+      <a href="ch12.html">12 再帰</a>
+      <a href="ch13.html">13 螺旋</a>
+      <a href="ch14.html" aria-current="page">14 頂点色</a>
+      <a href="ch15.html">15 毛</a>
+      <a href="ch16.html">16 差分</a>
+      <a href="zukan.html">図鑑</a>
+      <a href="view.html">ソース</a>
+      <a href="terms.html">用語</a>
+    </nav>
+  </div>
+</header>
+
+<main id="top" class="page">
+<div class="wrap" style="--ch:var(--p-suika)">
+  <p class="crumbs"><a href="index.html">目次</a><span class="sep">/</span>第14章</p>
+<section class="chapter" id="ch14" style="--ch:var(--p-suika)">
+  <div class="chapter-head">
+    <div class="chnum">14<small>VertexColor</small></div>
+    <div>
+      <h2>模様を貼らずに、頂点で塗る</h2>
+      <p class="sub">vertex colors &amp; baked occlusion — 頂点カラーと焼き込み遮蔽</p>
+    </div>
+  </div>
+  <div class="body">
+    <div class="recap">
+      <span class="label">この章の3行まとめ</span>
+      <ul>
+        <li>06章では模様をテクスチャに描きました。でもブロッコリーには<b>UVが張れません</b>。</li>
+        <li>枝分かれした構造に、破綻のない展開図は作れないからです。</li>
+        <li>代わりに<b>頂点1個ずつに色を持たせ</b>、さらに「谷の暗さ」をそこへ焼き込みます。</li>
+      </ul>
+    </div>
+
+    <p>
+      06章では、模様をテクスチャ（2Dの絵）に描いて立体に貼りました。
+      第I部で扱った野菜は、それで足りました。どれも1個のかたまりで、
+      地球儀のように「経度・緯度」を割り当てられたからです。
+    </p>
+    <p>
+      ブロッコリーではこれができません。枝が分かれて、その先でまた分かれた構造を、
+      1枚の紙に破れ目なく広げることはできないからです。
+      そして困ったことに、ブロッコリー.js は<b>テクスチャを1枚も使っていません</b>
+      （ざるの網代だけは別です）。
+    </p>
+    <p>
+      では色はどこから来るのか。<b>頂点そのものが色を持っています。</b>
+      3Dモデルは座標・三角形の番号表・法線・UVでできている、と05章で書きました。
+      そこにもう1本、<code>colors</code> という配列を足すだけです。
+      三角形の内側は、3つの頂点の色を混ぜて塗られます。
+    </p>
+    <figure>
+<pre>vd.positions = ...;
+vd.normals   = ...;
+vd.colors    = colors;     <span class="c">// 頂点1個につき RGBA の4つ</span>
+vd.indices   = ...;
+vd.applyToMesh(mesh, <span class="k">false</span>);
+
+curd.albedoColor = <span class="k">new</span> BABYLON.Color3(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>);   <span class="c">// 実色は頂点カラー</span></pre>
+      <figcaption>ブロッコリー.js。マテリアルの色は白のまま、頂点の色が掛かる</figcaption>
+    </figure>
+    <p>
+      必要な情報はぜんぶ「その粒がどこにあって、どっちを向いているか」から決まります。
+      だったら、わざわざ2Dの絵を経由するより、頂点に直接書いたほうが正確で速い。
+      これがブロッコリー.js の判断です。
+    </p>
+
+    <h3>質感を作っているのは、粒ではなく「谷の暗さ」</h3>
+    <p>
+      ブロッコリーの蕾の粒を2〜4万個ちゃんと並べても、それだけでは
+      <b>粒があるのに平板</b>に見えます。足りないのは<b>影</b>です。
+      粒と粒のあいだの谷には、まわりの光がほとんど届きません。この暗さが質感の正体です。
+    </p>
+    <p>
+      ところが、この谷は1〜2mmしかありません。11章に出てきた SSAO は画面上での処理なので、
+      この細かさは解像できません。そこでブロッコリー.js は、
+      <b>頂点を作るときに、その場で暗さを計算して色に焼き込みます</b>。
+    </p>
+    <figure>
+<pre><span class="c">// 隣の房が「空をどれだけ覆っているか」を立体角で足す</span>
+<span class="k">for</span> (<span class="k">const</span> d <span class="k">of</span> list) {
+    <span class="k">const</span> dist = <span class="c">/* 粒から隣の房の中心までの距離 */</span>;
+    <span class="k">const</span> nd = <span class="c">/* 粒の向きと、その方向の内積。裏側は数えない */</span>;
+    <span class="k">if</span> (nd &lt;= <span class="n">0</span>) <span class="k">continue</span>;
+    <span class="k">const</span> rr = d.R / Math.max(dist, d.R);
+    <span class="c">// 半径 R の球が距離 dist から張る立体角の、半球に対する比</span>
+    occ += <span class="n">0.5</span> * (<span class="n">1</span> - Math.sqrt(<span class="n">1</span> - rr * rr)) * nd;
+}
+<span class="k">return</span> clamp(<span class="n">1</span> - occ * strength, floor, <span class="n">1</span>);</pre>
+      <figcaption>ブロッコリー.js の sphereAO()。房を球とみなして解析的に解いている</figcaption>
+    </figure>
+    <p>
+      本物の影のように光線を飛ばして調べるのではなく、
+      <b>隣の房を球だと思って、公式で解いています</b>。だから速い。
+      数万個の頂点それぞれで、近くの房だけを見て計算します。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 谷の暗さを消してみる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="curdAO">遮蔽の強さ <span class="v" id="curdAOV">1.02</span></label>
+            <input type="range" id="curdAO" min="0" max="2.2" step="0.02" value="1.02">
+          </div>
+          <div class="ctrl">
+            <label for="curdFloor">暗さの下限 <span class="v" id="curdFloorV">0.20</span></label>
+            <input type="range" id="curdFloor" min="0.05" max="0.85" step="0.01" value="0.20">
+          </div>
+          <label class="switch"><input type="checkbox" id="curdWhite">白い花蕾（カリフラワー）にする</label>
+          <div class="readout" id="curdOut"></div>
+          <p class="hint">強さを0にすると、粒はそのままなのに絵が平らになります。これが「谷の暗さ」の効果です。</p>
+        </div>
+        <div>
+          <canvas id="curdCanvas" width="480" height="440" aria-label="蕾の粒と谷の暗さのデモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>暗くするのに、黒を掛けてはいけない</h3>
+    <p>
+      遮蔽を色に反映するとき、素直に「色 × 明るさ」とやると、谷が<b>黒く濁ります</b>。
+      実物の谷は黒ではなく、<b>深い緑</b>です。
+      そこでブロッコリー.js は掛け算ではなく、<b>谷の色へ寄せる</b>書き方をしています。
+    </p>
+    <figure>
+<pre><span class="c">// 遮蔽は「黒く掛ける」のではなく谷の色へ寄せる</span>
+<span class="k">const</span> dr = mix(DEEP[<span class="n">0</span>], cr, ao);
+<span class="k">const</span> dg = mix(DEEP[<span class="n">1</span>], cg, ao);
+<span class="k">const</span> db = mix(DEEP[<span class="n">2</span>], cb, ao);</pre>
+      <figcaption>ao が 1 なら元の色、0 なら谷の色。あいだは混ぜる</figcaption>
+    </figure>
+    <p>
+      白いカリフラワーでは、この差がもっとはっきり出ます。
+      白い野菜は谷に落ちた光も回り込んでくるので、暗くなりません。
+      ブロッコリーと同じ遮蔽を掛けると、<b>白い塊に墨を流した</b>ようになります。
+      実験の「白い花蕾にする」を入れて、下限が0.16のままだとどうなるか見てください
+      （<a href="ch16.html">16章</a>へ続きます）。
+    </p>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>粒をインスタンスにしてはいけません。</b>
+      同じ形を何万個も並べるとき、09章で出てきた「インスタンス」を使いたくなります。
+      でもインスタンスは<b>1個につき1色</b>しか持てません。
+      この野菜の質感は「同じ粒のなかで、外を向いた面は明るく谷を向いた面は暗い」という
+      頂点単位の濃淡がほぼ全部なので、それが出せなくなります。
+      1枚のメッシュに焼き込めば濃淡も出るし、描画も1回で済みます。</p>
+      <p><b>もうひとつ。</b>頂点カラーを RGBA の4つ組で入れると、Babylon.js は
+      <code>hasVertexAlpha</code> を立てて<b>透過パス</b>へ回します。
+      透過パスは深度書き込みが切られるので、粒どうしが互いを正しく隠せなくなります。
+      不透明なら <code>mesh.hasVertexAlpha = false</code> を明示します。</p>
+    </div>
+
+    <div class="try">
+      <span class="label">やってみよう</span>
+      <ol>
+        <li>遮蔽の強さを0にする。粒の数は変わらないのに平板に見えることを確かめる。</li>
+        <li>強さを2.2まで上げる。今度は「煤けた」感じになることを見る。</li>
+        <li>「白い花蕾」を入れたまま、下限をいくつまで上げると自然に見えるか探す。</li>
+        <li>ブロッコリーの実物を上から見て、谷がどれくらい暗いか観察する。</li>
+      </ol>
+    </div>
+
+  </div>
+</section>
+  <div class="pager">
+    <a class="prev" href="ch13.html"><span class="dir">← まえの章</span><span class="ttl">13 螺旋は、描かない</span></a>
+    <a class="next" href="ch15.html"><span class="dir">つぎの章 →</span><span class="ttl">15 毛は、薄い殻を重ねて生やす</span></a>
+  </div>
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
+    <div><a href="index.html">目次へ戻る</a></div>
+  </div>
+</footer>
+</body>
+</html>

@@ -6,7 +6,7 @@
  *  生成するもの:
  *    ・index.html / start.html / ch01〜ch11.html / zukan.html /
  *      view.html / terms.html   … 全16ページ
- *    ・assets/src/*.src.js       … 18本のサンプルをビューア用に複製
+ *    ・assets/src/*.src.js       … 23本のサンプルをビューア用に複製
  *                                  （.gitignore 済み。再生成はこれで行う）
  *
  *  【注意】上記のファイルは毎回まるごと上書きされます。
@@ -15,7 +15,7 @@
  *
  *  入力:
  *    ・assets/_index_original.bak.html … 01〜07章の本文の出典。消さないこと
- *    ・リポジトリ直下の *.js（18本）    … ビューア用の複製元
+ *    ・リポジトリ直下の *.js（23本）    … ビューア用の複製元
  *
  *  手書きで管理しているもの（このスクリプトは触りません）:
  *    ・assets/site.css / assets/labs.js / assets/havok-lab.js
@@ -97,7 +97,7 @@ pages.push({
   </div>
   <div class="body">
 ${recapBox([
-    "この18本は、<b>ブラウザだけ</b>で動きます。インストールは何も要りません。",
+    "この23本は、<b>ブラウザだけ</b>で動きます。インストールは何も要りません。",
     "Babylon.js Playground という公式サイトに、ファイルの中身を<b>まるごと貼って実行</b>するだけです。",
     "先に動かして、数字をひとつ壊してみる。<b>説明を読むのはそのあと</b>のほうが、ずっと早く分かります。"
   ])}
@@ -121,7 +121,7 @@ ${recapBox([
       </li>
       <li>
         <h3><b>ニンジン.js</b> の中身を全部コピーして貼る</h3>
-        <p>最初の1本は <b>ニンジン.js</b> がおすすめです。18本のなかでいちばん構造が素直で、
+        <p>最初の1本は <b>ニンジン.js</b> がおすすめです。23本のなかでいちばん構造が素直で、
         「円錐に溝を彫る」だけでできています。ファイルをテキストエディタで開き、
         全部コピーして、Playground の左側に貼り付けます。</p>
       </li>
@@ -147,12 +147,13 @@ ${recapBox([
       </li>
     </ol>
 
-    <h3>18本のうち、どれから読むか</h3>
+    <h3>23本のうち、どれから読むか</h3>
     <ul>
       <li><b>ニンジン.js</b> — いちばん素直。円錐 + 溝。まずこれ。</li>
       <li><b>キュウリ.js</b> — 稜（縦のすじ）とイボ。テクスチャの作りが分かりやすい。</li>
-      <li><b>トマト.js</b> — 肩が折り返す形。ここから少し難しくなります。</li>
+      <li><b>トマト.js / サクランボ.js</b> — 肩が折り返す形。ここから少し難しくなります。</li>
       <li><b>シイタケ.js / トウモロコシ.js</b> — 構造が複雑。慣れてから。</li>
+      <li><b>ブロッコリー.js / ロマネスコ.js</b> — 作り方がまったく別。最後でかまいません（→ <a href="ch12.html">12章</a>）。</li>
     </ul>
 
     <div class="note">
@@ -183,8 +184,41 @@ const legacy = [
     try: [
       "ニンジン.js の先頭のコメント（構成 0〜9）を読んで、他のファイルにも同じ並びがあるか確かめる。",
       "手続き的生成のいいところ3つを、自分の言葉で1行ずつ書いてみる。",
+      "ブロッコリー.js の先頭を開いて、4番と5番が別のものに入れ替わっていることを確かめる。",
       "身のまわりで「数式で説明できそうな形」を3つ探す（例：ソフトクリーム、ネジ、松ぼっくり）。"
-    ]
+    ],
+    // 5本追加されて「18本すべてが同じ9層」が成り立たなくなったので、
+    // 見出しと本文を差し替え、例外の3本への案内を足す
+    patch: (sec) =>
+      sec
+        .replace("18本ぜんぶ合わせても", "23本ぜんぶ合わせても")
+        .replace(
+          "<h3>18本すべてが同じ9層でできている</h3>",
+          "<h3>ほとんどのファイルが、同じ9層でできている</h3>"
+        )
+        .replace(
+          `      トマトもシイタケも玉ねぎも、ファイルの構造はまったく同じです。上から順に読めば、
+      どの野菜でも同じ場所に同じ役割のコードがあります。このサイトの章立ても、この層に対応させてあります。`,
+          `      トマトもシイタケも玉ねぎも、ファイルの構造はまったく同じです。上から順に読めば、
+      どの野菜でも同じ場所に同じ役割のコードがあります。このサイトの第I部（01〜11章）は、この層に対応させてあります。`
+        )
+        .replace(
+          "<figcaption>トマト.js の冒頭。18本すべてがこの並びで書かれている</figcaption>",
+          "<figcaption>トマト.js の冒頭。23本のうち20本が、この並びで書かれている</figcaption>"
+        )
+        .replace(
+          '    <div class="note">\n      <b>読む順番のおすすめ。</b>',
+          `    <div class="trap">
+      <span class="label">ただし、例外が3本あります</span>
+      <p><b>ブロッコリー.js / カリフラワー.js / ロマネスコ.js</b> は、この9層に収まりません。
+      形を「横顔」で言い表せないので <b>4. Profile が無く</b>、
+      枝分かれした形にはUVが張れないので <b>5. TextureLab も無い</b>。
+      代わりに <b>Corymb</b>（房の再帰）や <b>Fractal</b>（黄金角の再帰配置）という層が入っています。
+      この3本の作り方は<a href="ch12.html">第II部（12〜16章）</a>にまとめました。</p>
+    </div>
+    <div class="note">
+      <b>読む順番のおすすめ。</b>`
+        )
   },
   {
     id: "ch02", file: "ch02.html", no: "02", tag: "Rng", color: P.potato,
@@ -198,7 +232,8 @@ const legacy = [
       "同じシードを2回入れて、まったく同じ形が出ることを確かめる。",
       "気に入った形が出たシードの数字を、メモしておく。これが「保存」になります。",
       "ニンジン.js の <code>START_SEED</code>（175行目あたり）を自分の誕生日（例 20260801）にして実行する。"
-    ]
+    ],
+    patch: (sec) => sec.replace("18本すべてに入っている Rng", "23本すべてに入っている Rng")
   },
   {
     id: "ch03", file: "ch03.html", no: "03", tag: "Noise", color: P.suika,
@@ -336,7 +371,7 @@ ${recapBox([
       ほかの章の実験は、しくみが分かるように自前で書いた簡易版です。
       でもこの章の主役は物理エンジンそのものなので、下のデモは
       <b>Babylon.js と Havok を本当に読み込んで動かしています</b>。
-      使っている API も数値も、18本のサンプルからそのまま持ってきたものです。
+      使っている API も数値も、サンプルからそのまま持ってきたものです。
       そのぶんダウンロードが大きい（合計10MBほど）ので、ボタンを押すまで読み込みません。
     </p>
     <figure>
@@ -676,7 +711,7 @@ ${recapBox([
     "明るさは計算のなかでは1を超えます。それを画面用に圧縮するのが<b>トーンマッピング</b>です。"
   ])}
     <p>
-      18本のファイルの最後のほうに、必ず同じような行が並んでいます。
+      どのファイルも、最後のほうに必ず同じような行が並んでいます。
       <code>IBL / ライト / 影 / SSAO2 / トーンマッピング</code>。
       ここは野菜そのものではなく、<b>写真でいうところの照明とカメラの設定</b>です。
       同じ野菜でも、この設定次第で「おいしそう」にも「標本」にもなります。
@@ -758,12 +793,706 @@ ${tryBox([
 </section>`
 });
 
-/* ---- 図鑑 ---- */
+/* =====================================================================
+ *  第II部 — 構造そのものをつくる（12〜16）
+ *
+ *  01〜11章は「1本の .js を上から順にほどく」構成で、ファイルの
+ *  9層（CONFIG / Rng / Noise / Mesh / Profile / TextureLab / 本体 /
+ *  Basket / Scene）にそのまま対応していた。
+ *  あとから加わった5本（枝豆・サクランボ・ブロッコリー・カリフラワー・
+ *  ロマネスコ）のうち3本は、その9層に収まらない。
+ *    ・Profile が無い（回転体でも掃引でもない。再帰で生える）
+ *    ・TextureLab が無い（UVが張れないので頂点カラー）
+ *    ・代わりに Corymb / Fractal という層がある
+ *  そこで第II部として、層ではなく「作り方の種類」で章を立てる。
+ * ===================================================================== */
+
+/* ---- 12 再帰と自己相似（新規） ---- */
 pages.push({
-  file: "zukan.html", no: "18", tag: "FILES", color: P.corn,
-  title: "どのファイルで、何が学べるか", crumb: "図鑑",
-  html: grabSection("zukan")
+  file: "ch12.html", no: "12", tag: "Recursion", color: P.leaf,
+  title: "くり返しが、形をつくる", crumb: "第12章",
+  html: `<section class="chapter" id="ch12" style="--ch:${P.leaf}">
+  <div class="chapter-head">
+    <div class="chnum">12<small>Recursion</small></div>
+    <div>
+      <h2>くり返しが、形をつくる</h2>
+      <p class="sub">recursion &amp; self-similarity — 再帰と自己相似</p>
+    </div>
+  </div>
+  <div class="body">
+${recapBox([
+    "ブロッコリーやロマネスコは、横顔を回しても（04章）軸に沿わせても（10章）作れません。",
+    "この3本の正体は<b>同じ手順を、小さくしてくり返す</b>ことです。これを<b>再帰</b>といいます。",
+    "むずかしいのは作り方ではなく<b>どこで止めるか</b>。止め方を外すと、粒がバラバラになるか個数が爆発します。"
+  ])}
+    <p>
+      ここまでの章で作ってきた野菜は、どれも「1個のかたまり」でした。
+      横顔を回して作るか（04章）、曲がった軸に断面を並べて作るか（10章）。
+      ところがブロッコリー・カリフラワー・ロマネスコは、そのどちらでもありません。
+      これらは<b>枝が分かれて、その先でまた枝が分かれてできた構造</b>で、
+      形を1本の折れ線で言い表すことができません。
+    </p>
+    <p>
+      こういうものは、<b>自分自身を呼び出す関数</b>で作ります。
+      「円錐をひとつ描く。その表面に、少し小さい円錐をいくつか置く。
+      置いた円錐それぞれについて、また同じことをする」——
+      これだけで、あの複雑な形が出てきます。
+    </p>
+
+    <h3>ロマネスコの正体は、2行で言える</h3>
+    <p>
+      ロマネスコを「ブロッコリーの房を尖らせたもの」と考えると、絶対に似ません。
+      ロマネスコ.js の冒頭には、こう書いてあります。
+    </p>
+    <ul>
+      <li>(a) 親の円錐の面のうえに、子を「<b>頂点からの距離が等比数列</b> s<sub>i</sub> = S·λ<sup>i</sup>、
+        <b>方位が137.5°ずつ</b>」で置く</li>
+      <li>(b) <b>子の大きさを、その距離に比例させる</b></li>
+    </ul>
+    <p>
+      この2つが揃うと<b>自己相似</b>になります。どこを拡大しても同じ形が出てくる、という性質です。
+      そして自己相似になったとたん、見る向きによって8本・13本・21本と数の変わる螺旋が
+      <b>勝手に</b>現れます。螺旋を線として描こうとしたり、子を等間隔に並べたりすると、
+      ただのイガグリで終わります（この螺旋の話は<a href="ch13.html">13章</a>で）。
+    </p>
+    <figure>
+<pre><span class="k">function</span> growFractal(cfg, rng, out, base, axis, rho, H, level) {
+    <span class="k">const</span> L = cfg.levels[Math.min(level, cfg.levels.length - <span class="n">1</span>)];
+    <span class="c">// 打ち切りの判定。ここが章の本題</span>
+    <span class="k">const</span> leaf = (level &gt;= cfg.maxLevel)
+        || (L.coneK * rho * L.startFrac &lt; cfg.minChild);
+    ...
+    <span class="k">for</span> (<span class="k">let</span> i = <span class="n">0</span>; i &lt;= iMax; i++) {
+        <span class="k">const</span> f  = L.startFrac * Math.pow(lam, i);   <span class="c">// 頂点からの距離（等比）</span>
+        <span class="k">const</span> th = th0 + i * <span class="n">2.3999632</span>;              <span class="c">// 137.5° ずつ回す</span>
+        <span class="k">const</span> cr = L.coneK * coneR(rho, ..., tt);   <span class="c">// その場所の半径に見合う大きさ</span>
+        growFractal(cfg, rng, out, cb, ax, cr, cr * CL.aspect, level + <span class="n">1</span>);
+    }
+}</pre>
+      <figcaption>ロマネスコ.js の中心。自分自身を呼んでいるのが分かる</figcaption>
+    </figure>
+
+    <h3>「何階層まで」で止めてはいけない</h3>
+    <p>
+      再帰でいちばん大事なのは、<b>止める条件</b>です。素直に考えると「3階層まで潜る」と
+      決めたくなります。でもこれをやると失敗します。
+    </p>
+    <p>
+      頭の下側にある大きな小塔は、3階層では末端がまだ1cm近くあります。
+      つるつるした大きな瘤にしか見えません。逆に頂上付近の小さな小塔は、
+      3階層目がもう見えない大きさになっています。
+      <b>実物のロマネスコは、大きい小塔ほど深く分岐していて、
+      末端の粒の絶対的な大きさがどこでも1〜2mmに揃っています。</b>
+      だから打ち切りは階層数ではなく、<code>minChild</code>（cm単位の大きさ）で決めます。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — どこで止めるか</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="fracK">子の大きさの比 <span class="v" id="fracKV">0.52</span></label>
+            <input type="range" id="fracK" min="0.30" max="0.62" step="0.01" value="0.52">
+          </div>
+          <div class="ctrl">
+            <label for="fracMin">打ち切る粒の大きさ <span class="v" id="fracMinV">1.5 mm</span></label>
+            <input type="range" id="fracMin" min="0.8" max="9" step="0.1" value="1.5">
+          </div>
+          <label class="switch"><input type="checkbox" id="fracDepth">階層数で打ち切る（3階層）</label>
+          <div class="readout" id="fracOut"></div>
+          <p class="hint">「階層数で打ち切る」を入れると、末端の大きさがそろわなくなります。最後の行の「倍」を見てください。</p>
+        </div>
+        <div>
+          <canvas id="fracCanvas" width="520" height="460" aria-label="再帰で置いた円錐の側面図"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>本気で作ると1000万個になる</h3>
+    <p>
+      実験で「打ち切る粒の大きさ」を下げていくと、個数がすごい勢いで増えます。
+      これは計算してみると分かります。子は1階層あたり k 倍にしか小さくならないので、
+      4.6cmの頭から1mmの粒まで届くには、k = 0.5 でも
+      log(0.001/0.046) / log(0.5) ≒ <b>5.5階層</b>。
+      1階層あたり親の面を埋めるのに必要な個数を掛けると、末端は<b>1000万個</b>になります。
+      実物のロマネスコは、本当にその規模で分岐しています。
+    </p>
+    <p>
+      パソコンでは無理です。そこでロマネスコ.js は、末端だけ<b>「面に粒を彫る」</b>ことで
+      代用しています。ジオメトリは輪郭だけを担当し、細かい螺旋は面の凹凸に任せる。
+      作りたいものが大きすぎるときは、<b>どこまでを本物の形で作り、
+      どこからを表面の細工で済ませるか</b>を決めることになります。
+    </p>
+    <div class="note">
+      <b>被覆率という物差し。</b>
+      親の面が子で埋まっているかどうかは、式で確かめられます。
+      親の側面積を子の底面積で割った<b>被覆率 = k²·ρ /( S·(1−λ²) )</b>。
+      これが1を切ると親の面がそのまま見えて、「つるつるの円錐に粒が点在する」絵になります。
+      子を小さくすれば実物に近づく、と単純には言えません。
+      小さくすると面を埋めるのに必要な個数が増えて、すぐ破綻します。
+      <b>子の大きさと個数は、独立に決められません。</b>
+    </div>
+
+    <h3>ブロッコリーは、順番が逆</h3>
+    <p>
+      同じ再帰でも、ブロッコリーは作り方が逆向きです。
+      素直に「頭の縄張りを3〜4個に分けて、それぞれをまた分けて……」とやると、
+      房と房のあいだに<b>穴が空きます</b>。3個に分けたとき、隣り合う子の中心は
+      100°以上離れてしまうからです。
+    </p>
+    <p>
+      そこでブロッコリー.js は、<b>先に房の位置を全部決めます</b>。
+      頭の表面にフィボナッチ格子で均等に並べ（これも<a href="ch13.html">13章</a>の話です）、
+      そのあとで近いものどうしを k-means でまとめ直し、
+      まとまりの中心へ向かって枝を伸ばす。こうすれば、
+      表面が埋まっていることが最初から保証されます。
+    </p>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>子の軸を、親の面の法線のままにしないこと。</b>
+      面に垂直なまま生やすと、小塔が放射状に開いて<b>ウニ</b>になります。
+      実物はどの小塔も頭のてっぺんを向いて寝ているので、
+      法線から親の軸のほうへ大きく寄せます（<code>tilt</code>）。
+      上から見て星形・ヒトデ形になったら、たいていここが原因です。</p>
+    </div>
+${tryBox([
+    "「階層数で打ち切る」を入れて、末端の「いちばん大きい ÷ いちばん小さい」が何倍になるか読み取る。",
+    "打ち切る大きさを0.8mmまで下げて、円錐の総数が何個になるか見る。",
+    "子の大きさの比を0.30まで下げる。親の面が見えてくる（被覆率が1を切る）ことを確かめる。",
+    "身のまわりで自己相似な形を3つ探す（例：シダの葉、雷、木の枝）。"
+  ])}
+  </div>
+</section>`
 });
+
+/* ---- 13 葉序（新規） ---- */
+pages.push({
+  file: "ch13.html", no: "13", tag: "Phyllotaxis", color: P.corn,
+  title: "螺旋は、描かない", crumb: "第13章",
+  html: `<section class="chapter" id="ch13" style="--ch:${P.corn}">
+  <div class="chapter-head">
+    <div class="chnum">13<small>Phyllotaxis</small></div>
+    <div>
+      <h2>螺旋は、描かない</h2>
+      <p class="sub">phyllotaxis — 葉序・黄金角・フィボナッチ</p>
+    </div>
+  </div>
+  <div class="body">
+${recapBox([
+    "ロマネスコやひまわりの螺旋は、<b>螺旋を描いて作るのではありません</b>。",
+    "1個置くごとに <b>137.5°</b> ずつ回すだけ。すると螺旋が<b>勝手に</b>見えてきます。",
+    "しかもその本数は 8・13・21 ……と<b>フィボナッチ数</b>になります。狙って作った数ではありません。"
+  ])}
+    <p>
+      ロマネスコの写真を見ると、螺旋が右回りと左回りに走っているのが分かります。
+      数えると8本だったり13本だったり21本だったりします。
+      これをプログラムで作ろうとして、螺旋を線として描き始めると、まず失敗します。
+      <b>螺旋は、作った結果として出てくるものであって、作るものではありません。</b>
+    </p>
+    <p>
+      やっているのは、たった1行です。
+    </p>
+    <figure>
+<pre><span class="k">const</span> th = th0 + i * <span class="n">2.3999632</span>;   <span class="c">// i 番目の子の方位。2.3999632 rad = 137.5°</span></pre>
+      <figcaption>ロマネスコ.js / ブロッコリー.js / カリフラワー.js に共通して出てくる定数</figcaption>
+    </figure>
+    <p>
+      1個置くたびに137.5°回す。それだけです。この角度を<b>黄金角</b>といいます。
+      植物が葉や種をつける角度で、<b>葉序（ようじょ）</b>と呼ばれる仕組みです。
+    </p>
+
+    <h3>なぜ137.5°なのか</h3>
+    <p>
+      植物にとって、あとから出る葉は先に出た葉の真上に来ると困ります。日陰になるからです。
+      では「いちばん重ならない角度」は何度か。
+      たとえば90°だと、4個置くと元に戻ってしまい、4方向にしか葉が出ません。
+      120°なら3方向。<b>分数で表せる角度は、必ずどこかで重なります。</b>
+    </p>
+    <p>
+      だから、いちばん<b>分数で表しにくい</b>数を使えばいい。
+      それが黄金比 φ = (1+√5)/2 で、360° ÷ φ² ≒ <b>137.507°</b>。
+      これが「もっとも重ならない角度」になります。
+    </p>
+
+    <h3>螺旋の本数がフィボナッチ数になる理由</h3>
+    <p>
+      i 番目と i+m 番目が同じ方向に並んで見えるのは、
+      m 個ぶん回した角 m×137.5° が、<b>ちょうど1周の整数倍に近い</b>ときです。
+      そういう m を小さいほうから探すと、1, 2, 3, 5, 8, 13, 21, 34 ……
+      つまりフィボナッチ数が出てきます。
+      この m が、そのまま<b>目に見える螺旋（斜列）の本数</b>です。
+      下の実験で角度を少しずらすと、本数がフィボナッチ数から外れ、
+      同時に見た目が「植物らしくなくなる」のが分かります。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 角度をずらしてみる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="phylPre">
+            <button class="chip" type="button" data-a="137.5" aria-pressed="true">137.5°（黄金角）</button>
+            <button class="chip" type="button" data-a="137.0">137.0°</button>
+            <button class="chip" type="button" data-a="120">120°</button>
+            <button class="chip" type="button" data-a="90">90°</button>
+          </div>
+          <div class="ctrl">
+            <label for="phylAng">回す角度 <span class="v" id="phylAngV">137.5°</span></label>
+            <input type="range" id="phylAng" min="130" max="145" step="0.1" value="137.5">
+          </div>
+          <div class="ctrl">
+            <label for="phylN">置く数 <span class="v" id="phylNV">140 個</span></label>
+            <input type="range" id="phylN" min="40" max="600" step="10" value="140">
+          </div>
+          <label class="switch"><input type="checkbox" id="phylLink" checked>斜列を線でつなぐ</label>
+          <div class="readout" id="phylOut"></div>
+          <p class="hint">137.5 から 0.5 ずらすだけで、螺旋がほどけて「腕」が見えはじめます。</p>
+        </div>
+        <div>
+          <canvas id="phylCanvas" width="460" height="460" aria-label="黄金角で並べた点の配置"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>球の上に均等に置く — フィボナッチ格子</h3>
+    <p>
+      同じ考え方は、球の表面に点を均等にばらまくのにも使えます。
+      緯度・経度で等分すると<b>極のあたりだけ混み合います</b>（06章のUVと同じ問題です）。
+      そこで、高さ方向を等間隔に切って、方位を137.5°ずつ回す。
+      すると、どこでも同じ密度で並びます。
+    </p>
+    <figure>
+<pre><span class="c">// フィボナッチ球。等面積で並ぶので密度が極でも崩れない</span>
+<span class="k">const</span> lz = <span class="n">1</span> - <span class="n">2</span> * (k + <span class="n">0.5</span>) / M;
+<span class="k">const</span> lr = Math.sqrt(Math.max(<span class="n">0</span>, <span class="n">1</span> - lz * lz));
+<span class="k">const</span> th = k * <span class="n">2.3999632</span> + spin;
+<span class="k">const</span> d = vec(lr * Math.cos(th), lr * Math.sin(th), lz);</pre>
+      <figcaption>ブロッコリー.js。蕾の粒2〜4万個も、房の位置も、これで並べている</figcaption>
+    </figure>
+
+    <h3>おまけ — 螺旋の格子は「まっすぐ」にできる</h3>
+    <p>
+      ロマネスコには都合のいい性質があります。
+      <b>対数極座標</b> (x, y) = (θ/2π, ln f / ln λ) という座標に取り替えると、
+      葉序の格子は<b>どの階層でも、まったく同じ形の格子</b>になります。
+      螺旋が、ただの斜めの格子になるのです。
+      だから1枚のテクスチャを、大きさの違う何千個の円錐すべてに貼り回せます。
+      ロマネスコ.js が数万個の小塔を実時間で組めているのは、ここのおかげです。
+    </p>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>粒の半径を「格子の目盛」で決めてはいけません。</b>
+      黄金角の格子では、いちばん近い節点は「1つ隣」ではなく、
+      <b>フィボナッチ数だけ離れた節点</b>です。しかもその距離は5〜6目盛にもなります。
+      目盛を基準に「半径0.6」と決めると、粒がぽつぽつ散った点描になります。
+      ロマネスコ.js は、最初に最近接距離 <code>DMIN</code> を総当たりで求めてから、
+      それを基準に粒の大きさを決めています。</p>
+    </div>
+${tryBox([
+    "137.5°のまま「斜列を線でつなぐ」を入れて、赤・青・黄の線がどう走っているか見る。",
+    "角度を135.0°にする。螺旋がほどけて放射状の腕になることを確かめる。",
+    "置く数を40から600まで動かす。本数が 5/8/13 → 13/21/34 → 34/55/89 と、フィボナッチ数を1つずつ繰り上がっていくのを見る。",
+    "ひまわり・松ぼっくり・パイナップルの写真で、螺旋の本数を数えてみる。"
+  ])}
+  </div>
+</section>`
+});
+
+/* ---- 14 頂点カラーと焼き込みAO（新規） ---- */
+pages.push({
+  file: "ch14.html", no: "14", tag: "VertexColor", color: P.suika,
+  title: "模様を貼らずに、頂点で塗る", crumb: "第14章",
+  html: `<section class="chapter" id="ch14" style="--ch:${P.suika}">
+  <div class="chapter-head">
+    <div class="chnum">14<small>VertexColor</small></div>
+    <div>
+      <h2>模様を貼らずに、頂点で塗る</h2>
+      <p class="sub">vertex colors &amp; baked occlusion — 頂点カラーと焼き込み遮蔽</p>
+    </div>
+  </div>
+  <div class="body">
+${recapBox([
+    "06章では模様をテクスチャに描きました。でもブロッコリーには<b>UVが張れません</b>。",
+    "枝分かれした構造に、破綻のない展開図は作れないからです。",
+    "代わりに<b>頂点1個ずつに色を持たせ</b>、さらに「谷の暗さ」をそこへ焼き込みます。"
+  ])}
+    <p>
+      06章では、模様をテクスチャ（2Dの絵）に描いて立体に貼りました。
+      第I部で扱った野菜は、それで足りました。どれも1個のかたまりで、
+      地球儀のように「経度・緯度」を割り当てられたからです。
+    </p>
+    <p>
+      ブロッコリーではこれができません。枝が分かれて、その先でまた分かれた構造を、
+      1枚の紙に破れ目なく広げることはできないからです。
+      そして困ったことに、ブロッコリー.js は<b>テクスチャを1枚も使っていません</b>
+      （ざるの網代だけは別です）。
+    </p>
+    <p>
+      では色はどこから来るのか。<b>頂点そのものが色を持っています。</b>
+      3Dモデルは座標・三角形の番号表・法線・UVでできている、と05章で書きました。
+      そこにもう1本、<code>colors</code> という配列を足すだけです。
+      三角形の内側は、3つの頂点の色を混ぜて塗られます。
+    </p>
+    <figure>
+<pre>vd.positions = ...;
+vd.normals   = ...;
+vd.colors    = colors;     <span class="c">// 頂点1個につき RGBA の4つ</span>
+vd.indices   = ...;
+vd.applyToMesh(mesh, <span class="k">false</span>);
+
+curd.albedoColor = <span class="k">new</span> BABYLON.Color3(<span class="n">1</span>, <span class="n">1</span>, <span class="n">1</span>);   <span class="c">// 実色は頂点カラー</span></pre>
+      <figcaption>ブロッコリー.js。マテリアルの色は白のまま、頂点の色が掛かる</figcaption>
+    </figure>
+    <p>
+      必要な情報はぜんぶ「その粒がどこにあって、どっちを向いているか」から決まります。
+      だったら、わざわざ2Dの絵を経由するより、頂点に直接書いたほうが正確で速い。
+      これがブロッコリー.js の判断です。
+    </p>
+
+    <h3>質感を作っているのは、粒ではなく「谷の暗さ」</h3>
+    <p>
+      ブロッコリーの蕾の粒を2〜4万個ちゃんと並べても、それだけでは
+      <b>粒があるのに平板</b>に見えます。足りないのは<b>影</b>です。
+      粒と粒のあいだの谷には、まわりの光がほとんど届きません。この暗さが質感の正体です。
+    </p>
+    <p>
+      ところが、この谷は1〜2mmしかありません。11章に出てきた SSAO は画面上での処理なので、
+      この細かさは解像できません。そこでブロッコリー.js は、
+      <b>頂点を作るときに、その場で暗さを計算して色に焼き込みます</b>。
+    </p>
+    <figure>
+<pre><span class="c">// 隣の房が「空をどれだけ覆っているか」を立体角で足す</span>
+<span class="k">for</span> (<span class="k">const</span> d <span class="k">of</span> list) {
+    <span class="k">const</span> dist = <span class="c">/* 粒から隣の房の中心までの距離 */</span>;
+    <span class="k">const</span> nd = <span class="c">/* 粒の向きと、その方向の内積。裏側は数えない */</span>;
+    <span class="k">if</span> (nd &lt;= <span class="n">0</span>) <span class="k">continue</span>;
+    <span class="k">const</span> rr = d.R / Math.max(dist, d.R);
+    <span class="c">// 半径 R の球が距離 dist から張る立体角の、半球に対する比</span>
+    occ += <span class="n">0.5</span> * (<span class="n">1</span> - Math.sqrt(<span class="n">1</span> - rr * rr)) * nd;
+}
+<span class="k">return</span> clamp(<span class="n">1</span> - occ * strength, floor, <span class="n">1</span>);</pre>
+      <figcaption>ブロッコリー.js の sphereAO()。房を球とみなして解析的に解いている</figcaption>
+    </figure>
+    <p>
+      本物の影のように光線を飛ばして調べるのではなく、
+      <b>隣の房を球だと思って、公式で解いています</b>。だから速い。
+      数万個の頂点それぞれで、近くの房だけを見て計算します。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 谷の暗さを消してみる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="curdAO">遮蔽の強さ <span class="v" id="curdAOV">1.02</span></label>
+            <input type="range" id="curdAO" min="0" max="2.2" step="0.02" value="1.02">
+          </div>
+          <div class="ctrl">
+            <label for="curdFloor">暗さの下限 <span class="v" id="curdFloorV">0.20</span></label>
+            <input type="range" id="curdFloor" min="0.05" max="0.85" step="0.01" value="0.20">
+          </div>
+          <label class="switch"><input type="checkbox" id="curdWhite">白い花蕾（カリフラワー）にする</label>
+          <div class="readout" id="curdOut"></div>
+          <p class="hint">強さを0にすると、粒はそのままなのに絵が平らになります。これが「谷の暗さ」の効果です。</p>
+        </div>
+        <div>
+          <canvas id="curdCanvas" width="480" height="440" aria-label="蕾の粒と谷の暗さのデモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>暗くするのに、黒を掛けてはいけない</h3>
+    <p>
+      遮蔽を色に反映するとき、素直に「色 × 明るさ」とやると、谷が<b>黒く濁ります</b>。
+      実物の谷は黒ではなく、<b>深い緑</b>です。
+      そこでブロッコリー.js は掛け算ではなく、<b>谷の色へ寄せる</b>書き方をしています。
+    </p>
+    <figure>
+<pre><span class="c">// 遮蔽は「黒く掛ける」のではなく谷の色へ寄せる</span>
+<span class="k">const</span> dr = mix(DEEP[<span class="n">0</span>], cr, ao);
+<span class="k">const</span> dg = mix(DEEP[<span class="n">1</span>], cg, ao);
+<span class="k">const</span> db = mix(DEEP[<span class="n">2</span>], cb, ao);</pre>
+      <figcaption>ao が 1 なら元の色、0 なら谷の色。あいだは混ぜる</figcaption>
+    </figure>
+    <p>
+      白いカリフラワーでは、この差がもっとはっきり出ます。
+      白い野菜は谷に落ちた光も回り込んでくるので、暗くなりません。
+      ブロッコリーと同じ遮蔽を掛けると、<b>白い塊に墨を流した</b>ようになります。
+      実験の「白い花蕾にする」を入れて、下限が0.16のままだとどうなるか見てください
+      （<a href="ch16.html">16章</a>へ続きます）。
+    </p>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>粒をインスタンスにしてはいけません。</b>
+      同じ形を何万個も並べるとき、09章で出てきた「インスタンス」を使いたくなります。
+      でもインスタンスは<b>1個につき1色</b>しか持てません。
+      この野菜の質感は「同じ粒のなかで、外を向いた面は明るく谷を向いた面は暗い」という
+      頂点単位の濃淡がほぼ全部なので、それが出せなくなります。
+      1枚のメッシュに焼き込めば濃淡も出るし、描画も1回で済みます。</p>
+      <p><b>もうひとつ。</b>頂点カラーを RGBA の4つ組で入れると、Babylon.js は
+      <code>hasVertexAlpha</code> を立てて<b>透過パス</b>へ回します。
+      透過パスは深度書き込みが切られるので、粒どうしが互いを正しく隠せなくなります。
+      不透明なら <code>mesh.hasVertexAlpha = false</code> を明示します。</p>
+    </div>
+${tryBox([
+    "遮蔽の強さを0にする。粒の数は変わらないのに平板に見えることを確かめる。",
+    "強さを2.2まで上げる。今度は「煤けた」感じになることを見る。",
+    "「白い花蕾」を入れたまま、下限をいくつまで上げると自然に見えるか探す。",
+    "ブロッコリーの実物を上から見て、谷がどれくらい暗いか観察する。"
+  ])}
+  </div>
+</section>`
+});
+
+/* ---- 15 シェル法の毛（新規） ---- */
+pages.push({
+  file: "ch15.html", no: "15", tag: "Shell", color: P.okra,
+  title: "毛は、薄い殻を重ねて生やす", crumb: "第15章",
+  html: `<section class="chapter" id="ch15" style="--ch:${P.okra}">
+  <div class="chapter-head">
+    <div class="chnum">15<small>Shell</small></div>
+    <div>
+      <h2>毛は、薄い殻を重ねて生やす</h2>
+      <p class="sub">shell fur — シェル法</p>
+    </div>
+  </div>
+  <div class="body">
+${recapBox([
+    "枝豆のいちばんの特徴は産毛です。でも<b>法線マップでは毛は出ません</b>。輪郭がつるつるのままだからです。",
+    "そこで本体の少し外側に、毛の点々を描いた<b>透明な殻</b>を1枚2枚と重ねます。",
+    "正面はうっすら、輪郭では殻が斜めに重なって濃くなる。これが毛に見えます。"
+  ])}
+    <p>
+      07章で、オクラの産毛は <b>sheen</b>（布のような照り）で表しました。
+      表面が縁のあたりで柔らかく光る、という質感です。オクラはそれで足ります。
+      でも枝豆はそうはいきません。枝豆の毛はもっと長く、密で、
+      <b>シルエットに毛が立って見える</b>からです。
+    </p>
+    <p>
+      06章の法線マップは「実際には形を変えず、光の当たり方だけ嘘をつく」技術でした。
+      安上がりですが、弱点があります。<b>輪郭には効かない。</b>
+      横から見たときの縁は形そのものなので、いくら法線をいじっても滑らかなままです。
+    </p>
+
+    <h3>やり方 — 少し大きい殻を、何枚か重ねる</h3>
+    <p>
+      そこで<b>シェル法</b>（shell fur）を使います。考え方はとても素朴です。
+    </p>
+    <ol>
+      <li>莢のメッシュを、ほんの少し外側へ膨らませたコピーを作る</li>
+      <li>そこに「毛の断面の点々」を描いた半透明のテクスチャを貼る</li>
+      <li>これを、膨らませる量を変えながら2〜3枚重ねる</li>
+    </ol>
+    <p>
+      毛を1本ずつ作るわけではありません。毛を<b>輪切りにした点々</b>を、
+      高さ違いで何枚か置いているだけです。それでも毛に見えます。
+      正面から見ると点々はまばらに散っているだけですが、
+      輪郭のあたりでは同じ点々を<b>斜めから何枚も透かして見る</b>ことになるので、
+      そこだけ濃く積み上がるからです。
+    </p>
+    <figure>
+<pre><span class="k">for</span> (<span class="k">let</span> k = <span class="n">0</span>; k &lt; <span class="n">3</span>; k++) {
+    <span class="k">const</span> f = <span class="k">new</span> BABYLON.StandardMaterial(<span class="s">"edamameFuzz"</span> + k, scene);
+    f.opacityTexture = <span class="k">this</span>.fuzzTex;      <span class="c">// 毛の点々（アルファ）</span>
+    f.alpha = cfg.fuzzAlpha * Math.pow(<span class="n">0.55</span>, k);  <span class="c">// 外側の殻ほど薄く</span>
+    f.backFaceCulling = <span class="k">false</span>;
+    f.disableDepthWrite = <span class="k">true</span>;             <span class="c">// 前後で悩まないようにする</span>
+    <span class="k">this</span>.fuzzMats.push(f);
+}</pre>
+      <figcaption>枝豆.js。殻ごとにアルファを 0.55 倍ずつ落としていく</figcaption>
+    </figure>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 殻を重ねる</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="ctrl">
+            <label for="fuzzShell">殻の枚数 <span class="v" id="fuzzShellV">2 枚</span></label>
+            <input type="range" id="fuzzShell" min="0" max="4" step="1" value="2">
+          </div>
+          <div class="ctrl">
+            <label for="fuzzLen">毛の長さ <span class="v" id="fuzzLenV">0.075</span></label>
+            <input type="range" id="fuzzLen" min="0.01" max="0.20" step="0.005" value="0.075">
+          </div>
+          <div class="ctrl">
+            <label for="fuzzA">毛の濃さ <span class="v" id="fuzzAV">0.30</span></label>
+            <input type="range" id="fuzzA" min="0.05" max="0.9" step="0.01" value="0.30">
+          </div>
+          <div class="readout" id="fuzzOut"></div>
+          <p class="hint">枚数を0にすると輪郭がつるつるになります。1枚でも入れると、縁だけ毛羽立って見えます。</p>
+        </div>
+        <div>
+          <canvas id="fuzzCanvas" width="520" height="380" aria-label="シェル法による産毛のデモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p>枝豆.js は最初、<code>opacityFresnel</code>（見る角度で透明度を変える機能）を使って
+      「輪郭付近だけ毛を見せる」つもりでした。ところが Babylon.js のこの機能は
+      <code>alpha += left*(1-F) + F*right</code> という<b>足し算</b>で、
+      しかも <code>leftColor</code> が<b>正面</b>側です。
+      白と黒を入れたところ、正面のアルファに 1.0 が足されて完全に不透明になり、
+      莢が<b>霜をかぶったように真っ白</b>になりました。
+      いまは素直なシェル法に戻してあります。
+      「便利そうな機能を、中身を確かめずに使うと壊れる」という記録です。</p>
+    </div>
+    <div class="note">
+      <b>毛の色を純白にしない。</b>
+      産毛は白っぽく見えますが、そのまま白で描くと霜に見えます。
+      枝豆.js は毛の色に莢の緑を3割混ぜています。
+      塩ゆでにしたときは <code>fuzzAlpha</code> を0.7倍にします。
+      濡れた毛は寝て束になるからです。
+    </div>
+${tryBox([
+    "殻の枚数を0にして、輪郭が完全に滑らかになることを確かめる。",
+    "枚数1・濃さ0.9と、枚数3・濃さ0.3を見比べる。どちらが毛らしいか。",
+    "毛の長さを0.20まで伸ばす。どのあたりから「カビ」に見えはじめるか。",
+    "実物の枝豆を明るいほうへかざして、輪郭に毛が立つのを見る。"
+  ])}
+  </div>
+</section>`
+});
+
+/* ---- 16 差分でつくる（新規） ---- */
+pages.push({
+  file: "ch16.html", no: "16", tag: "Variants", color: P.onion,
+  title: "「似ているのに別物」を作り分ける", crumb: "第16章",
+  html: `<section class="chapter" id="ch16" style="--ch:${P.onion}">
+  <div class="chapter-head">
+    <div class="chnum">16<small>Variants</small></div>
+    <div>
+      <h2>「似ているのに別物」を作り分ける</h2>
+      <p class="sub">differential design — 差分でつくる</p>
+    </div>
+  </div>
+  <div class="body">
+${recapBox([
+    "ブロッコリーとカリフラワーは、<b>ほぼ同じプログラム</b>です。違うのは数値だけ。",
+    "でも<b>色を白くしただけでは絶対に似ません</b>。変えるべきは色ではなく構造です。",
+    "実物を2つ並べて「何が違うか」を書き出す作業が、手続き的生成の設計そのものです。"
+  ])}
+    <p>
+      カリフラワー.js は、ブロッコリー.js の骨格（散房花序の再帰 → 花蕾ドーム → 粒）を
+      そのまま使っています。茎も、ざるも、物理も、GUIも共通です。
+      にもかかわらず、冒頭にはこう書いてあります。
+      <b>「同じ設定のまま色を白くしても絶対に似ません」</b>。
+    </p>
+    <p>
+      これは手続き的生成の一番おいしいところであり、一番むずかしいところでもあります。
+      数値を変えるだけで別の野菜になる。でも<b>どの数値を変えるかは、実物を見ないと分からない</b>。
+      カリフラワー.js が実際に変えたのは、次の4か所です。
+    </p>
+
+    <table>
+      <tr><th>変えたところ</th><th>ブロッコリー</th><th>カリフラワー</th><th>なぜ</th></tr>
+      <tr><td>房のあいだ</td><td>areaKeep 0.975<br>domeSwell 1.09</td><td>areaKeep 1.00<br>domeSwell 1.22</td>
+        <td>ブロッコリーは房と房が枝まで裂けている。カリフラワーは押し合って固まっていて、境目は浅い溝でしかない</td></tr>
+      <tr><td>粒のかたち</td><td>budAspect 1.28</td><td>budAspect 0.52</td>
+        <td>ブロッコリーは球状の蕾が1個ずつ外へ伸びる。カリフラワーは粒が法線方向へ潰れて繋がっている</td></tr>
+      <tr><td>谷の暗さ</td><td>強さ 1.02 / 下限 0.20</td><td>強さ 0.48 / 下限 0.56</td>
+        <td>白いので谷に落ちても光が回り込む。同じ遮蔽だと白い塊に墨を流したようになる</td></tr>
+      <tr><td>据わり方</td><td>切り口で立つ</td><td>葉柄の上に座る</td>
+        <td>葉が輪になって外へ張り出しているので、その上に載る。物理の凸包にも葉柄を入れる</td></tr>
+    </table>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 1項目ずつカリフラワーに近づける</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <label class="switch"><input type="checkbox" id="diffSwell">房を裂かず、大きく重ねる</label>
+          <label class="switch"><input type="checkbox" id="diffFuse">粒を潰して融合させる</label>
+          <label class="switch"><input type="checkbox" id="diffAo">谷の暗さをゆるめる</label>
+          <label class="switch"><input type="checkbox" id="diffCol">色を白くする</label>
+          <div class="readout" id="diffOut"></div>
+          <p class="hint">「色を白くする」だけを入れてみてください。白いブロッコリーにしかなりません。
+          （このミニチュアでは areaKeep と domeSwell を1本のつまみにまとめてあります）</p>
+        </div>
+        <div>
+          <canvas id="diffCanvas" width="480" height="440" aria-label="ブロッコリーからカリフラワーへの差分デモ"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>差分は3種類ある</h3>
+    <p>
+      23本のサンプルを見渡すと、「似ているものを作り分ける」やり方は3つに分けられます。
+    </p>
+    <ul>
+      <li><b>別の野菜にする</b> — ブロッコリー → カリフラワー。骨格を残して構造の数値を変える。
+        ファイルは別々にする（共通部分をライブラリにまとめてしまうと、実物と見比べて直す作業がやりにくくなる）。</li>
+      <li><b>品種を切り替える</b> — 同じファイルのなかの <code>PRESETS</code>。
+        サクランボ.js には佐藤錦・ナポレオン・紅秀峰の3つが入っています。</li>
+      <li><b>状態を切り替える</b> — 枝豆.js の「生／塩ゆで」。形は同じで、色と質感だけが変わる。</li>
+    </ul>
+
+    <h3>品種の差は、たいてい「色の分布」</h3>
+    <p>
+      サクランボの3品種は、形の数値もわずかに違いますが、効いているのはほとんど色です。
+      しかも「赤の濃さ」ではなく<b>赤がどこまで回り込んでいるか</b>です。
+    </p>
+    <figure>
+<pre>satonishiki: { blushFloor: <span class="n">0.30</span>, blushSpread: <span class="n">1.15</span> },  <span class="c">// 日陰に黄色が残る</span>
+napoleon:    { blushFloor: <span class="n">0.16</span>, blushSpread: <span class="n">1.45</span> },  <span class="c">// 色づきが浅く黄色が広い</span>
+benishuho:   { blushFloor: <span class="n">0.74</span>, blushSpread: <span class="n">1.70</span> }   <span class="c">// 全体が濃い赤。黄色はほぼ残らない</span></pre>
+      <figcaption>サクランボ.js。blushFloor は「日陰側にどれだけ赤が残るか」の下限</figcaption>
+    </figure>
+    <p>
+      サクランボ.js は、<b>日向側（u = 0.5）から赤が回り込む</b>という1つの仕組みで
+      3品種ぜんぶを作っています。「品種ごとにテクスチャを描く」のではなく、
+      <b>共通の仕組みに、品種ごとの数値を入れる</b>。これが手続き的生成の考え方です。
+    </p>
+
+    <h3>状態の差は、色・艶・付着物</h3>
+    <p>
+      枝豆.js の「塩ゆで」は、形をまったく変えません。変わるのはこれだけです。
+    </p>
+    <ul>
+      <li>色が冴える（くすみを取って彩度を上げる）</li>
+      <li>粗さを 0.74 倍にして濡れた艶を出す。ただし<b>鏡面にはしない</b>（緑のプラスチックになる）</li>
+      <li>白い粉（ブルーム）を 0.35 倍に落とす。茹でると落ちるので</li>
+      <li>産毛のアルファを 0.7 倍。濡れた毛は寝て束になる</li>
+      <li>塩の粒を乗せる</li>
+    </ul>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>色から手をつけると、必ず失敗します。</b>
+      「カリフラワーはブロッコリーの白いやつ」「ナポレオンは佐藤錦の色違い」——
+      こう考えているうちは似ません。実物を並べて、
+      まず<b>シルエットの違い</b>、次に<b>表面の粒立ちの違い</b>、
+      最後に色、の順で見てください。
+      このサイトのサンプルのコメントに残っている失敗は、
+      ほとんどが「構造の違いを色でごまかそうとした」記録です。</p>
+    </div>
+${tryBox([
+    "「色を白くする」だけを入れて、白いブロッコリーにしかならないことを確かめる。",
+    "4つ全部を入れてから、ひとつずつ戻す。いちばん効いているのはどれか。",
+    "自分でスーパーへ行き、ブロッコリーとカリフラワーの写真を撮って並べる。違いを5つ書き出す。",
+    "サクランボ.js の benishuho の blushFloor を 0.10 にして実行し、何品種に見えるか確かめる。"
+  ])}
+  </div>
+</section>`
+});
+
+/* ---- 図鑑 ---- */
+{
+  let sec = grabSection("zukan");
+  // 5本追加されたので、見出しの本数を直す
+  sec = sec
+    .replace('<div class="chnum">18<small>FILES</small></div>',
+             '<div class="chnum">23<small>FILES</small></div>')
+    .replace("18本それぞれに、そこでしか出てこない技術がある",
+             "23本それぞれに、そこでしか出てこない技術がある");
+  pages.push({
+    file: "zukan.html", no: "23", tag: "FILES", color: P.corn,
+    title: "どのファイルで、何が学べるか", crumb: "図鑑",
+    html: sec
+  });
+}
 
 /* ---- ソースビューア ---- */
 pages.push({
@@ -778,7 +1507,7 @@ pages.push({
     <div class="chnum" style="font-size:13px">src<small style="opacity:.7">SOURCE</small></div>
     <div>
       <h2>サンプルのソースを読む</h2>
-      <p class="sub">18本の .js を、そのまま表示します</p>
+      <p class="sub">23本の .js を、そのまま表示します</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
@@ -809,21 +1538,31 @@ pages.push({
     <div class="body" style="margin-top:34px">
       <h3>どこを読めばいいか</h3>
       <p>
-        18本とも、ファイルの先頭に「構成」というコメントがあります。
-        並びはどのファイルも同じなので、番号とこのサイトの章を対応させておきます。
+        どのファイルも、先頭に「構成」というコメントがあります。
+        並びはだいたい共通なので、番号とこのサイトの章を対応させておきます。
       </p>
       <table>
         <tr><th>ファイル内の番号</th><th>中身</th><th>対応する章</th></tr>
-        <tr><td>0. CONFIG</td><td>品種プリセット。太さや長さの数値</td><td><a href="ch01.html">01 手続き生成</a></td></tr>
+        <tr><td>0. CONFIG</td><td>品種プリセット。太さや長さの数値</td><td><a href="ch01.html">01 手続き生成</a> / <a href="ch16.html">16 差分</a></td></tr>
         <tr><td>1. Rng</td><td>シード付き擬似乱数</td><td><a href="ch02.html">02 乱数</a></td></tr>
         <tr><td>2. Noise</td><td>値ノイズ / fBm</td><td><a href="ch03.html">03 ノイズ</a></td></tr>
         <tr><td>3. Mesh utils</td><td>巻き順の判定・法線の溶接・掃引</td><td><a href="ch05.html">05 面と法線</a> / <a href="ch10.html">10 曲がり</a></td></tr>
-        <tr><td>4. Profile</td><td>断面のテーブル、稜やくぼみ</td><td><a href="ch04.html">04 かたち</a></td></tr>
-        <tr><td>5. TextureLab</td><td>アルベド・ORM・法線マップの生成</td><td><a href="ch06.html">06 テクスチャ</a></td></tr>
+        <tr><td>4. Profile / Fields</td><td>断面のテーブル、稜やくぼみ、膨らみの場</td><td><a href="ch04.html">04 かたち</a></td></tr>
+        <tr><td>5. TextureLab</td><td>アルベド・ORM・法線マップの生成</td><td><a href="ch06.html">06 テクスチャ</a> / <a href="ch15.html">15 毛</a></td></tr>
         <tr><td>6. 本体</td><td>その野菜そのものの組み立て</td><td><a href="ch09.html">09 部品</a></td></tr>
         <tr><td>7. Basket</td><td>ざる</td><td><a href="ch08.html">08 物理</a></td></tr>
         <tr><td>8. Scene / 物理</td><td>光・影・露出と Havok</td><td><a href="ch11.html">11 光</a> / <a href="ch08.html">08 物理</a></td></tr>
         <tr><td>9. GUI</td><td>右下のスライダー</td><td>—</td></tr>
+      </table>
+      <p>
+        ただし、あとから加わった<b>ブロッコリー・カリフラワー・ロマネスコ</b>の3本は、
+        この並びに収まりません。Profile も TextureLab も持たず、
+        代わりに <b>Corymb</b>（散房花序の再帰）や <b>Fractal</b>（黄金角の再帰配置）という層があります。
+      </p>
+      <table>
+        <tr><th>この3本だけにある番号</th><th>中身</th><th>対応する章</th></tr>
+        <tr><td>4. Fields</td><td>頭部の包絡面 / 瘤の場 / 遮蔽（AO）</td><td><a href="ch14.html">14 頂点カラー</a></td></tr>
+        <tr><td>5. Corymb / Fractal</td><td>房や小塔の再帰生成</td><td><a href="ch12.html">12 再帰</a> / <a href="ch13.html">13 螺旋</a></td></tr>
       </table>
       <div class="note">
         <b>コメントの【対策】を探してみてください。</b>
@@ -842,6 +1581,24 @@ pages.push({
   sec = sec.replace(
     "<table>",
     '<input type="search" class="termsearch" id="termFilter" placeholder="言葉で絞り込む（例：法線、シード、UV）">\n    <table id="termTable">'
+  );
+  // 第II部（12〜16章）で出てくる語を足す
+  sec = sec.replace(
+    "    </table>",
+    `      <tr><td>再帰</td><td>関数が自分自身を呼ぶこと。枝分かれした形はこれで作る（<a href="ch12.html">12章</a>）。</td></tr>
+      <tr><td>自己相似</td><td>どこを拡大しても同じ形が出てくる性質。ロマネスコがその代表。</td></tr>
+      <tr><td>葉序 / phyllotaxis</td><td>植物が葉や種をつける並び方。137.5°ずつ回すのが基本（<a href="ch13.html">13章</a>）。</td></tr>
+      <tr><td>黄金角</td><td>360° ÷ φ² ≒ 137.5°。もっとも重なりにくい角度。</td></tr>
+      <tr><td>斜列 / parastichy</td><td>葉序の並びに目で見える螺旋。本数がフィボナッチ数になる。</td></tr>
+      <tr><td>フィボナッチ格子</td><td>球や円板に点を等密度でばらまく方法。極でも混み合わない。</td></tr>
+      <tr><td>散房花序</td><td>枝の長さを変えて花を同じ高さに揃える咲き方。ブロッコリーの頭はこれ。</td></tr>
+      <tr><td>包絡面 / envelope</td><td>房の先端がそろって作る、頭全体のなめらかな面。</td></tr>
+      <tr><td>頂点カラー</td><td>頂点ひとつずつが持つ色。テクスチャを貼らずに塗る（<a href="ch14.html">14章</a>）。</td></tr>
+      <tr><td>遮蔽 / AO</td><td>すみっこに光が届かない暗さ。ここでは頂点の色へ焼き込んでいる。</td></tr>
+      <tr><td>焼き込む / bake</td><td>実行のたびに計算せず、あらかじめ結果を色や画像へ書き込んでおくこと。</td></tr>
+      <tr><td>シェル法 / shell fur</td><td>少し大きくしたコピーを重ねて毛を出す手法（<a href="ch15.html">15章</a>）。</td></tr>
+      <tr><td>被覆率</td><td>親の面が子でどれだけ埋まっているかの比。1を切ると下地が見える。</td></tr>
+    </table>`
   );
   pages.push({
     file: "terms.html", no: "用語", tag: "GLOSSARY", color: P.onion,
@@ -865,6 +1622,11 @@ const NAV_ITEMS = [
   ["ch09.html", "09 部品"],
   ["ch10.html", "10 曲がり"],
   ["ch11.html", "11 光"],
+  ["ch12.html", "12 再帰"],
+  ["ch13.html", "13 螺旋"],
+  ["ch14.html", "14 頂点色"],
+  ["ch15.html", "15 毛"],
+  ["ch16.html", "16 差分"],
   ["zukan.html", "図鑑"],
   ["view.html", "ソース"],
   ["terms.html", "用語"]
@@ -966,7 +1728,7 @@ ${pagerHTML(prev, next)}
 
 /* ---------- トップページ ---------- */
 const HUB_BLURB = {
-  "start.html": "インストールなし。ブラウザだけで18本を動かす手順。まずここから。",
+  "start.html": "インストールなし。ブラウザだけで23本を動かす手順。まずここから。",
   "ch01.html": "モデルファイルを読み込まずに、実行した瞬間に座標を計算で作る。その利点と代償。",
   "ch02.html": "Math.random() を使わない理由。「種」を渡すと毎回同じ結果になる乱数を自分で書く。",
   "ch03.html": "となり合う値がなめらかにつながる乱数。重ねると自然物の模様になる（fBm）。",
@@ -978,20 +1740,28 @@ const HUB_BLURB = {
   "ch09.html": "粒・ひだ・房。部品を1個作って何百個並べ、合体させる。重なりはほぐす。",
   "ch10.html": "バナナやきゅうりは曲がっている。先に軸を決め、断面を軸に垂直に置いていく。",
   "ch11.html": "同じ野菜でも光で別物になる。IBL・影・露出・トーンマッピング。",
-  "zukan.html": "18本それぞれの「そこでしか出てこない技術」の一覧。カードからソースへ飛べます。",
-  "view.html": "18本の .js をその場で表示。全選択してコピーすれば、そのまま Playground に貼れます。",
+  "ch12.html": "ブロッコリーもロマネスコも、同じ手順を小さくしてくり返しただけ。むずかしいのは止め方。",
+  "ch13.html": "137.5°ずつ回して置くだけで、8本・13本・21本の螺旋が勝手に現れる。",
+  "ch14.html": "枝分かれした形にUVは張れない。色も影も、頂点ひとつずつに焼き込む。",
+  "ch15.html": "産毛は法線マップでは出ない。少し大きい殻を重ねて、輪郭に毛を立てる。",
+  "ch16.html": "ブロッコリーとカリフラワーは同じプログラム。色を白くしただけでは似ない。",
+  "zukan.html": "23本それぞれの「そこでしか出てこない技術」の一覧。カードからソースへ飛べます。",
+  "view.html": "23本の .js をその場で表示。全選択してコピーすれば、そのまま Playground に貼れます。",
   "terms.html": "法線、UV、巻き順、ORM……最初の1周で引っかかる言葉だけ。検索できます。"
 };
 
-const hubCards = pages
-  .map(
-    (p) => `      <a class="hubcard" href="${p.file}" style="--ch:${p.color}">
+const card = (p) => `      <a class="hubcard" href="${p.file}" style="--ch:${p.color}">
         <span class="no">${p.no}<span style="opacity:.55;margin-left:8px">${p.tag}</span></span>
         <h3>${p.title}</h3>
         <p>${p.blurb || HUB_BLURB[p.file] || ""}</p>
-      </a>`
-  )
-  .join("\n");
+      </a>`;
+const cardsFor = (files) =>
+  pages.filter((p) => files.indexOf(p.file) >= 0).map(card).join("\n");
+
+const PART1 = ["start.html", "ch01.html", "ch02.html", "ch03.html", "ch04.html",
+  "ch05.html", "ch06.html", "ch07.html", "ch08.html", "ch09.html", "ch10.html", "ch11.html"];
+const PART2 = ["ch12.html", "ch13.html", "ch14.html", "ch15.html", "ch16.html"];
+const REFS = ["zukan.html", "view.html", "terms.html"];
 
 const indexBody = `<section class="hero">
   <div class="hero-grid">
@@ -999,7 +1769,7 @@ const indexBody = `<section class="hero">
       <p class="eyebrow">Babylon.js / procedural vegetables</p>
       <h1>3Dの野菜は、<br><span class="accent">数式から育つ</span>。</h1>
       <p class="lede">
-        このサイトで扱う18本のプログラムは、3Dモデルも写真も1枚も読み込みません。
+        このサイトで扱う23本のプログラムは、3Dモデルも写真も1枚も読み込みません。
         点の座標を計算で並べ、模様をその場で描き、光り方を数値で決める。
         絵を描く技術ではなく、形を組み立てる技術です。中学・高校の数学で追えるところから順に見ていきます。
       </p>
@@ -1039,6 +1809,7 @@ const indexBody = `<section class="hero">
       <li><span class="rn">A</span><span class="rt"><b>とにかく動かしたい人</b><span><a href="start.html">00 まず動かしてみる</a> → 好きな章の実験だけ触る</span></span></li>
       <li><span class="rn">B</span><span class="rt"><b>順番に理解したい人</b><span>01 → 02 → 03 …… と上から。04章（かたち）と05章（面と法線）がこの教材の背骨です。</span></span></li>
       <li><span class="rn">C</span><span class="rt"><b>コードを読みたい人</b><span><a href="zukan.html">図鑑</a>でファイルを選ぶ → 対応する章に戻る</span></span></li>
+      <li><span class="rn">D</span><span class="rt"><b>もう一周した人</b><span>第II部（<a href="ch12.html">12</a>〜<a href="ch16.html">16</a>）へ。ブロッコリー・ロマネスコの3本は、第I部のやり方では作れません</span></span></li>
     </ul>
     <div class="note">
       <b>必要な数学。</b>
@@ -1050,15 +1821,54 @@ const indexBody = `<section class="hero">
 
 <section class="chapter" id="chapters" style="--ch:var(--p-tomato)">
   <div class="chapter-head">
-    <div class="chnum" style="font-size:15px">目次<small style="opacity:.7">INDEX</small></div>
+    <div class="chnum" style="font-size:15px">第I部<small style="opacity:.7">PART I</small></div>
     <div>
-      <h2>ぜんぶで11章</h2>
+      <h2>1個の野菜をつくる（00〜11）</h2>
       <p class="sub">1本の .js ファイルを、上から順にほどいていく構成</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
     <div class="hub">
-${hubCards}
+${cardsFor(PART1)}
+    </div>
+  </div>
+</section>
+
+<section class="chapter" id="chapters2" style="--ch:var(--p-leaf)">
+  <div class="chapter-head">
+    <div class="chnum" style="font-size:15px">第II部<small style="opacity:.7">PART II</small></div>
+    <div>
+      <h2>構造そのものをつくる（12〜16）</h2>
+      <p class="sub">回転体でも掃引でも作れない野菜が持ち込んだ、5つの技術</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      第I部の11章は、ファイルの構成（CONFIG → Rng → Noise → Profile → TextureLab → 本体 …）に
+      そのまま対応していました。ところが、あとから加わった<b>ブロッコリー・カリフラワー・ロマネスコ</b>は、
+      その並びに収まりません。<b>横顔（Profile）が無く、テクスチャも1枚も使わない</b>からです。
+      形は再帰で生え、色は頂点そのものが持っています。
+      第II部は、層ではなく「作り方の種類」で立てた5章です。
+    </p>
+  </div>
+  <div class="body" style="max-width:none">
+    <div class="hub">
+${cardsFor(PART2)}
+    </div>
+  </div>
+</section>
+
+<section class="chapter" id="refs" style="--ch:var(--p-corn)">
+  <div class="chapter-head">
+    <div class="chnum" style="font-size:15px">資料<small style="opacity:.7">REFERENCE</small></div>
+    <div>
+      <h2>23本を引く</h2>
+      <p class="sub">ファイルから逆に読みたいとき</p>
+    </div>
+  </div>
+  <div class="body" style="max-width:none">
+    <div class="hub">
+${cardsFor(REFS)}
     </div>
   </div>
 </section>
@@ -1070,7 +1880,7 @@ fs.writeFileSync(
   shell({
     fullTitle: "やさいのつくりかた — コードで野菜を育てる技術ノート",
     cur: "index.html",
-    desc: "Babylon.js で野菜を手続き的に生成する18本のサンプルを、中学生・高校生向けに解説する学習ポータル",
+    desc: "Babylon.js で野菜を手続き的に生成する23本のサンプルを、中学生・高校生向けに解説する学習ポータル",
     body: indexBody
   }),
   "utf8"

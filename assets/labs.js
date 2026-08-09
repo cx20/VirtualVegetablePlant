@@ -1320,7 +1320,12 @@ var FILES = [
         ["メロン", "メロン.js", "#B3A667", "網目に視差マッピング。法線マップのアルファに高さを入れる小技つき。"],
         ["リンゴ", "リンゴ.js", "#C0342B", "5裂の断面と2つのくぼみ。クリアコートが掛け算で効く落とし穴の記録あり。"],
         ["ブドウ", "ブドウ.js", "#5B2A6E", "粒を数十個配置して重なりを解消する反復計算。房の作り方。"],
-        ["バナナ", "バナナ.js", "#E3C13F", "断面が5稜の多角形。回転体ではなく、曲がった軸に沿った掃引の例。"]
+        ["バナナ", "バナナ.js", "#E3C13F", "断面が5稜の多角形。回転体ではなく、曲がった軸に沿った掃引の例。"],
+        ["サクランボ", "サクランボ.js", "#CC1C16", "球ではなくハート形。黄色い地色に赤が回り込み、境目に斑点が飛ぶ。色の作り方の教科書。"],
+        ["枝豆", "枝豆.js", "#588A2D", "豆の膨らみを「なめらかな max」で合成する。産毛はシェル（薄い殻）を重ねて生やす。"],
+        ["ブロッコリー", "ブロッコリー.js", "#54743C", "テクスチャを1枚も使わない。房を再帰で生やし、粒の谷の暗さを頂点カラーに焼き込む。"],
+        ["カリフラワー", "カリフラワー.js", "#EDE9D7", "ブロッコリーと同じ骨格。数値を4か所変えるだけで別の野菜になる、差分設計の見本。"],
+        ["ロマネスコ", "ロマネスコ.js", "#A2B340", "黄金角137.5°と等比数列だけで自己相似の螺旋が生まれる。打ち切りの設計がすべて。"]
 ];
 function viewHref(file) { return "view.html?f=" + encodeURIComponent(file); }
 
@@ -1929,6 +1934,412 @@ function lazyLoop(cv, draw) {
     slider("#scExpo", "#scExpoV", function (n) { return n.toFixed(2); }, function (n) { expo = n; });
     var swTone = $("#scTone");
     if (swTone) swTone.addEventListener("change", function () { tm = swTone.checked; });
+})();
+
+/* ======================================================================
+   12 — 再帰の打ち切り（ロマネスコ）
+   円錐の側面図を再帰で描く。打ち切りを「階層数」でやるか
+   「粒の大きさ」でやるかで、末端の揃い方がまるで変わる。
+   ====================================================================== */
+(function () {
+    var cv = $("#fracCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var K = 0.52, MINC = 1.5, byDepth = false;
+    var LAM = 0.62, TILT = 0.58, SINK = 0.30, ASP = 1.95;
+    var FILL = ["#3f5a16", "#4e6c1c", "#5f8022", "#729429", "#86a832", "#9dbd3e"];
+    var HEAD_R = 42;                              // mm。頭の底面半径
+    var st, mark;
+
+    function grow(ax, ay, ux, uy, rho, H, depth) {
+        if (st.total > 24000) { st.over = true; return; }
+        var px = -uy, py = ux;                    // 軸に垂直な向き
+        var bx = ax + ux * H, by = ay + uy * H;
+        ctx.beginPath();
+        ctx.moveTo(ax, ay);
+        ctx.lineTo(bx + px * rho, by + py * rho);
+        ctx.lineTo(bx - px * rho, by - py * rho);
+        ctx.closePath();
+        ctx.fillStyle = FILL[Math.min(depth, FILL.length - 1)];
+        ctx.fill();
+        st.total++;
+
+        // ここが本題。打ち切りの条件だけが違う
+        var leaf = byDepth ? (depth >= 3) : (K * rho < MINC);
+        if (leaf) { mark_leaf(rho); return; }
+        // 子を「頂点からの距離が等比数列」で置く。両側の母線に置けば側面図になる
+        var placed = 0;
+        for (var i = 0; i < 40; i++) {
+            var f = 0.985 * Math.pow(LAM, i);
+            var cr = K * rho * f;
+            if (cr < MINC) break;
+            placed++;
+            for (var s = -1; s <= 1; s += 2) {
+                var qx = ax + ux * (H * f) + px * (rho * f) * s;
+                var qy = ay + uy * (H * f) + py * (rho * f) * s;
+                // 母線の外向き法線
+                var nx = (px * H - ux * rho) * s, ny = (py * H - uy * rho) * s;
+                var nl = Math.sqrt(nx * nx + ny * ny) || 1;
+                nx /= nl; ny /= nl;
+                // 親の軸へ寄せる。寄せないと小塔が真横へ張り出してヒトデになる
+                var cxu = mix(nx, ux, TILT), cyu = mix(ny, uy, TILT);
+                var cl = Math.sqrt(cxu * cxu + cyu * cyu) || 1;
+                cxu /= cl; cyu /= cl;
+                grow(qx - cxu * cr * SINK, qy - cyu * cr * SINK,
+                     cxu, cyu, cr, cr * ASP, depth + 1);
+            }
+        }
+        // 1個も子が置けなかったものも末端として数える
+        if (!placed) mark_leaf(rho);
+    }
+
+    function mark_leaf(rho) {
+        st.leaves++;
+        var d = rho * 2;
+        if (d < st.min) st.min = d;
+        if (d > st.max) st.max = d;
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, c.W, c.H);
+        st = { total: 0, leaves: 0, min: 1e9, max: 0, over: false };
+        var H = HEAD_R * 2.35;
+        var scale = Math.min((c.H - 36) / H, (c.W - 40) / (HEAD_R * 2.6));
+        ctx.save();
+        ctx.translate(c.W / 2, 18);
+        ctx.scale(scale, scale);
+        grow(0, 0, 0, 1, HEAD_R, H, 0);
+        ctx.restore();
+
+        var el = $("#fracOut");
+        if (el) {
+            var ok = st.leaves > 0 && st.max > 0;
+            var ratio = ok ? st.max / st.min : 1;
+            el.innerHTML =
+                "円錐の総数：<b>" + st.total + (st.over ? "+（描画を打ち切り）" : "") + " 個</b><br>" +
+                "末端の粒：<b>" + st.leaves + " 個</b><br>" +
+                "末端の大きさ：<b>" + (ok
+                    ? Math.round(st.min * 10) / 10 + " 〜 " + Math.round(st.max * 10) / 10 + " mm"
+                    : "—") + "</b><br>" +
+                "いちばん大きい粒 ÷ いちばん小さい粒：<b>" + ratio.toFixed(1) + " 倍</b>" +
+                (ratio > 2.2
+                    ? '<br><span style="color:#b4321c">末端の大きさが揃っていません</span>'
+                    : "");
+        }
+    }
+
+    mark = lazyLoop(cv, draw);
+    slider("#fracK", "#fracKV", function (n) { return n.toFixed(2); },
+        function (n) { K = n; mark(); });
+    slider("#fracMin", "#fracMinV", function (n) { return n.toFixed(1) + " mm"; },
+        function (n) { MINC = n; mark(); });
+    var sw = $("#fracDepth");
+    if (sw) sw.addEventListener("change", function () { byDepth = sw.checked; mark(); });
+})();
+
+/* ======================================================================
+   13 — 葉序（黄金角）
+   点を i·α ずつ回して置くだけ。斜列（見える螺旋）の本数は
+   α をフィボナッチ数倍したときの「1周からのずれ」で決まる。
+   ====================================================================== */
+(function () {
+    var cv = $("#phylCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var ang = 137.5, N = 140, link = true;
+    var mark;
+    var FIB = { 1: 1, 2: 1, 3: 1, 5: 1, 8: 1, 13: 1, 21: 1, 34: 1, 55: 1, 89: 1 };
+
+    // 目に見える斜列 = 「i 番目といちばん近くに並ぶのは i+m 番目か」を実測する。
+    // 黄金角のときだけ、この m がフィボナッチ数になる。
+    function parastichy(pts, n) {
+        var i0 = Math.round(n * 0.55);
+        var lim = Math.min(89, n - i0 - 1), cand = [], m;
+        for (m = 1; m <= lim; m++) {
+            var dx = pts[i0][0] - pts[i0 + m][0], dy = pts[i0][1] - pts[i0 + m][1];
+            cand.push([m, dx * dx + dy * dy]);
+        }
+        cand.sort(function (a, b) { return a[1] - b[1]; });
+        return cand.slice(0, 3).map(function (c) { return c[0]; })
+            .sort(function (a, b) { return a - b; });
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, c.W, c.H);
+        var cx = c.W / 2, cy = c.H / 2;
+        var R = Math.min(c.W, c.H) / 2 - 16;
+        var pts = [], i, t, r;
+        for (i = 0; i < N; i++) {
+            t = i * ang * Math.PI / 180;
+            r = R * Math.sqrt((i + 0.5) / N);
+            pts.push([cx + r * Math.cos(t), cy + r * Math.sin(t)]);
+        }
+        var fam = parastichy(pts, N);
+        if (link) {
+            var COL = ["#DA130E", "#1667c8", "#C98A05"];
+            for (var k = 0; k < fam.length; k++) {
+                ctx.strokeStyle = COL[k]; ctx.lineWidth = 1.1; ctx.globalAlpha = 0.55;
+                ctx.beginPath();
+                for (i = 0; i + fam[k] < N; i++) {
+                    ctx.moveTo(pts[i][0], pts[i][1]);
+                    ctx.lineTo(pts[i + fam[k]][0], pts[i + fam[k]][1]);
+                }
+                ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+        for (i = 0; i < N; i++) {
+            var s = 2.4 + 4.2 * Math.sqrt((i + 0.5) / N);
+            ctx.fillStyle = "#2B6F1C";
+            ctx.beginPath(); ctx.arc(pts[i][0], pts[i][1], s, 0, TAU); ctx.fill();
+        }
+        var el = $("#phylOut");
+        if (el) {
+            var allFib = fam.length === 3 && fam.every(function (m) { return FIB[m]; });
+            el.innerHTML = "見える螺旋（斜列）の本数：<b>" + fam.join(" ／ ") + "</b><br>" +
+                (allFib ? "3つともフィボナッチ数です"
+                    : '<span style="color:#b4321c">フィボナッチ数から外れました</span>');
+        }
+    }
+
+    mark = lazyLoop(cv, draw);
+    slider("#phylAng", "#phylAngV", function (n) { return n.toFixed(1) + "°"; },
+        function (n) { ang = n; mark(); });
+    slider("#phylN", "#phylNV", function (n) { return (n | 0) + " 個"; },
+        function (n) { N = Math.max(20, n | 0); mark(); });
+    var sw = $("#phylLink");
+    if (sw) sw.addEventListener("change", function () { link = sw.checked; mark(); });
+    $$("#phylPre .chip").forEach(function (b) {
+        b.addEventListener("click", function () {
+            var el = $("#phylAng");
+            el.value = b.dataset.a;
+            el.dispatchEvent(new Event("input"));
+            $$("#phylPre .chip").forEach(function (o) {
+                o.setAttribute("aria-pressed", o === b ? "true" : "false");
+            });
+        });
+    });
+})();
+
+/* ----------------------------------------------------------------------
+   花蕾（房＋粒）のミニチュア。14章と16章で共有する。
+   ブロッコリー.js の sphereAO と同じ式を使っている。
+   ---------------------------------------------------------------------- */
+function drawCurd(c, o) {
+    var ctx = c.ctx;
+    ctx.clearRect(0, 0, c.W, c.H);
+    var R = Math.min(c.W, c.H) * 0.42;
+    var cx = c.W / 2, cy = c.H / 2 + R * 0.06;
+    var rng = new Rng(4711);
+
+    // --- 房を半球のうえに置く（フィボナッチ格子）---
+    var M = 15, domes = [], i, k;
+    var w = Math.sqrt(2 / M);                       // 房ひとつぶんの角半径
+    for (i = 0; i < M; i++) {
+        var z = 1 - (i + 0.5) / M * 0.92;
+        var rr = Math.sqrt(Math.max(0, 1 - z * z));
+        var th = i * 2.3999632 + 0.7;
+        var d = [rr * Math.cos(th), rr * Math.sin(th) * 0.86 + z * 0.30, z * 0.94];
+        var dl = Math.sqrt(d[0] * d[0] + d[1] * d[1] + d[2] * d[2]);
+        d = [d[0] / dl, d[1] / dl, d[2] / dl];
+        var Rd = w * o.swell * (0.86 + 0.28 * rng.next());
+        domes.push({
+            d: d, R: Rd,
+            c: [d[0] * (1 - Rd * 0.55), d[1] * (1 - Rd * 0.55), d[2] * (1 - Rd * 0.55)]
+        });
+    }
+
+    // --- 粒をならべる ---
+    var buds = [];
+    for (k = 0; k < domes.length; k++) {
+        var dm = domes[k];
+        var B = Math.max(18, Math.round(120 * dm.R * dm.R / (w * w)));
+        var spin = rng.range(0, TAU);
+        for (i = 0; i < B; i++) {
+            var lz = 1 - 2 * (i + 0.5) / B;
+            var lr = Math.sqrt(Math.max(0, 1 - lz * lz));
+            var t2 = i * 2.3999632 + spin;
+            var u = [lr * Math.cos(t2), lr * Math.sin(t2), lz];
+            // 房の軸（= 頭の法線）から見て裏側は刈る
+            if (u[0] * dm.d[0] + u[1] * dm.d[1] + u[2] * dm.d[2] < -0.30) continue;
+            var p = [dm.c[0] + u[0] * dm.R, dm.c[1] + u[1] * dm.R, dm.c[2] + u[2] * dm.R];
+            // 隣の房にめり込む粒は捨てる
+            var inside = false;
+            for (var j = 0; j < domes.length && !inside; j++) {
+                if (j === k) continue;
+                var q = domes[j];
+                var ddx = p[0] - q.c[0], ddy = p[1] - q.c[1], ddz = p[2] - q.c[2];
+                if (ddx * ddx + ddy * ddy + ddz * ddz < q.R * q.R * 0.985) inside = true;
+            }
+            if (inside) continue;
+            // 遮蔽。隣の房が空をどれだけ覆っているかを立体角で足す
+            var occ = 0;
+            for (j = 0; j < domes.length; j++) {
+                if (j === k) continue;
+                var e = domes[j];
+                var vx = e.c[0] - p[0], vy = e.c[1] - p[1], vz = e.c[2] - p[2];
+                var dist = Math.sqrt(vx * vx + vy * vy + vz * vz);
+                if (dist < 1e-4) continue;
+                var nd = (vx * u[0] + vy * u[1] + vz * u[2]) / dist;
+                if (nd <= 0) continue;
+                var q2 = e.R / Math.max(dist, e.R * 1.0001);
+                occ += 0.5 * (1 - Math.sqrt(Math.max(0, 1 - q2 * q2))) * nd;
+            }
+            buds.push({ p: p, n: u, ao: clamp(1 - occ * o.ao, o.floor, 1) });
+        }
+    }
+    buds.sort(function (a, b) { return a.p[2] - b.p[2]; });
+
+    // --- 描く ---
+    var TOP = o.top, SIDE = o.side, DEEP = o.deep;
+    var LX = -0.42, LY = -0.72, LZ = 0.55;
+    var rr2 = R * w * 0.30 * (0.72 + 0.5 * o.asp);
+    for (i = 0; i < buds.length; i++) {
+        var b = buds[i], n = b.n;
+        var lam = clamp(n[0] * LX + n[1] * LY + n[2] * LZ, 0, 1);
+        var e2 = smooth(0.05, 0.85, 0.30 + 0.70 * lam);
+        var col = [mix(SIDE[0], TOP[0], e2), mix(SIDE[1], TOP[1], e2), mix(SIDE[2], TOP[2], e2)];
+        // 遮蔽は黒で掛けるのではなく、谷の色へ寄せる
+        col = [mix(DEEP[0], col[0], b.ao), mix(DEEP[1], col[1], b.ao), mix(DEEP[2], col[2], b.ao)];
+        var sx = cx + b.p[0] * R, sy = cy - b.p[1] * R;
+        var rad = rr2 * (0.86 + 0.30 * (b.p[2] + 1) / 2);
+        // 潰れた粒（asp が小さい）ほど内部の陰影が浅い＝融合して見える
+        var g = ctx.createRadialGradient(sx - rad * 0.34, sy - rad * 0.40, rad * 0.1, sx, sy, rad);
+        var hi = 1 + 0.30 * o.asp;
+        g.addColorStop(0, "rgb(" + (col[0] * 255 * hi | 0) + "," + (col[1] * 255 * hi | 0) + "," + (col[2] * 255 * hi | 0) + ")");
+        g.addColorStop(1, "rgb(" + (col[0] * 255 * (1 - 0.30 * o.asp) | 0) + "," +
+            (col[1] * 255 * (1 - 0.30 * o.asp) | 0) + "," + (col[2] * 255 * (1 - 0.30 * o.asp) | 0) + ")");
+        ctx.fillStyle = g;
+        ctx.beginPath(); ctx.arc(sx, sy, rad, 0, TAU); ctx.fill();
+    }
+    return buds.length;
+}
+
+var CURD_GREEN = { top: [0.330, 0.455, 0.235], side: [0.170, 0.268, 0.128], deep: [0.058, 0.098, 0.050] };
+var CURD_WHITE = { top: [0.930, 0.912, 0.845], side: [0.822, 0.798, 0.718], deep: [0.560, 0.536, 0.462] };
+
+/* ======================================================================
+   14 — 頂点カラーと焼き込みAO（ブロッコリー）
+   ====================================================================== */
+(function () {
+    var cv = $("#curdCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var ao = 1.02, floor = 0.20, white = false;
+    var mark;
+
+    function draw() {
+        var pal = white ? CURD_WHITE : CURD_GREEN;
+        var n = drawCurd(c, {
+            swell: 1.0, asp: 1.28, ao: ao, floor: floor,
+            top: pal.top, side: pal.side, deep: pal.deep
+        });
+        var el = $("#curdOut");
+        if (el) {
+            el.innerHTML = "粒の数：<b>" + n + " 個</b>（本物は2〜4万個）<br>" +
+                (ao < 0.15 ? "<b>谷が明るいままです。粒はあるのに平板に見えます</b>"
+                    : (white && floor < 0.35 ? "<b>白い野菜に墨を流したようになっています</b>"
+                        : "谷が締まって、粒が粒に見えています"));
+        }
+    }
+    mark = lazyLoop(cv, draw);
+    slider("#curdAO", "#curdAOV", function (n) { return n.toFixed(2); },
+        function (n) { ao = n; mark(); });
+    slider("#curdFloor", "#curdFloorV", function (n) { return n.toFixed(2); },
+        function (n) { floor = n; mark(); });
+    var sw = $("#curdWhite");
+    if (sw) sw.addEventListener("change", function () { white = sw.checked; mark(); });
+})();
+
+/* ======================================================================
+   15 — シェル法の産毛（枝豆）
+   毛は殻を重ねているだけ。輪郭が濃くなるのは、そこだけ
+   同じ毛を斜めから何枚も透かして見ることになるから。
+   ====================================================================== */
+(function () {
+    var cv = $("#fuzzCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var shells = 2, len = 0.075, alpha = 0.30;
+    var mark, pts = [];
+    var rng = new Rng(90210);
+    for (var i = 0; i < 2600; i++) {
+        var z = 1 - 2 * (i + 0.5) / 2600;
+        var r = Math.sqrt(Math.max(0, 1 - z * z));
+        var t = i * 2.3999632;
+        pts.push([r * Math.cos(t), z, r * Math.sin(t), rng.range(0.7, 1.3)]);
+    }
+
+    function draw() {
+        ctx.clearRect(0, 0, c.W, c.H);
+        var R = Math.min(c.W / 2.6, c.H / 1.7);
+        var cx = c.W / 2, cy = c.H / 2;
+        var SX = R * 1.15, SY = R * 0.40, SZ = R * 0.30;   // 莢のかたち（扁平）
+
+        // 莢そのもの
+        ctx.fillStyle = "#4a7a24";
+        ctx.beginPath(); ctx.ellipse(cx, cy, SX, SY, 0, 0, TAU); ctx.fill();
+
+        var k, j, drawn = 0;
+        for (k = 0; k < shells; k++) {
+            var g = 1 + len * (k + 1);
+            var a = alpha * Math.pow(0.55, k);
+            ctx.fillStyle = "rgba(214,219,186," + a.toFixed(3) + ")";
+            for (j = 0; j < pts.length; j++) {
+                var p = pts[j];
+                if (p[2] < -0.15) continue;                 // 裏側は描かない
+                var x = cx + p[0] * SX * g;
+                var y = cy - p[1] * SY * g;
+                ctx.beginPath(); ctx.arc(x, y, 0.85 * p[3], 0, TAU); ctx.fill();
+                drawn++;
+            }
+        }
+        var el = $("#fuzzOut");
+        if (el) {
+            el.innerHTML = "描いた毛：<b>" + drawn + " 個</b>（殻 " + shells + " 枚）<br>" +
+                (shells === 0 ? "<b>輪郭がつるつるです。産毛は法線マップでは出ません</b>"
+                    : "輪郭のあたりだけ毛が濃く見えています");
+        }
+    }
+    mark = lazyLoop(cv, draw);
+    slider("#fuzzShell", "#fuzzShellV", function (n) { return (n | 0) + " 枚"; },
+        function (n) { shells = n | 0; mark(); });
+    slider("#fuzzLen", "#fuzzLenV", function (n) { return n.toFixed(3); },
+        function (n) { len = n; mark(); });
+    slider("#fuzzA", "#fuzzAV", function (n) { return n.toFixed(2); },
+        function (n) { alpha = n; mark(); });
+})();
+
+/* ======================================================================
+   16 — 差分でつくる（ブロッコリー → カリフラワー）
+   ====================================================================== */
+(function () {
+    var cv = $("#diffCanvas"); if (!cv) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var f = { swell: false, fuse: false, ao: false, col: false };
+    var mark;
+
+    function draw() {
+        var pal = f.col ? CURD_WHITE : CURD_GREEN;
+        drawCurd(c, {
+            swell: f.swell ? 1.22 : 0.94,
+            asp: f.fuse ? 0.52 : 1.28,
+            ao: f.ao ? 0.48 : 1.02,
+            floor: f.ao ? 0.56 : 0.20,
+            top: pal.top, side: pal.side, deep: pal.deep
+        });
+        var n = (f.swell ? 1 : 0) + (f.fuse ? 1 : 0) + (f.ao ? 1 : 0) + (f.col ? 1 : 0);
+        var el = $("#diffOut");
+        if (el) {
+            el.innerHTML = "変えた項目：<b>" + n + " / 4</b><br>" +
+                (n === 0 ? "ブロッコリー"
+                    : n === 4 ? "カリフラワー"
+                        : (f.col ? "<b style='color:#b4321c'>白いブロッコリー（色だけでは別物になりません）</b>"
+                            : "まだブロッコリー寄りです"));
+        }
+    }
+    mark = lazyLoop(cv, draw);
+    ["Swell", "Fuse", "Ao", "Col"].forEach(function (key) {
+        var el = $("#diff" + key); if (!el) return;
+        var k = key.toLowerCase();
+        el.addEventListener("change", function () { f[k] = el.checked; mark(); });
+    });
 })();
 
 /* ======================================================================
