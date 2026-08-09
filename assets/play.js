@@ -32,7 +32,7 @@ var srcEl = $("#playSrc"), rawEl = $("#playRaw");
 if (titleEl) titleEl.textContent = file;
 document.title = file + " を動かす — やさいのつくりかた";
 if (srcEl) srcEl.href = "view.html?f=" + encodeURIComponent(file);
-if (rawEl) rawEl.href = encodeURIComponent(file);
+if (rawEl) rawEl.href = "samples/" + encodeURIComponent(file);
 
 function say(msg, bad) {
     if (!stateEl) return;
@@ -68,7 +68,7 @@ function loadCode(name, done, fail) {
     }
     var settled = false;
     try {
-        fetch(encodeURIComponent(name)).then(function (r) {
+        fetch("samples/" + encodeURIComponent(name)).then(function (r) {
             if (!r.ok) throw new Error(r.status);
             return r.text();
         }).then(function (t) { settled = true; done(t); })
