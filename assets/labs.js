@@ -191,9 +191,9 @@ function srgbToLin(c) { return c * c; }
 function tone(x) { return Math.pow(clamp(x / (1 + x) * 1.45, 0, 1), 0.4545); }
 
 // exCap＝この面が拾えるハイライトの「細さの上限」。renderMesh が面ごとに渡す。
-function shadePixel(nx, ny, nz, px, py, pz, alb, m, L, exCap) {
-    // 視線
-    var vx = -px, vy = -py, vz = -CAM.dist - pz;
+function shadePixel(nx, ny, nz, px, py, pz, alb, m, L, exCap, camd) {
+    // 視線。camd はカメラまでの距離（ホイールで寄ると変わる）
+    var vx = -px, vy = -py, vz = -(camd || CAM.dist) - pz;
     var vl = Math.hypot(vx, vy, vz) || 1; vx /= vl; vy /= vl; vz /= vl;
     var ndl = nx * L[0] + ny * L[1] + nz * L[2]; if (ndl < 0) ndl = 0;
     var ndv = nx * vx + ny * vy + nz * vz; if (ndv < 0) ndv = 0;
@@ -254,6 +254,8 @@ function renderMesh(ctx, W, H, mesh, o) {
     var Ll = Math.hypot(L[0], L[1], L[2]); L = [L[0] / Ll, L[1] / Ll, L[2] / Ll];
 
     var S = Math.min(W, H), cx = W / 2, cy = H / 2 + (o.yShift || 0);
+    // カメラまでの距離。指定が無ければ従来どおり CAM.dist
+    var camd = o.dist || CAM.dist;
     var cs = Math.cos(rot), sn = Math.sin(rot);
     // 見下ろし角。0なら真横から。Y軸で回したあと、X軸まわりに倒す
     var elev = o.elev || 0, ce = Math.cos(elev), se = Math.sin(elev);
@@ -270,7 +272,7 @@ function renderMesh(ctx, W, H, mesh, o) {
         var a = Nn[k * 3], b = Nn[k * 3 + 1], c = Nn[k * 3 + 2];
         var qn = -a * sn + c * cs;
         vn[k * 3] = a * cs + c * sn; vn[k * 3 + 1] = b * ce + qn * se; vn[k * 3 + 2] = -b * se + qn * ce;
-        var d = rz + CAM.dist, sc2 = CAM.f * S / Math.max(0.4, d);
+        var d = rz + camd, sc2 = CAM.f * S / Math.max(0.4, d);
         sx[k] = cx + rx * sc2; sy[k] = cy - ry * sc2;
     }
 
@@ -321,7 +323,7 @@ function renderMesh(ctx, W, H, mesh, o) {
                     // 対角の2頂点で法線がどれだけ開いているか（≒この面の曲がり具合）。
                     // 1-cosθ ≒ θ²/2 なので、ここからハイライトの細さの上限が出る
                     var dnd = 1 - (vn[iA * 3] * vn[iD * 3] + vn[iA * 3 + 1] * vn[iD * 3 + 1] + vn[iA * 3 + 2] * vn[iD * 3 + 2]);
-                    col = shadePixel(nx, ny, nz, mx, my, mz, c3, mat, L, dnd > 1e-6 ? 0.963 / dnd : 0);
+                    col = shadePixel(nx, ny, nz, mx, my, mz, c3, mat, L, dnd > 1e-6 ? 0.963 / dnd : 0, camd);
                 }
             }
             faceBuf.push({ z: z0, p: pts, c: col });
@@ -397,6 +399,138 @@ function onResize(fn) {
 
 var lastT = 0, lastRun = 0;
 function spin(now, k) { return reduce ? 0.7 : now * k; }
+
+/* --------------------------------------------------------------
+   5b. カメラ操作 — ドラッグで回す / ホイールで寄る
+   ミニレンダラのカメラは「Y軸まわりの角 rot・見下ろす角 elev・
+   カメラまでの距離 dist」の3つしか持たない。その3つをポインタで
+   動かすだけ。Babylon の ArcRotateCamera と考え方は同じで、
+   注視点を原点に固定した極座標のカメラになっている。
+
+   【対策】自動回転にドラッグぶんを足すと、掴んだ瞬間に絵が飛ぶ。
+           掴んだ時点の角度をそのまま引き継ぎ、自動回転を止める。
+   【対策】ホイールは「一度掴んだあと」だけ効かせる。読んでいる途中の
+           ページスクロールを、大きなキャンバスが飲み込まないように。
+   -------------------------------------------------------------- */
+function orbit(cv, opt) {
+    opt = opt || {};
+    var E0 = opt.elev || 0;                       // 既定の見下ろし角
+    var D0 = opt.dist || CAM.dist;                // 既定のカメラ距離
+    var K = opt.spin || 0;                        // 自動回転の速さ
+    var EMIN = opt.elevMin == null ? -1.15 : opt.elevMin;
+    var EMAX = opt.elevMax == null ? 1.15 : opt.elevMax;
+    var DMIN = opt.distMin == null ? D0 * 0.55 : opt.distMin;
+    var DMAX = opt.distMax == null ? D0 * 2.40 : opt.distMax;
+    var changed = opt.onChange || function () { };
+
+    var o = { elev: E0, dist: D0, manual: false, yaw: 0, off: 0, last: 0 };
+
+    // 毎フレーム呼ぶ。自動回転中は今までどおりの角度を返しつつ、
+    // その値を控えておく（掴んだ瞬間に引き継ぐため）
+    o.rot = function (now) {
+        o.last = o.manual ? o.yaw : spin(now, K) + o.off;
+        return o.last;
+    };
+    // renderMesh へ渡すオプションに、カメラぶんを足して返す
+    o.view = function (obj) { obj.elev = o.elev; obj.dist = o.dist; return obj; };
+
+    /* --- 操作の目印。キャンバスを包んで、その隅に重ねる --- */
+    var wrap = document.createElement("div");
+    wrap.className = "orbit";
+    cv.parentNode.insertBefore(wrap, cv);
+    wrap.appendChild(cv);
+    var hint = document.createElement("span");
+    hint.className = "orbit-hint";
+    hint.textContent = "ドラッグで回す";
+    wrap.appendChild(hint);
+    var btn = document.createElement("button");
+    btn.className = "orbit-reset";
+    btn.type = "button";
+    btn.textContent = "⟲ 自動回転へもどす";
+    wrap.appendChild(btn);
+    // キーボードでも回せるようにする。読み上げ用の説明にも足しておく
+    cv.tabIndex = 0;
+    var lab = cv.getAttribute("aria-label");
+    if (lab) cv.setAttribute("aria-label", lab + "。ドラッグまたは矢印キーで視点を変えられます");
+
+    function setManual(on) {
+        if (o.manual === on) return;
+        o.manual = on;
+        wrap.classList.toggle("manual", on);
+        hint.textContent = on ? "ドラッグ＝回す／ホイール＝寄る" : "ドラッグで回す";
+    }
+
+    function grab() { if (!o.manual) { o.yaw = o.last; setManual(true); } }
+
+    function reset() {
+        // 見下ろし角と距離だけ既定へ戻し、回転はいまの角度から自動へつなぐ。
+        // 回転体には「正面」が無いので、ここで角度まで戻すと逆に飛んで見える
+        o.off = reduce ? 0 : o.yaw - spin(performance.now() / 1000, K);
+        o.elev = E0; o.dist = D0;
+        setManual(false);
+        changed();
+    }
+    o.reset = reset;
+    btn.addEventListener("click", reset);
+    cv.addEventListener("dblclick", reset);
+
+    /* --- ドラッグ --- */
+    var drag = null;
+    cv.addEventListener("pointerdown", function (ev) {
+        if (ev.button) return;                    // 左ボタン（とタッチ）だけ
+        grab();
+        drag = { id: ev.pointerId, x: ev.clientX, y: ev.clientY };
+        wrap.classList.add("grabbing");
+        if (cv.setPointerCapture) cv.setPointerCapture(ev.pointerId);
+        // preventDefault は選択を止めるが、フォーカスも止めてしまう。
+        // 矢印キーを効かせたいので自分で当てる（スクロールはさせない）
+        ev.preventDefault();
+        try { cv.focus({ preventScroll: true }); } catch (e) { cv.focus(); }
+        changed();
+    });
+    cv.addEventListener("pointermove", function (ev) {
+        if (!drag || ev.pointerId !== drag.id) return;
+        // キャンバスの幅いっぱいで約 2.4rad（140度）回る
+        var sens = 2.4 / Math.max(120, cv.clientWidth || 400);
+        o.yaw -= (ev.clientX - drag.x) * sens;
+        o.elev = clamp(o.elev + (ev.clientY - drag.y) * sens * 0.75, EMIN, EMAX);
+        drag.x = ev.clientX; drag.y = ev.clientY;
+        ev.preventDefault();
+        changed();
+    });
+    function drop() { if (drag) { drag = null; wrap.classList.remove("grabbing"); } }
+    cv.addEventListener("pointerup", drop);
+    cv.addEventListener("pointercancel", drop);
+
+    /* --- ホイール（掴んだあとだけ） --- */
+    cv.addEventListener("wheel", function (ev) {
+        if (!o.manual) return;
+        ev.preventDefault();
+        // deltaMode 1 は「行」単位。1行 ≒ 16px として揃える
+        var d = ev.deltaY * (ev.deltaMode === 1 ? 16 : 1);
+        o.dist = clamp(o.dist * Math.exp(d * 0.0011), DMIN, DMAX);
+        changed();
+    }, { passive: false });
+
+    /* --- キーボード。矢印はドラッグと同じ向きに動かす --- */
+    cv.addEventListener("keydown", function (ev) {
+        var k = ev.key, step = 0.14;
+        if (k === "ArrowLeft" || k === "ArrowRight") { grab(); o.yaw += (k === "ArrowLeft" ? step : -step); }
+        else if (k === "ArrowUp" || k === "ArrowDown") {
+            grab();
+            o.elev = clamp(o.elev + (k === "ArrowDown" ? step * 0.7 : -step * 0.7), EMIN, EMAX);
+        }
+        else if (k === "+" || k === "=") { grab(); o.dist = clamp(o.dist / 1.1, DMIN, DMAX); }
+        else if (k === "-" || k === "_") { grab(); o.dist = clamp(o.dist * 1.1, DMIN, DMAX); }
+        else if (k === "Escape") { reset(); }
+        else return;
+        ev.preventDefault();
+        changed();
+    });
+
+    return o;
+}
+
 function tick(now) {
     var dt = Math.min(0.05, (now - lastT) / 1000 || 0.016); lastT = now;
     // 動きを減らす設定のときは回転を止め、描き直しも間引く
@@ -506,6 +640,8 @@ var MATS = {
     var DIP = 0.26, DIP_FROM = 0.78;
     var HH = PROFILE_H.tomato + 0.18;       // 高さ。点・曲線・軸の下描きでも同じ値を使う
     var ELEV = 0.28;                        // 少し見下ろす。真横からだと肩もヘタも見えない
+    // ドラッグで回し、ホイールで寄れるようにする（自動回転は掴んだ時点で止まる）
+    var cam = orbit(cv, { elev: ELEV, spin: 0.32 });
     var shape = makeShape(ctrl, {
         bump: 0.020, ridge: 6, ridgeAmp: 0.022, seed: 3,
         height: HH, dip: DIP, dipFrom: DIP_FROM
@@ -629,9 +765,9 @@ var MATS = {
         }
         parts.sort(function (a, b) { return b.z - a.z; });
         for (var k = 0; k < parts.length; k++) {
-            renderMesh(ctx, c.W, c.H, parts[k].m, {
-                rot: rot, elev: ELEV, cull: false, albedo: parts[k].alb, mat: CALYX
-            });
+            renderMesh(ctx, c.W, c.H, parts[k].m, cam.view({
+                rot: rot, cull: false, albedo: parts[k].alb, mat: CALYX
+            }));
         }
     }
 
@@ -639,10 +775,10 @@ var MATS = {
     // 下描きだけ別の計算にすると、①②と③以降で形が食い違う。
     var pr = [0, 0, 0];
     function proj(x, y, z, rot) {
-        var cs = Math.cos(rot), sn = Math.sin(rot), ce = Math.cos(ELEV), se = Math.sin(ELEV);
+        var cs = Math.cos(rot), sn = Math.sin(rot), ce = Math.cos(cam.elev), se = Math.sin(cam.elev);
         var rx = x * cs + z * sn, qz = -x * sn + z * cs;
         var ry = y * ce + qz * se, rz = -y * se + qz * ce;
-        var S = Math.min(c.W, c.H), sc = CAM.f * S / Math.max(0.4, rz + CAM.dist);
+        var S = Math.min(c.W, c.H), sc = CAM.f * S / Math.max(0.4, rz + cam.dist);
         pr[0] = c.W / 2 + rx * sc; pr[1] = c.H / 2 - ry * sc;
         return pr;
     }
@@ -700,23 +836,23 @@ var MATS = {
         var acc = 0, st = 5;
         for (var i = 0; i < DUR.length; i++) { acc += DUR[i]; if (el < acc) { st = i; break; } }
         if (el >= acc) { st = 5; }
-        var rot = spin(now, 0.32);
+        var rot = cam.rot(now);
         if (st !== stage) { stage = st; if (stageEl) stageEl.textContent = stageNames[st]; }
         if (countEl) countEl.textContent = (st === 0 ? ctrl.length * 2 + " 個の制御点"
             : mesh.count.toLocaleString() + " 頂点 / " + ((mesh.N - 1) * mesh.M * 2).toLocaleString() + " 三角形");
 
         if (st === 0) { drawDots(rot); return; }
         if (st === 1) { drawRings(rot); return; }
-        if (st === 2) { renderMesh(ctx, c.W, c.H, mesh, { rot: rot, elev: ELEV, mode: "wire" }); return; }
+        if (st === 2) { renderMesh(ctx, c.W, c.H, mesh, cam.view({ rot: rot, mode: "wire" })); return; }
         if (st === 3) {
-            renderMesh(ctx, c.W, c.H, mesh, { rot: rot, elev: ELEV, albedo: white, mat: { rough: 0.85, coat: 0, sss: 0, sheen: 0 } });
+            renderMesh(ctx, c.W, c.H, mesh, cam.view({ rot: rot, albedo: white, mat: { rough: 0.85, coat: 0, sss: 0, sheen: 0 } }));
             return;
         }
         if (st === 4) {
-            renderMesh(ctx, c.W, c.H, mesh, { rot: rot, elev: ELEV, albedo: albedo, mat: { rough: 0.9, coat: 0, sss: 0, sheen: 0 } });
+            renderMesh(ctx, c.W, c.H, mesh, cam.view({ rot: rot, albedo: albedo, mat: { rough: 0.9, coat: 0, sss: 0, sheen: 0 } }));
             return;
         }
-        renderMesh(ctx, c.W, c.H, mesh, { rot: rot, elev: ELEV, albedo: albedo, mat: MATS.tomato });
+        renderMesh(ctx, c.W, c.H, mesh, cam.view({ rot: rot, albedo: albedo, mat: MATS.tomato }));
         drawCalyx(rot);
     });
 })();
@@ -855,6 +991,8 @@ var MATS = {
 (function () {
     var cvE = $("#profCanvas"), cvV = $("#profView"); if (!cvE || !cvV) return;
     var e = setupCanvas(cvE), v = setupCanvas(cvV);
+    // プレビュー側だけカメラを付ける（左は断面エディタで、点をドラッグするため）
+    var cam = orbit(cvV, { spin: 0.4 });
     var curKey = "carrot";
     var ctrl = cloneProfile(PROFILES.carrot);
     var hUnits = PROFILE_H.carrot;
@@ -1007,9 +1145,9 @@ var MATS = {
     addLoop(cvV, function (dt, now) {
         if (dirty) rebuild();
         v.ctx.clearRect(0, 0, v.W, v.H);
-        renderMesh(v.ctx, v.W, v.H, mesh, {
-            rot: spin(now, 0.4), albedo: lookAlb, mat: look().mat
-        });
+        renderMesh(v.ctx, v.W, v.H, mesh, cam.view({
+            rot: cam.rot(now), albedo: lookAlb, mat: look().mat
+        }));
     });
     window.addEventListener("resize", function () { layout(); drawEditor(); });
 })();
@@ -1021,6 +1159,7 @@ var MATS = {
     var cv = $("#meshCanvas"); if (!cv) return;
     var c = setupCanvas(cv), ctx = c.ctx;
     var mode = "solid", smoothN = true, flip = false, cull = true, seg = 40;
+    var cam = orbit(cv, { spin: 0.4 });
     var mesh = null;
     function rebuild() {
         var shape = makeShape(PROFILES.tomato, { ridge: 6, ridgeAmp: 0.03, height: PROFILE_H.tomato });
@@ -1043,11 +1182,11 @@ var MATS = {
 
     addLoop(cv, function (dt, now) {
         ctx.clearRect(0, 0, c.W, c.H);
-        renderMesh(ctx, c.W, c.H, mesh, {
-            rot: spin(now, 0.4), mode: mode, smooth: smoothN, flip: flip, cull: cull,
+        renderMesh(ctx, c.W, c.H, mesh, cam.view({
+            rot: cam.rot(now), mode: mode, smooth: smoothN, flip: flip, cull: cull,
             albedo: function () { return MATS.tomato.col; },
             mat: { rough: 0.28, coat: 0.25, sss: 0.18, sheen: 0, sssCol: [1, 0.3, 0.2] }
-        });
+        }));
         if (mode === "facing") {
             ctx.font = "12px ui-monospace,monospace";
             ctx.fillStyle = "#528530"; ctx.fillText("■ 表向き（描かれる）", 14, 22);
@@ -1069,6 +1208,8 @@ var MATS = {
 (function () {
     var cvT = $("#texCanvas"), cvV = $("#texView"); if (!cvT || !cvV) return;
     var t = setupCanvas(cvT), v = setupCanvas(cvV);
+    // 右の立体だけカメラを付ける（左は焼いたテクスチャそのものの表示）
+    var cam = orbit(cvV, { spin: 0.35 });
     var TS = 256;
     var buf = document.createElement("canvas"); buf.width = TS; buf.height = TS;
     var bctx = buf.getContext("2d");
@@ -1235,10 +1376,10 @@ var MATS = {
     addLoop(cvV, function (dt, now) {
         if (needBake) { bake(); needBake = false; }
         v.ctx.clearRect(0, 0, v.W, v.H);
-        renderMesh(v.ctx, v.W, v.H, meshFor(kind), {
-            rot: spin(now, 0.35), albedo: sample,
+        renderMesh(v.ctx, v.W, v.H, meshFor(kind), cam.view({
+            rot: cam.rot(now), albedo: sample,
             mat: { rough: 0.38, coat: 0.22, sss: 0.08, sheen: 0.05 }
-        });
+        }));
     });
 })();
 
@@ -1251,6 +1392,7 @@ var MATS = {
     // ここは艶そのものを見る実験なので、分割は粗くしない。
     // 面が粗いと、鏡面のローブが面の間に落ちてスライダーの効きが見えなくなる
     var mesh = buildMesh(makeShape(PROFILES.nasu, { bump: 0.02, seed: 4, height: PROFILE_H.nasu }), 48, 64);
+    var cam = orbit(cv, { spin: 0.3 });
     var m = { rough: 0.24, coat: 0.45, sss: 0.10, sheen: 0, col: MATS.nasu.col.slice(), sssCol: [0.7, 0.3, 0.9], sheenCol: [0.82, 0.86, 0.66] };
     var ang = -35;
     var ids = { rough: "pbrRough", coat: "pbrCoat", sss: "pbrSss", sheen: "pbrSheen" };
@@ -1283,8 +1425,8 @@ var MATS = {
     addLoop(cv, function (dt, now) {
         ctx.clearRect(0, 0, c.W, c.H);
         var a = ang * Math.PI / 180;
-        renderMesh(ctx, c.W, c.H, mesh, {
-            rot: spin(now, 0.3),
+        renderMesh(ctx, c.W, c.H, mesh, cam.view({
+            rot: cam.rot(now),
             light: [Math.sin(a) * 0.8, 0.62, -Math.cos(a) * 0.8],
             albedo: function (u, v) {
                 var n = Noise.fbmu(u * 10, v * 12, 10, 17, 3);
@@ -1293,7 +1435,7 @@ var MATS = {
                 clamp(m.col[2] * (0.86 + 0.28 * n), 0, 1)];
             },
             mat: m
-        });
+        }));
     });
 })();
 
@@ -1808,6 +1950,7 @@ function lazyLoop(cv, draw) {
     var cv = $("#spineCanvas"); if (!cv) return;
     var c = setupCanvas(cv), ctx = c.ctx;
     var bend = 0.85, ridge = 5, ridgeAmp = 0.10, twist = 0, showSpine = true;
+    var cam = orbit(cv, { spin: 0.45 });
     var H = 1.75, R0 = 0.26;
     var mesh = null, dirty = true;
 
@@ -1857,19 +2000,23 @@ function lazyLoop(cv, draw) {
     function rebuild() { mesh = buildMesh(shape(), 42, 40); dirty = false; }
     rebuild();
 
+    // 赤い軸の下描き。renderMesh とまったく同じカメラで投影しないと、
+    // 見下ろしたときに軸だけ立体から浮いて見える
     function project(x, y, z, rot, S, cx0, cy0) {
         var cs = Math.cos(rot), sn = Math.sin(rot);
-        var rx = x * cs + z * sn, rz = -x * sn + z * cs;
-        var sc = CAM.f * S / Math.max(0.4, rz + CAM.dist);
-        return [cx0 + rx * sc, cy0 - y * sc];
+        var ce = Math.cos(cam.elev), se = Math.sin(cam.elev);
+        var rx = x * cs + z * sn, qz = -x * sn + z * cs;
+        var ry = y * ce + qz * se, rz = -y * se + qz * ce;
+        var sc = CAM.f * S / Math.max(0.4, rz + cam.dist);
+        return [cx0 + rx * sc, cy0 - ry * sc];
     }
 
     addLoop(cv, function (dt, now) {
         if (dirty) rebuild();
         ctx.clearRect(0, 0, c.W, c.H);
-        var rot = spin(now, 0.45);
+        var rot = cam.rot(now);
         var col = COLORS[kind];
-        renderMesh(ctx, c.W, c.H, mesh, {
+        renderMesh(ctx, c.W, c.H, mesh, cam.view({
             rot: rot,
             mat: { rough: kind === "banana" ? 0.55 : 0.3, coat: kind === "banana" ? 0.05 : 0.35, sss: 0.12, sheen: 0 },
             albedo: function (u, v) {
@@ -1880,7 +2027,7 @@ function lazyLoop(cv, draw) {
                     clamp(col[2] * (0.88 + 0.30 * n), 0, 1)
                 ];
             }
-        });
+        }));
         if (showSpine) {
             var S = Math.min(c.W, c.H), cx0 = c.W / 2, cy0 = c.H / 2;
             ctx.strokeStyle = "rgba(218,19,14,.85)"; ctx.lineWidth = 1.8;
@@ -1921,6 +2068,7 @@ function lazyLoop(cv, draw) {
     // ハイライトが面の間に落ちない程度には分割しておく
     var mesh = buildMesh(makeShape(PROFILES.tomato, { bump: 0.03, ridge: 6, ridgeAmp: 0.02, seed: 3, height: PROFILE_H.tomato }), 48, 64);
     var ang = -35, ambK = 1, expo = 1, tm = true;
+    var cam = orbit(cv, { spin: 0.35 });
     var warnEl = $("#scWarn");
 
     function albedo(u, v) {
@@ -1937,8 +2085,8 @@ function lazyLoop(cv, draw) {
     addLoop(cv, function (dt, now) {
         ctx.clearRect(0, 0, c.W, c.H);
         var rad = ang * Math.PI / 180;
-        renderMesh(ctx, c.W, c.H, mesh, {
-            rot: spin(now, 0.35),
+        renderMesh(ctx, c.W, c.H, mesh, cam.view({
+            rot: cam.rot(now),
             light: [Math.sin(rad), 0.72, -Math.cos(rad)],
             mat: {
                 rough: 0.19, coat: 0.40, sss: 0.28, sheen: 0,
@@ -1946,7 +2094,7 @@ function lazyLoop(cv, draw) {
                 ambK: ambK, expo: expo, tonemap: tm
             },
             albedo: albedo
-        });
+        }));
         if (warnEl) {
             warnEl.textContent = (!tm && expo > 1.3) ? "ハイライトが真っ白に潰れています"
                 : (ambK < 0.25 ? "影が真っ黒に沈んでいます" : "だいたい素直に見えています");
