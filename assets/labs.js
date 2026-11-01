@@ -1467,7 +1467,9 @@ var FILES = [
         ["枝豆", "枝豆.js", "#588A2D", "豆の膨らみを「なめらかな max」で合成する。産毛はシェル（薄い殻）を重ねて生やす。"],
         ["ブロッコリー", "ブロッコリー.js", "#54743C", "テクスチャを1枚も使わない。房を再帰で生やし、粒の谷の暗さを頂点カラーに焼き込む。"],
         ["カリフラワー", "カリフラワー.js", "#EDE9D7", "ブロッコリーと同じ骨格。数値を4か所変えるだけで別の野菜になる、差分設計の見本。"],
-        ["ロマネスコ", "ロマネスコ.js", "#A2B340", "黄金角137.5°と等比数列だけで自己相似の螺旋が生まれる。打ち切りの設計がすべて。"]
+        ["ロマネスコ", "ロマネスコ.js", "#A2B340", "黄金角137.5°と等比数列だけで自己相似の螺旋が生まれる。打ち切りの設計がすべて。"],
+        ["ミカン", "ミカン.js", "#FA7A0D", "26点の横顔をやめて超楕円に。油胞は色ではなく艶の差で見せる。5品種入り。"],
+        ["柿", "柿.js", "#E6500B", "横顔も、上から見た断面も超楕円。角の丸い四角と4本の溝。網代のざるは真上から貼る。"]
 ];
 function viewHref(file) { return "view.html?f=" + encodeURIComponent(file); }
 function playHref(file) { return "play.html?f=" + encodeURIComponent(file); }
@@ -2512,6 +2514,193 @@ var CURD_WHITE = { top: [0.930, 0.912, 0.845], side: [0.822, 0.798, 0.718], deep
         var k = key.toLowerCase();
         el.addEventListener("change", function () { f[k] = el.checked; mark(); });
     });
+})();
+
+/* ======================================================================
+   17 — 超楕円（ミカン / 柿）
+   横顔は |r|^n + |y|^n = 1 を天面と底面で別の n で。
+   柿だけは、水平の断面にも同じ式を使って角の丸い四角にする。
+   ====================================================================== */
+(function () {
+    var cv = $("#superCanvas"), cvB = $("#superPlan"); if (!cv || !cvB) return;
+    var c = setupCanvas(cv), ctx = c.ctx;
+    var b = setupCanvas(cvB), bctx = b.ctx;
+    var cam = orbit(cv, { elev: 0.42, spin: 0.35 });
+    var R = 0.64;
+
+    // ミカン.js v12 までの横顔（MERIDIAN）。[r, y]、へた側から花落ち側へ
+    var MERIDIAN = [
+        [0.000, 0.860], [0.070, 0.864], [0.145, 0.876], [0.225, 0.894],
+        [0.310, 0.912], [0.400, 0.926], [0.500, 0.930], [0.610, 0.918],
+        [0.715, 0.892], [0.808, 0.852], [0.886, 0.798], [0.945, 0.730],
+        [0.983, 0.650], [1.000, 0.558], [0.997, 0.462], [0.976, 0.366],
+        [0.938, 0.276], [0.882, 0.196], [0.806, 0.128], [0.706, 0.076],
+        [0.584, 0.042], [0.450, 0.024], [0.316, 0.018], [0.190, 0.022],
+        [0.082, 0.032], [0.000, 0.038]
+    ];
+    // 数値はサンプルの PRESETS から。aspect は 高さ ÷ 直径
+    var PRE = {
+        table: { table: true, nTop: 2, nBot: 2, sq: 2, groove: 0, aspect: 0.81, dimple: 0, dw: 0.11, col: [0.97, 0.52, 0.11] },
+        mikkabi: { nTop: 2.60, nBot: 2.25, sq: 2, groove: 0, aspect: 0.81, dimple: 0.030, dw: 0.11, col: [0.98, 0.48, 0.05] },
+        fuyu: { nTop: 2.70, nBot: 2.30, sq: 2.45, groove: 0.020, aspect: 0.76, dimple: 0.050, dw: 0.24, col: [0.93, 0.38, 0.05] },
+        jiro: { nTop: 3.20, nBot: 2.60, sq: 2.90, groove: 0.042, aspect: 0.68, dimple: 0.035, dw: 0.22, col: [0.94, 0.42, 0.06] },
+        suika: { nTop: 2.16, nBot: 2.10, sq: 2, groove: 0, aspect: 1.06, dimple: 0, dw: 0.11, col: [0.16, 0.36, 0.13] }
+    };
+    var p = {}, kind = "mikkabi";
+    var GD = [1.0, 0.72, 1.22, 0.86];             // 溝の深さ。サンプルでは1本ずつ乱数
+    var mesh = null, dirty = true, markPlan;
+
+    function catmull(p0, p1, p2, p3, t) {
+        var t2 = t * t, t3 = t2 * t;
+        return 0.5 * ((2 * p1) + (-p0 + p2) * t + (2 * p0 - 5 * p1 + 4 * p2 - p3) * t2
+            + (-p0 + 3 * p1 - 3 * p2 + p3) * t3);
+    }
+    // 横顔。v = 0 がへた側（上）、1 が花落ち側（下）。y は 0（底）..1（天面）
+    function meridian(v, o) {
+        if (p.table) {
+            var n = MERIDIAN.length, f = clamp(v, 0, 1) * (n - 1);
+            var i = Math.min(n - 2, Math.floor(f)), t = f - i;
+            var A = MERIDIAN[Math.max(0, i - 1)], B = MERIDIAN[i], C = MERIDIAN[i + 1], D = MERIDIAN[Math.min(n - 1, i + 2)];
+            o.r = Math.max(0, catmull(A[0], B[0], C[0], D[0], t));
+            o.y = (catmull(A[1], B[1], C[1], D[1], t) - 0.018) / 0.912;
+            return o;
+        }
+        var th = clamp(v, 0, 1) * Math.PI, ct = Math.cos(th), st = Math.sin(th);
+        var e = ct > 0 ? p.nTop : p.nBot;
+        var r = Math.pow(st, 2 / e);
+        var y = 0.5 + 0.5 * (ct < 0 ? -1 : 1) * Math.pow(Math.abs(ct), 2 / e);
+        // へたの座る浅い窪み
+        y -= p.dimple * Math.exp(-(r * r) / (2 * p.dw * p.dw)) * smooth(0.45, 0.60, y);
+        o.r = r; o.y = y;
+        return o;
+    }
+    // 断面（上から見た形）の半径の倍率。柿.js の radiusAt() と同じ
+    function section(phi, y) {
+        var n = 2 + (p.sq - 2) * (0.25 + 0.75 * Math.sin(Math.PI * clamp(y, 0, 1)));
+        var ps = phi + Math.PI / 4;
+        var f = Math.pow(Math.pow(Math.abs(Math.cos(ps)), n) + Math.pow(Math.abs(Math.sin(ps)), n), -1 / n);
+        f /= (1 + Math.pow(2, 0.5 - 1 / n)) * 0.5;      // 平均径を保つ
+        if (p.groove > 0) {
+            var g = 0;
+            for (var k = 0; k < 4; k++) {
+                var dp = phi - (Math.PI / 4 + k * Math.PI / 2);
+                dp = Math.atan2(Math.sin(dp), Math.cos(dp));
+                g += GD[k] * Math.exp(-(dp * dp) / (2 * 0.12 * 0.12));
+            }
+            f *= 1 - p.groove * smooth(0.06, 0.40, y) * smooth(0.98, 0.70, y) * g;
+        }
+        return f;
+    }
+
+    var mo = { r: 0, y: 0 };
+    function shape() {
+        var H = 2 * R * p.aspect;
+        return {
+            height: H,
+            pos: function (t, a, out) {
+                meridian(1 - t, mo);
+                var r = mo.r * R * section(a, mo.y);
+                out[0] = r * Math.cos(a); out[1] = (mo.y - 0.5) * H; out[2] = r * Math.sin(a);
+                return out;
+            }
+        };
+    }
+    function rebuild() { mesh = buildMesh(shape(), 56, 72); dirty = false; }
+
+    function albedo(u, v) {
+        var n = Noise.fbmu(u * 9, v * 8, 9, 23, 3), col = p.col;
+        return [clamp(col[0] * (0.90 + 0.18 * n), 0, 1),
+            clamp(col[1] * (0.88 + 0.22 * n), 0, 1),
+            clamp(col[2] * (0.88 + 0.22 * n), 0, 1)];
+    }
+
+    addLoop(cv, function (dt, now) {
+        if (dirty) rebuild();
+        ctx.clearRect(0, 0, c.W, c.H);
+        renderMesh(ctx, c.W, c.H, mesh, cam.view({
+            rot: cam.rot(now), albedo: albedo,
+            mat: { rough: 0.36, coat: 0.40, sss: 0.10, sheen: 0, sssCol: [1, 0.5, 0.2] }
+        }));
+    });
+
+    /* --- 設計図。左が横顔、右が上から見た断面。点線は n = 2（ふつうの楕円・円） --- */
+    function drawPlan() {
+        var W = b.W, Hh = b.H, half = W / 2;
+        bctx.clearRect(0, 0, W, Hh);
+        bctx.font = "11px ui-monospace,monospace";
+        bctx.fillStyle = "#6b6b62";
+        bctx.fillText("横顔", 12, 16);
+        bctx.fillText("上から見た断面（胴の中ほど）", half + 12, 16);
+
+        // 横顔：左右対称に描く
+        var sc = Math.min((half - 40) / 2, (Hh - 44) / (2 * p.aspect));
+        var cx = half / 2, cy = Hh / 2 + 8, hh = sc * 2 * p.aspect;
+        bctx.setLineDash([4, 4]); bctx.strokeStyle = "#b8b6aa"; bctx.lineWidth = 1;
+        bctx.beginPath(); bctx.ellipse(cx, cy, sc, hh / 2, 0, 0, TAU); bctx.stroke();
+        bctx.setLineDash([]);
+        bctx.strokeStyle = "#E2691C"; bctx.lineWidth = 2;
+        for (var s = -1; s <= 1; s += 2) {
+            bctx.beginPath();
+            for (var i = 0; i <= 80; i++) {
+                meridian(i / 80, mo);
+                var X = cx + s * mo.r * sc, Y = cy - (mo.y - 0.5) * hh;
+                if (i === 0) bctx.moveTo(X, Y); else bctx.lineTo(X, Y);
+            }
+            bctx.stroke();
+        }
+
+        // 断面
+        var sr = Math.min(half - 40, Hh - 44) / 2, qx = half + half / 2, qy = Hh / 2 + 8;
+        bctx.setLineDash([4, 4]); bctx.strokeStyle = "#b8b6aa"; bctx.lineWidth = 1;
+        bctx.beginPath(); bctx.arc(qx, qy, sr, 0, TAU); bctx.stroke();
+        bctx.setLineDash([]);
+        bctx.strokeStyle = "#E2691C"; bctx.lineWidth = 2;
+        bctx.beginPath();
+        for (var j = 0; j <= 160; j++) {
+            var a = j / 160 * TAU, f = section(a, 0.5) * sr;
+            var X2 = qx + Math.cos(a) * f, Y2 = qy + Math.sin(a) * f;
+            if (j === 0) bctx.moveTo(X2, Y2); else bctx.lineTo(X2, Y2);
+        }
+        bctx.closePath(); bctx.stroke();
+    }
+    markPlan = lazyLoop(cvB, drawPlan);
+
+    var IDS = [["nTop", "#supTop", "#supTopV"], ["nBot", "#supBot", "#supBotV"],
+        ["sq", "#supSq", "#supSqV"], ["groove", "#supGroove", "#supGrooveV"], ["aspect", "#supAsp", "#supAspV"]];
+    function touch() {
+        dirty = true; markPlan();
+        if (!p.col) return;                       // load() より前（スライダーの初期化中）
+        var out = $("#supOut");
+        if (out) out.innerHTML = p.table
+            ? "横顔：<b>26点の表（ミカン.js v12）</b><br>天面・底面の指数を動かすと、式に切り替わります"
+            : "横顔：<b>超楕円</b>（天面 n = " + p.nTop.toFixed(2) + " / 底面 n = " + p.nBot.toFixed(2) + "）";
+    }
+    var setting = 0;
+    IDS.forEach(function (d) {
+        slider(d[1], d[2], function (n) {
+            return d[0] === "sq" && n <= 2.001 ? "2.00（丸）" : n.toFixed(d[0] === "groove" ? 3 : 2);
+        }, function (n) {
+            p[d[0]] = n;
+            // 指数を動かしたら「表」から式へ切り替える
+            if ((d[0] === "nTop" || d[0] === "nBot") && p.table && setting === 0) p.table = false;
+            touch();
+        });
+    });
+    function load(k) {
+        kind = k;
+        var q = PRE[k];
+        p = { table: !!q.table, nTop: q.nTop, nBot: q.nBot, sq: q.sq, groove: q.groove, aspect: q.aspect, dimple: q.dimple, dw: q.dw, col: q.col };
+        // スライダーの表示を合わせる。input を流すあいだは表のままにしておく
+        setting++;
+        IDS.forEach(function (d) {
+            var el = $(d[1]); if (!el) return;
+            el.value = p[d[0]]; el.dispatchEvent(new Event("input"));
+        });
+        setting--;
+        touch();
+    }
+    chipGroup("#supPreset", load);
+    load("mikkabi");
 })();
 
 /* ======================================================================
