@@ -4,9 +4,9 @@
  *  実行:  node tools/build.js   （リポジトリのどこからでも可）
  *
  *  生成するもの:
- *    ・index.html / start.html / ch01〜ch11.html / zukan.html /
- *      view.html / terms.html   … 全16ページ
- *    ・assets/src/*.src.js       … 23本のサンプルをビューア用に複製
+ *    ・index.html / start.html / ch01〜ch17.html / zukan.html /
+ *      view.html / play.html / terms.html   … 全23ページ
+ *    ・assets/src/*.src.js       … 25本のサンプルをビューア用に複製
  *                                  （.gitignore 済み。再生成はこれで行う）
  *
  *  【注意】上記のファイルは毎回まるごと上書きされます。
@@ -15,7 +15,7 @@
  *
  *  入力:
  *    ・assets/_index_original.bak.html … 01〜07章の本文の出典。消さないこと
- *    ・samples/*.js（23本）             … ビューア用の複製元
+ *    ・samples/*.js（25本）             … ビューア用の複製元
  *
  *  手書きで管理しているもの（このスクリプトは触りません）:
  *    ・assets/site.css / assets/labs.js / assets/havok-lab.js
@@ -103,7 +103,7 @@ pages.push({
   </div>
   <div class="body">
 ${recapBox([
-    "この23本は、<b>ブラウザだけ</b>で動きます。インストールは何も要りません。",
+    "この25本は、<b>ブラウザだけ</b>で動きます。インストールは何も要りません。",
     "Babylon.js Playground という公式サイトに、ファイルの中身を<b>まるごと貼って実行</b>するだけです。",
     "先に動かして、数字をひとつ壊してみる。<b>説明を読むのはそのあと</b>のほうが、ずっと早く分かります。"
   ])}
@@ -127,7 +127,7 @@ ${recapBox([
       </li>
       <li>
         <h3><b>ニンジン.js</b> の中身を全部コピーして貼る</h3>
-        <p>最初の1本は <b>ニンジン.js</b> がおすすめです。23本のなかでいちばん構造が素直で、
+        <p>最初の1本は <b>ニンジン.js</b> がおすすめです。25本のなかでいちばん構造が素直で、
         「円錐に溝を彫る」だけでできています。ファイルをテキストエディタで開き、
         全部コピーして、Playground の左側に貼り付けます。</p>
       </li>
@@ -153,10 +153,11 @@ ${recapBox([
       </li>
     </ol>
 
-    <h3>23本のうち、どれから読むか</h3>
+    <h3>25本のうち、どれから読むか</h3>
     <ul>
       <li><b>ニンジン.js</b> — いちばん素直。円錐 + 溝。まずこれ。</li>
       <li><b>キュウリ.js</b> — 稜（縦のすじ）とイボ。テクスチャの作りが分かりやすい。</li>
+      <li><b>ミカン.js / 柿.js</b> — 横顔が1本の式（超楕円）。表を読むより短く済みます（→ <a href="ch17.html">17章</a>）。</li>
       <li><b>トマト.js / サクランボ.js</b> — 肩が折り返す形。ここから少し難しくなります。</li>
       <li><b>シイタケ.js / トウモロコシ.js</b> — 構造が複雑。慣れてから。</li>
       <li><b>ブロッコリー.js / ロマネスコ.js</b> — 作り方がまったく別。最後でかまいません（→ <a href="ch12.html">12章</a>）。</li>
@@ -197,7 +198,7 @@ const legacy = [
     // 見出しと本文を差し替え、例外の3本への案内を足す
     patch: (sec) =>
       sec
-        .replace("18本ぜんぶ合わせても", "23本ぜんぶ合わせても")
+        .replace("18本ぜんぶ合わせても", "25本ぜんぶ合わせても")
         .replace(
           "<h3>18本すべてが同じ9層でできている</h3>",
           "<h3>ほとんどのファイルが、同じ9層でできている</h3>"
@@ -210,7 +211,7 @@ const legacy = [
         )
         .replace(
           "<figcaption>トマト.js の冒頭。18本すべてがこの並びで書かれている</figcaption>",
-          "<figcaption>トマト.js の冒頭。23本のうち20本が、この並びで書かれている</figcaption>"
+          "<figcaption>トマト.js の冒頭。25本のうち22本が、ほぼこの並びで書かれている</figcaption>"
         )
         .replace(
           '    <div class="note">\n      <b>読む順番のおすすめ。</b>',
@@ -239,7 +240,7 @@ const legacy = [
       "気に入った形が出たシードの数字を、メモしておく。これが「保存」になります。",
       "ニンジン.js の <code>START_SEED</code>（175行目あたり）を自分の誕生日（例 20260801）にして実行する。"
     ],
-    patch: (sec) => sec.replace("18本すべてに入っている Rng", "23本すべてに入っている Rng")
+    patch: (sec) => sec.replace("18本すべてに入っている Rng", "25本すべてに入っている Rng")
   },
   {
     id: "ch03", file: "ch03.html", no: "03", tag: "Noise", color: P.suika,
@@ -800,7 +801,7 @@ ${tryBox([
 });
 
 /* =====================================================================
- *  第II部 — 構造そのものをつくる（12〜16）
+ *  第II部 — 構造そのものをつくる（12〜17）
  *
  *  01〜11章は「1本の .js を上から順にほどく」構成で、ファイルの
  *  9層（CONFIG / Rng / Noise / Mesh / Profile / TextureLab / 本体 /
@@ -811,6 +812,8 @@ ${tryBox([
  *    ・TextureLab が無い（UVが張れないので頂点カラー）
  *    ・代わりに Corymb / Fractal という層がある
  *  そこで第II部として、層ではなく「作り方の種類」で章を立てる。
+ *  さらにあとから加わったミカン・柿の2本は9層にほぼ収まるが、
+ *  横顔を表ではなく超楕円の式で書くので、17章として足した。
  * ===================================================================== */
 
 /* ---- 12 再帰と自己相似（新規） ---- */
@@ -1425,7 +1428,7 @@ ${recapBox([
 
     <h3>差分は3種類ある</h3>
     <p>
-      23本のサンプルを見渡すと、「似ているものを作り分ける」やり方は3つに分けられます。
+      25本のサンプルを見渡すと、「似ているものを作り分ける」やり方は3つに分けられます。
     </p>
     <ul>
       <li><b>別の野菜にする</b> — ブロッコリー → カリフラワー。骨格を残して構造の数値を変える。
@@ -1484,15 +1487,205 @@ ${tryBox([
 </section>`
 });
 
+/* ---- 17 超楕円（新規） ----
+ *  あとから加わったミカン・柿の2本のために足した章。
+ *  2本とも、横顔を点の表ではなく超楕円の式で書いている。
+ *  柿は、上から見た断面にも同じ式を使う。 */
+pages.push({
+  file: "ch17.html", no: "17", tag: "Exponent", color: P.carrot,
+  title: "平たさと角を、指数ひとつで決める", crumb: "第17章",
+  html: `<section class="chapter" id="ch17" style="--ch:${P.carrot}">
+  <div class="chapter-head">
+    <div class="chnum">17<small>Exponent</small></div>
+    <div>
+      <h2>平たさと角を、指数ひとつで決める</h2>
+      <p class="sub">superellipse — 超楕円</p>
+    </div>
+  </div>
+  <div class="body">
+${recapBox([
+    "円の式 x² + y² = 1 の「2」を大きくすると、形は<b>平たく、角ばって</b>いきます。これが超楕円です。",
+    "ミカンは横顔に、柿は横顔と<b>上から見た断面の両方</b>に、この式を使っています。",
+    "点を何十個も並べた表より、<b>数字が1つだけの式</b>のほうが、その果物らしさを外しにくいことがあります。"
+  ])}
+    <p>
+      ミカン.js の冒頭に、こんな記録が残っています。<b>「リンゴの形に見える」</b>。
+      それまでのミカンは、04章と同じように横顔を<b>26個の点の表</b>（<code>MERIDIAN</code>）で描いていました。
+      高さを縮めて扁平にしても、どうしてもリンゴにしか見えなかったのです。
+    </p>
+    <p>
+      原因は、点の並びそのものにありました。コメントによると、その表は
+      「天面の中央が深くくぼみ、そのまわりの肩が盛り上がる」
+      「いちばん太いところが中央より上にあり、下へすぼまる」形になっていました。
+      これはリンゴの特徴そのものです。点の並びに染みついているので、全体を縦に潰しても消えません。
+      実物の温州みかんは、<b>天面も底面も広く平らで、いちばん太いのはほぼ真ん中</b>です。
+    </p>
+
+    <h3>円の式の「2」を変える</h3>
+    <p>
+      半径1の円は x² + y² = 1 と書けます。この「2」を、好きな数 n に変えてみます。
+    </p>
+    <p style="text-align:center;font-size:1.15em"><b>|x|<sup>n</sup> + |y|<sup>n</sup> = 1</b></p>
+    <p>
+      これを<b>超楕円</b>といいます。n = 2 ならふつうの円（縦横の長さを変えれば楕円）。
+      n を大きくすると、上下左右が平らになって角の丸い四角へ近づきます。
+      n を 2 より小さくすると逆に痩せて、n = 1 でひし形になります。
+      数字を1つ変えるだけで、「丸」と「四角」のあいだを好きな位置で止められるわけです。
+    </p>
+    <p>
+      プログラムでは、この式を角度 θ で表した形（媒介変数表示）で使います。
+    </p>
+    <figure>
+<pre><span class="k">const</span> th = v * Math.PI;                   <span class="c">// v = 0 がへた側、1 が花落ち側</span>
+<span class="k">const</span> ct = Math.cos(th), st = Math.sin(th);
+<span class="k">const</span> n  = ct &gt; <span class="n">0</span> ? cfg.superNTop : cfg.superN;   <span class="c">// 上半分と下半分で別の指数</span>
+<span class="k">let</span> r = Math.pow(st, <span class="n">2</span> / n);
+<span class="k">let</span> y = <span class="n">0.5</span> + <span class="n">0.5</span> * Math.sign(ct) * Math.pow(Math.abs(ct), <span class="n">2</span> / n);</pre>
+      <figcaption>ミカン.js / 柿.js の meridianAt()。返す y は 0（底）〜 1（天面）</figcaption>
+    </figure>
+    <p>
+      なぜ「2 / n 乗」なのかは、式に代入すると分かります。
+      r<sup>n</sup> = (sin θ)<sup>2</sup>、y<sup>n</sup> = (cos θ)<sup>2</sup> になるので、
+      足すと sin²θ + cos²θ = 1。ちゃんと超楕円の上に乗っています。
+      高校1年の三角比で確かめられる計算です。
+    </p>
+    <p>
+      もうひとつの工夫は、<b>上半分と下半分で n を変えている</b>ことです。
+      実物の果物は上下対称ではありません。サンプルに入っている指数を並べると、こうなります。
+    </p>
+    <table>
+      <tr><th>サンプル</th><th>天面の n</th><th>底面の n</th><th>見た目</th></tr>
+      <tr><td>スイカ（大玉）</td><td>2.16</td><td>2.10</td><td>ほぼ球。わずかに張っている</td></tr>
+      <tr><td>三ヶ日みかん</td><td>2.60</td><td>2.25</td><td>天面が広く平ら。底はやや丸い</td></tr>
+      <tr><td>富有柿</td><td>2.70</td><td>2.30</td><td>肩が張って、やや角張る</td></tr>
+      <tr><td>次郎柿</td><td>3.20</td><td>2.60</td><td>上も下も平らで、四角い</td></tr>
+    </table>
+    <p>
+      スイカ.js も、実は同じ式で作っています（04章ではそこまで触れませんでした）。
+      2.1 と 3.2 の差はわずかに見えますが、並べると<b>球・ミカン・柿</b>ときちんと別物になります。
+    </p>
+
+    <div class="lab">
+      <p class="lab-title">実験 — 指数で形を変える</p>
+      <div class="lab-cols side">
+        <div class="controls">
+          <div class="chips" id="supPreset">
+            <button class="chip" type="button" data-v="table">表の横顔（旧ミカン）</button>
+            <button class="chip" type="button" data-v="mikkabi" aria-pressed="true">三ヶ日みかん</button>
+            <button class="chip" type="button" data-v="fuyu">富有柿</button>
+            <button class="chip" type="button" data-v="jiro">次郎柿</button>
+            <button class="chip" type="button" data-v="suika">スイカ</button>
+          </div>
+          <div class="ctrl">
+            <label for="supTop">天面の指数 n <span class="v" id="supTopV">2.60</span></label>
+            <input type="range" id="supTop" min="1.4" max="5" step="0.01" value="2.6">
+          </div>
+          <div class="ctrl">
+            <label for="supBot">底面の指数 n <span class="v" id="supBotV">2.25</span></label>
+            <input type="range" id="supBot" min="1.4" max="5" step="0.01" value="2.25">
+          </div>
+          <div class="ctrl">
+            <label for="supAsp">高さ ÷ 直径 <span class="v" id="supAspV">0.81</span></label>
+            <input type="range" id="supAsp" min="0.5" max="1.2" step="0.01" value="0.81">
+          </div>
+          <div class="ctrl">
+            <label for="supSq">断面の四角さ <span class="v" id="supSqV">2.00（丸）</span></label>
+            <input type="range" id="supSq" min="2" max="4.5" step="0.01" value="2">
+          </div>
+          <div class="ctrl">
+            <label for="supGroove">縦の溝 <span class="v" id="supGrooveV">0.000</span></label>
+            <input type="range" id="supGroove" min="0" max="0.08" step="0.001" value="0">
+          </div>
+          <div class="readout" id="supOut"></div>
+          <p class="hint">「表の横顔」と「三ヶ日みかん」を切り替えて比べてください。高さ ÷ 直径は同じ 0.81 です。
+          下の図の点線は n = 2（ふつうの楕円と円）です。</p>
+        </div>
+        <div>
+          <canvas id="superCanvas" width="520" height="380" aria-label="超楕円で作ったミカンと柿の立体"></canvas>
+          <canvas id="superPlan" width="520" height="200" style="margin-top:10px" aria-label="横顔と、上から見た断面の設計図"></canvas>
+        </div>
+      </div>
+    </div>
+
+    <h3>柿は、上から見ても超楕円</h3>
+    <p>
+      柿を真上から見ると、丸ではなく<b>角の丸い四角</b>をしています。がく片が4枚で、
+      そのあいだに浅い縦の溝が4本走っているからです。
+      柿.js は、横顔に使ったのと同じ式を、今度は<b>水平の断面</b>に使っています。
+    </p>
+    <figure>
+<pre><span class="c">// 角の丸い四角（超楕円の断面）。極に近いほど丸に戻す</span>
+<span class="k">const</span> n = <span class="n">2</span> + (cfg.squareN - <span class="n">2</span>) * (<span class="n">0.25</span> + <span class="n">0.75</span> * yb);   <span class="c">// yb は胴で 1、上下の端で 0</span>
+<span class="k">const</span> ps = phi + Math.PI / <span class="n">4</span>;
+<span class="k">let</span> f = Math.pow(Math.pow(|cos ps|, n) + Math.pow(|sin ps|, n), -<span class="n">1</span> / n);
+f /= (<span class="n">1</span> + Math.pow(<span class="n">2</span>, <span class="n">0.5</span> - <span class="n">1</span> / n)) * <span class="n">0.5</span>;          <span class="c">// 平均径を保つ</span></pre>
+      <figcaption>柿.js の radiusAt()（読みやすく少し書き換えています）。f は、その向きの半径に掛ける倍率</figcaption>
+    </figure>
+    <p>
+      ここには細かい工夫が2つあります。
+    </p>
+    <ul>
+      <li><b>上下の端に近づくほど n を 2（円）へ戻す。</b>四角いのは胴だけで、へたのまわりと花落ちのまわりは丸い。
+        端まで四角のまま絞ると、へたの下から角が4本突き出したような形になります。</li>
+      <li><b>平均の半径をそろえる。</b>n を上げると角が外へ張り出すので、同じ大きさのつもりでも一回り大きく見えます。
+        角の向きの半径（1）と、辺の真ん中の向きの半径（2<sup>1/2 − 1/n</sup>）の平均で割って、
+        「四角さ」を変えても大きさが変わらないようにしています。</li>
+    </ul>
+    <p>
+      溝は、角と角のちょうど中間に<b>山形の関数（ガウス関数）</b>を4つ置いて、そのぶん半径を削っています。
+      溝の深さは1本ずつ乱数で 0.55〜1.30 倍に揺らします。4本とも同じ深さだと、型で抜いたように見えるからです。
+      がく片4枚の向きもこの角にそろえます（そろえないと、溝の筋とがく片がずれます）。
+    </p>
+
+    <div class="trap">
+      <span class="label">つまずきポイント</span>
+      <p><b>表と式は、どちらが上というものではありません。</b>
+      式は数字が少ないので、その果物らしさを外しにくい。そのかわり、式に無い形は作れません。
+      トマトの肩が内側へ折り返す形（04章）は、超楕円では書けません。
+      実際、ミカン.js でも超楕円を使っているのは三ヶ日みかんだけで、温州みかん・青みかん・
+      ポンカン・デコポンの4品種は今も表（<code>superN: 0</code>）のままです。
+      デコポンの「でこ」は、表に足し算して作っています。
+      どちらを選ぶかは、<b>実物の写真を横に並べて</b>決めてください。</p>
+    </div>
+
+    <h3>同じファイルの、ほかの見どころ</h3>
+    <p>
+      ミカン.js と 柿.js には、超楕円のほかにも、ほかの章とつながる工夫が入っています。
+    </p>
+    <ul>
+      <li><b>油胞（ミカンの皮の粒）は、格子に並べてから少しずらす</b>（ミカン.js の <code>oilGlands()</code>）。
+        完全にでたらめに置くと、粒が固まったところとすき間ができます。
+        極に近い行は粒の数を sin(πv) 倍に減らします。極ではテクスチャの横方向が縮むからです（→ <a href="ch06.html">06章</a>）。</li>
+      <li><b>粒は色ではなく艶で見せる。</b>はじめは油胞を濃い色の点で塗っていたので、
+        「水玉模様を印刷したように見える」という記録が残っています。
+        実物の粒は色の差がほとんどなく、ハイライトのなかで光り方が変わって見えるだけ。
+        色の濃さ <code>glandInk</code> を 0.42 から 0.12 へ下げ、そのぶんを粗さの差に回しました（→ <a href="ch07.html">07章</a>）。</li>
+      <li><b>竹ざるの編み目は、真上から平らに貼る</b>（柿.js の <code>ZaruLab.weave()</code>）。
+        網代（あじろ）編みのひごは、器の形に関係なく平行に走ります。
+        回転体と同じように極座標でテクスチャを貼ると、ひごが中心へ放射状に集まって「蜘蛛の巣」になります（→ <a href="ch06.html">06章</a>）。</li>
+      <li><b>当たり判定の底を、1.8mm だけ削いで平らにする</b>（柿.js の <code>hullShape()</code>）。
+        柿の底は丸いので、凸包の底がほぼ同じ平面の小さな面の集まりになり、
+        ざるに載ったあと5秒以上揺れ続けていました。見た目には出ない量だけ削ると止まります（→ <a href="ch08.html">08章</a>）。</li>
+    </ul>
+${tryBox([
+    "天面と底面の n を両方 2.00 にして、ただの扁平な楕円体に戻す。何に見えるか。",
+    "次郎柿で、断面の四角さを 2.00（丸）に戻す。それでも柿に見えるか。",
+    "「表の横顔」と「三ヶ日みかん」を切り替えて見比べ、表のほうがリンゴっぽく見える理由を言葉にする。",
+    "柿.js の次郎柿の squareN を 4.0 にして Playground で実行する。どこまで四角くすると柿に見えなくなるか。"
+  ])}
+  </div>
+</section>`
+});
+
 /* ---- 図鑑 ---- */
 {
   let sec = grabSection("zukan");
-  // 5本追加されたので、見出しの本数を直す
+  // 7本追加されたので、見出しの本数を直す
   sec = sec
     .replace('<div class="chnum">18<small>FILES</small></div>',
-             '<div class="chnum">23<small>FILES</small></div>')
+             '<div class="chnum">25<small>FILES</small></div>')
     .replace("18本それぞれに、そこでしか出てこない技術がある",
-             "23本それぞれに、そこでしか出てこない技術がある")
+             "25本それぞれに、そこでしか出てこない技術がある")
     .replace(
       `      左の色帯は、そのファイルのコードに実際に書かれている果皮の色です。
       同じ枠組みなのに、担当する「難所」が1本ずつ違います。`,
@@ -1504,7 +1697,7 @@ ${tryBox([
       同じ枠組みなのに、担当する「難所」が1本ずつ違います。`
     );
   pages.push({
-    file: "zukan.html", no: "23", tag: "FILES", color: P.corn,
+    file: "zukan.html", no: "25", tag: "FILES", color: P.corn,
     title: "どのファイルで、何が学べるか", crumb: "図鑑",
     // サムネイルの一覧。tools/shoot.js が書き出す。labs.js より先に読ませる
     scripts: ["assets/thumbs/thumbs.js"],
@@ -1525,7 +1718,7 @@ pages.push({
     <div class="chnum" style="font-size:13px">src<small style="opacity:.7">SOURCE</small></div>
     <div>
       <h2>サンプルのソースを読む</h2>
-      <p class="sub">23本の .js を、そのまま表示します</p>
+      <p class="sub">25本の .js を、そのまま表示します</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
@@ -1601,7 +1794,7 @@ pages.push({
     "<table>",
     '<input type="search" class="termsearch" id="termFilter" placeholder="言葉で絞り込む（例：法線、シード、UV）">\n    <table id="termTable">'
   );
-  // 第II部（12〜16章）で出てくる語を足す
+  // 第II部（12〜17章）で出てくる語を足す
   sec = sec.replace(
     "    </table>",
     `      <tr><td>再帰</td><td>関数が自分自身を呼ぶこと。枝分かれした形はこれで作る（<a href="ch12.html">12章</a>）。</td></tr>
@@ -1617,6 +1810,10 @@ pages.push({
       <tr><td>焼き込む / bake</td><td>実行のたびに計算せず、あらかじめ結果を色や画像へ書き込んでおくこと。</td></tr>
       <tr><td>シェル法 / shell fur</td><td>少し大きくしたコピーを重ねて毛を出す手法（<a href="ch15.html">15章</a>）。</td></tr>
       <tr><td>被覆率</td><td>親の面が子でどれだけ埋まっているかの比。1を切ると下地が見える。</td></tr>
+      <tr><td>超楕円 / superellipse</td><td>|x|<sup>n</sup> + |y|<sup>n</sup> = 1 で表される形。n = 2 で円、大きいほど角の丸い四角に近づく（<a href="ch17.html">17章</a>）。</td></tr>
+      <tr><td>媒介変数表示</td><td>x と y を、別の1つの数（角度 θ など）で表す書き方。曲線の上を順に点を打てる。</td></tr>
+      <tr><td>油胞</td><td>ミカンの皮の表面に並ぶ、油をためた小さな粒。</td></tr>
+      <tr><td>網代 / あじろ</td><td>竹のひごを数本越え・1本潜りで編む編み方。ひごは器の形に関係なく平行に走る。</td></tr>
     </table>`
   );
   pages.push({
@@ -1646,6 +1843,7 @@ const NAV_ITEMS = [
   ["ch14.html", "14 頂点色"],
   ["ch15.html", "15 毛"],
   ["ch16.html", "16 差分"],
+  ["ch17.html", "17 超楕円"],
   ["zukan.html", "図鑑"],
   ["view.html", "ソース"],
   ["terms.html", "用語"]
@@ -1794,7 +1992,7 @@ ${pagerHTML(prev, next)}
 
 /* ---------- トップページ ---------- */
 const HUB_BLURB = {
-  "start.html": "インストールなし。ブラウザだけで23本を動かす手順。まずここから。",
+  "start.html": "インストールなし。ブラウザだけで25本を動かす手順。まずここから。",
   "ch01.html": "モデルファイルを読み込まずに、実行した瞬間に座標を計算で作る。その利点と代償。",
   "ch02.html": "Math.random() を使わない理由。「種」を渡すと毎回同じ結果になる乱数を自分で書く。",
   "ch03.html": "となり合う値がなめらかにつながる乱数。重ねると自然物の模様になる（fBm）。",
@@ -1811,8 +2009,9 @@ const HUB_BLURB = {
   "ch14.html": "枝分かれした形にUVは張れない。色も影も、頂点ひとつずつに焼き込む。",
   "ch15.html": "産毛は法線マップでは出ない。少し大きい殻を重ねて、輪郭に毛を立てる。",
   "ch16.html": "ブロッコリーとカリフラワーは同じプログラム。色を白くしただけでは似ない。",
-  "zukan.html": "23本それぞれの「そこでしか出てこない技術」の一覧。カードからソースへ飛べます。",
-  "view.html": "23本の .js をその場で表示。全選択してコピーすれば、そのまま Playground に貼れます。",
+  "ch17.html": "円の式の「2」を大きくすると、平たく角ばる。ミカンの横顔も柿の四角も、指数ひとつ。",
+  "zukan.html": "25本それぞれの「そこでしか出てこない技術」の一覧。カードからソースへ飛べます。",
+  "view.html": "25本の .js をその場で表示。全選択してコピーすれば、そのまま Playground に貼れます。",
   "terms.html": "法線、UV、巻き順、ORM……最初の1周で引っかかる言葉だけ。検索できます。"
 };
 
@@ -1826,7 +2025,7 @@ const cardsFor = (files) =>
 
 const PART1 = ["start.html", "ch01.html", "ch02.html", "ch03.html", "ch04.html",
   "ch05.html", "ch06.html", "ch07.html", "ch08.html", "ch09.html", "ch10.html", "ch11.html"];
-const PART2 = ["ch12.html", "ch13.html", "ch14.html", "ch15.html", "ch16.html"];
+const PART2 = ["ch12.html", "ch13.html", "ch14.html", "ch15.html", "ch16.html", "ch17.html"];
 const REFS = ["zukan.html", "view.html", "terms.html"];
 
 const indexBody = `<section class="hero">
@@ -1835,7 +2034,7 @@ const indexBody = `<section class="hero">
       <p class="eyebrow">Babylon.js / procedural vegetables</p>
       <h1>3Dの野菜は、<br><span class="accent">数式から育つ</span>。</h1>
       <p class="lede">
-        このサイトで扱う23本のプログラムは、3Dモデルも写真も1枚も読み込みません。
+        このサイトで扱う25本のプログラムは、3Dモデルも写真も1枚も読み込みません。
         点の座標を計算で並べ、模様をその場で描き、光り方を数値で決める。
         絵を描く技術ではなく、形を組み立てる技術です。中学・高校の数学で追えるところから順に見ていきます。
       </p>
@@ -1869,13 +2068,15 @@ const indexBody = `<section class="hero">
     <p>
       各章には<b>その場で動かせる実験</b>がついています。スライダーを動かすと、
       文章で説明していることが目の前で起きます。読むより先に、まず動かしてください。
+      立体は<b>ドラッグで回せます</b>（掴むと自動回転が止まり、ホイールで寄れます。
+      矢印キーでも動きます）。正面だけでなく、上や裏からも確かめてみてください。
       むずかしい言葉は<a href="terms.html">用語集</a>にまとめてあります。
     </p>
     <ul class="roadmap">
       <li><span class="rn">A</span><span class="rt"><b>とにかく動かしたい人</b><span><a href="start.html">00 まず動かしてみる</a> → 好きな章の実験だけ触る</span></span></li>
       <li><span class="rn">B</span><span class="rt"><b>順番に理解したい人</b><span>01 → 02 → 03 …… と上から。04章（かたち）と05章（面と法線）がこの教材の背骨です。</span></span></li>
       <li><span class="rn">C</span><span class="rt"><b>コードを読みたい人</b><span><a href="zukan.html">図鑑</a>でファイルを選ぶ → 対応する章に戻る</span></span></li>
-      <li><span class="rn">D</span><span class="rt"><b>もう一周した人</b><span>第II部（<a href="ch12.html">12</a>〜<a href="ch16.html">16</a>）へ。ブロッコリー・ロマネスコの3本は、第I部のやり方では作れません</span></span></li>
+      <li><span class="rn">D</span><span class="rt"><b>もう一周した人</b><span>第II部（<a href="ch12.html">12</a>〜<a href="ch17.html">17</a>）へ。ブロッコリー・ロマネスコの3本は、第I部のやり方では作れません</span></span></li>
     </ul>
     <div class="note">
       <b>必要な数学。</b>
@@ -1904,8 +2105,8 @@ ${cardsFor(PART1)}
   <div class="chapter-head">
     <div class="chnum" style="font-size:15px">第II部<small style="opacity:.7">PART II</small></div>
     <div>
-      <h2>構造そのものをつくる（12〜16）</h2>
-      <p class="sub">回転体でも掃引でも作れない野菜が持ち込んだ、5つの技術</p>
+      <h2>構造そのものをつくる（12〜17）</h2>
+      <p class="sub">あとから加わった野菜・果物が持ち込んだ、6つの技術</p>
     </div>
   </div>
   <div class="body">
@@ -1914,7 +2115,8 @@ ${cardsFor(PART1)}
       そのまま対応していました。ところが、あとから加わった<b>ブロッコリー・カリフラワー・ロマネスコ</b>は、
       その並びに収まりません。<b>横顔（Profile）が無く、テクスチャも1枚も使わない</b>からです。
       形は再帰で生え、色は頂点そのものが持っています。
-      第II部は、層ではなく「作り方の種類」で立てた5章です。
+      さらにそのあと加わった<b>ミカン・柿</b>は、横顔を点の表ではなく<b>1本の式</b>で書きます（17章）。
+      第II部は、層ではなく「作り方の種類」で立てた6章です。
     </p>
   </div>
   <div class="body" style="max-width:none">
@@ -1928,7 +2130,7 @@ ${cardsFor(PART2)}
   <div class="chapter-head">
     <div class="chnum" style="font-size:15px">資料<small style="opacity:.7">REFERENCE</small></div>
     <div>
-      <h2>23本を引く</h2>
+      <h2>25本を引く</h2>
       <p class="sub">ファイルから逆に読みたいとき</p>
     </div>
   </div>
@@ -1946,7 +2148,7 @@ fs.writeFileSync(
   shell({
     fullTitle: "やさいのつくりかた — コードで野菜を育てる技術ノート",
     cur: "index.html",
-    desc: "Babylon.js で野菜を手続き的に生成する23本のサンプルを、中学生・高校生向けに解説する学習ポータル",
+    desc: "Babylon.js で野菜を手続き的に生成する25本のサンプルを、中学生・高校生向けに解説する学習ポータル",
     body: indexBody
   }),
   "utf8"

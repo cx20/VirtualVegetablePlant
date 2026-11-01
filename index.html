@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>やさいのつくりかた — コードで野菜を育てる技術ノート</title>
-<meta name="description" content="Babylon.js で野菜を手続き的に生成する23本のサンプルを、中学生・高校生向けに解説する学習ポータル">
+<meta name="description" content="Babylon.js で野菜を手続き的に生成する25本のサンプルを、中学生・高校生向けに解説する学習ポータル">
 <link rel="stylesheet" href="assets/site.css">
 <script src="assets/labs.js" defer></script>
 </head>
@@ -31,6 +31,7 @@
       <a href="ch14.html">14 頂点色</a>
       <a href="ch15.html">15 毛</a>
       <a href="ch16.html">16 差分</a>
+      <a href="ch17.html">17 超楕円</a>
       <a href="zukan.html">図鑑</a>
       <a href="view.html">ソース</a>
       <a href="terms.html">用語</a>
@@ -45,7 +46,7 @@
       <p class="eyebrow">Babylon.js / procedural vegetables</p>
       <h1>3Dの野菜は、<br><span class="accent">数式から育つ</span>。</h1>
       <p class="lede">
-        このサイトで扱う23本のプログラムは、3Dモデルも写真も1枚も読み込みません。
+        このサイトで扱う25本のプログラムは、3Dモデルも写真も1枚も読み込みません。
         点の座標を計算で並べ、模様をその場で描き、光り方を数値で決める。
         絵を描く技術ではなく、形を組み立てる技術です。中学・高校の数学で追えるところから順に見ていきます。
       </p>
@@ -87,7 +88,7 @@
       <li><span class="rn">A</span><span class="rt"><b>とにかく動かしたい人</b><span><a href="start.html">00 まず動かしてみる</a> → 好きな章の実験だけ触る</span></span></li>
       <li><span class="rn">B</span><span class="rt"><b>順番に理解したい人</b><span>01 → 02 → 03 …… と上から。04章（かたち）と05章（面と法線）がこの教材の背骨です。</span></span></li>
       <li><span class="rn">C</span><span class="rt"><b>コードを読みたい人</b><span><a href="zukan.html">図鑑</a>でファイルを選ぶ → 対応する章に戻る</span></span></li>
-      <li><span class="rn">D</span><span class="rt"><b>もう一周した人</b><span>第II部（<a href="ch12.html">12</a>〜<a href="ch16.html">16</a>）へ。ブロッコリー・ロマネスコの3本は、第I部のやり方では作れません</span></span></li>
+      <li><span class="rn">D</span><span class="rt"><b>もう一周した人</b><span>第II部（<a href="ch12.html">12</a>〜<a href="ch17.html">17</a>）へ。ブロッコリー・ロマネスコの3本は、第I部のやり方では作れません</span></span></li>
     </ul>
     <div class="note">
       <b>必要な数学。</b>
@@ -110,7 +111,7 @@
       <a class="hubcard" href="start.html" style="--ch:var(--p-leaf)">
         <span class="no">00<span style="opacity:.55;margin-left:8px">START</span></span>
         <h3>まず動かしてみる</h3>
-        <p>インストールなし。ブラウザだけで23本を動かす手順。まずここから。</p>
+        <p>インストールなし。ブラウザだけで25本を動かす手順。まずここから。</p>
       </a>
       <a class="hubcard" href="ch01.html" style="--ch:var(--p-leaf)">
         <span class="no">01<span style="opacity:.55;margin-left:8px">CONFIG</span></span>
@@ -175,8 +176,8 @@
   <div class="chapter-head">
     <div class="chnum" style="font-size:15px">第II部<small style="opacity:.7">PART II</small></div>
     <div>
-      <h2>構造そのものをつくる（12〜16）</h2>
-      <p class="sub">回転体でも掃引でも作れない野菜が持ち込んだ、5つの技術</p>
+      <h2>構造そのものをつくる（12〜17）</h2>
+      <p class="sub">あとから加わった野菜・果物が持ち込んだ、6つの技術</p>
     </div>
   </div>
   <div class="body">
@@ -185,7 +186,8 @@
       そのまま対応していました。ところが、あとから加わった<b>ブロッコリー・カリフラワー・ロマネスコ</b>は、
       その並びに収まりません。<b>横顔（Profile）が無く、テクスチャも1枚も使わない</b>からです。
       形は再帰で生え、色は頂点そのものが持っています。
-      第II部は、層ではなく「作り方の種類」で立てた5章です。
+      さらにそのあと加わった<b>ミカン・柿</b>は、横顔を点の表ではなく<b>1本の式</b>で書きます（17章）。
+      第II部は、層ではなく「作り方の種類」で立てた6章です。
     </p>
   </div>
   <div class="body" style="max-width:none">
@@ -215,6 +217,11 @@
         <h3>「似ているのに別物」を作り分ける</h3>
         <p>ブロッコリーとカリフラワーは同じプログラム。色を白くしただけでは似ない。</p>
       </a>
+      <a class="hubcard" href="ch17.html" style="--ch:var(--p-carrot)">
+        <span class="no">17<span style="opacity:.55;margin-left:8px">Exponent</span></span>
+        <h3>平たさと角を、指数ひとつで決める</h3>
+        <p>円の式の「2」を大きくすると、平たく角ばる。ミカンの横顔も柿の四角も、指数ひとつ。</p>
+      </a>
     </div>
   </div>
 </section>
@@ -223,21 +230,21 @@
   <div class="chapter-head">
     <div class="chnum" style="font-size:15px">資料<small style="opacity:.7">REFERENCE</small></div>
     <div>
-      <h2>23本を引く</h2>
+      <h2>25本を引く</h2>
       <p class="sub">ファイルから逆に読みたいとき</p>
     </div>
   </div>
   <div class="body" style="max-width:none">
     <div class="hub">
       <a class="hubcard" href="zukan.html" style="--ch:var(--p-corn)">
-        <span class="no">23<span style="opacity:.55;margin-left:8px">FILES</span></span>
+        <span class="no">25<span style="opacity:.55;margin-left:8px">FILES</span></span>
         <h3>どのファイルで、何が学べるか</h3>
-        <p>23本それぞれの「そこでしか出てこない技術」の一覧。カードからソースへ飛べます。</p>
+        <p>25本それぞれの「そこでしか出てこない技術」の一覧。カードからソースへ飛べます。</p>
       </a>
       <a class="hubcard" href="view.html" style="--ch:var(--p-leaf)">
         <span class="no">SRC<span style="opacity:.55;margin-left:8px">SOURCE</span></span>
         <h3>サンプルのソースを読む</h3>
-        <p>23本の .js をその場で表示。全選択してコピーすれば、そのまま Playground に貼れます。</p>
+        <p>25本の .js をその場で表示。全選択してコピーすれば、そのまま Playground に貼れます。</p>
       </a>
       <a class="hubcard" href="terms.html" style="--ch:var(--p-onion)">
         <span class="no">用語<span style="opacity:.55;margin-left:8px">GLOSSARY</span></span>
