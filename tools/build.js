@@ -33,6 +33,25 @@ const ROOT = path.resolve(__dirname, "..");
 const SAMPLES = path.join(ROOT, "samples");
 const SRC = fs.readFileSync(path.join(ROOT, "assets/_index_original.bak.html"), "utf8");
 
+const REPO_URL = "https://github.com/cx20/VirtualVegetablePlant";
+/* 姉妹サイト。フッター（全ページ）とトップページの紹介欄で使う */
+const SISTERS = [
+  {
+    title: "たべもののつくりかた",
+    repo: "VirtualFoodCourt",
+    site: "https://cx20.github.io/VirtualFoodCourt/",
+    color: "var(--p-carrot)",
+    desc: "料理を題材に、形に加えて焼き色や透け、衣・麺・汁、盛り付けなどの表現を解説します。"
+  },
+  {
+    title: "おかしのつくりかた",
+    repo: "VirtualSweetsFactory",
+    site: "https://cx20.github.io/VirtualSweetsFactory/",
+    color: "var(--p-tomato)",
+    desc: "お菓子を題材に、型で抜く、焼く、たれを掛けるといった工程や、やわらかい物が触れ合って変形する表現を解説します。"
+  }
+];
+
 /* ---------- 元ファイルから <section class="chapter" id="X"> を取り出す ---------- */
 function grabSection(id) {
   const open = SRC.indexOf('<section class="chapter" id="' + id + '"');
@@ -1909,7 +1928,8 @@ ${o.body}
 <footer>
   <div class="wrap">
     <div><b>やさいのつくりかた</b> — Babylon.js による手続き的モデリングの学習ノート</div>
-    <div><a href="index.html">目次へ戻る</a></div>
+    <div>姉妹サイト：${SISTERS.map((s) => '<a href="' + s.site + '" target="_blank" rel="noopener">' + s.title + "</a>").join(" ／ ")}</div>
+    <div><a href="${REPO_URL}/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a> ・ <a href="index.html">目次へ戻る</a></div>
   </div>
 </footer>
 </body>
@@ -2163,6 +2183,30 @@ ${cardsFor(PART2)}
   <div class="body" style="max-width:none">
     <div class="hub">
 ${cardsFor(REFS)}
+    </div>
+  </div>
+</section>
+
+<section class="chapter" id="sisters" style="--ch:var(--p-okra)">
+  <div class="chapter-head">
+    <div class="chnum" style="font-size:15px">姉妹編<small style="opacity:.7">SISTERS</small></div>
+    <div>
+      <h2>ほかの題材でつくる</h2>
+      <p class="sub">同じ手続き的モデリングを、料理とお菓子で</p>
+    </div>
+  </div>
+  <div class="body">
+    <p>
+      このサイトは、野菜・果物・きのこの形や表面の模様を、計算とコードで作る方法を解説します。題材を変えた姉妹サイトが2つあります。乱数・ノイズ・面と法線のような道具は共通です。
+    </p>
+  </div>
+  <div class="body" style="max-width:none">
+    <div class="hub">
+${SISTERS.map((s) => `      <a class="hubcard" href="${s.site}" target="_blank" rel="noopener" style="--ch:${s.color}">
+        <span class="no">${s.repo}</span>
+        <h3>${s.title}</h3>
+        <p>${s.desc}</p>
+      </a>`).join("\n")}
     </div>
   </div>
 </section>
