@@ -15,6 +15,51 @@
 
 ---
 
+## 作った野菜・果物・きのこ
+
+ぜんぶコードだけで作っています（画像は `tools/shoot.js` でサンプルを実際に動かして撮ったもの）。
+画像を押すとサイト上でその場で動き、名前を押すとソースが開きます。
+
+<table>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=ニンジン.js"><img src="assets/thumbs/ニンジン.jpg" alt="ニンジン" width="160"></a><br><a href="samples/ニンジン.js">ニンジン</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=キュウリ.js"><img src="assets/thumbs/キュウリ.jpg" alt="キュウリ" width="160"></a><br><a href="samples/キュウリ.js">キュウリ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=トマト.js"><img src="assets/thumbs/トマト.jpg" alt="トマト" width="160"></a><br><a href="samples/トマト.js">トマト</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=ナス.js"><img src="assets/thumbs/ナス.jpg" alt="ナス" width="160"></a><br><a href="samples/ナス.js">ナス</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=ピーマン.js"><img src="assets/thumbs/ピーマン.jpg" alt="ピーマン" width="160"></a><br><a href="samples/ピーマン.js">ピーマン</a></td>
+  </tr>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=オクラ.js"><img src="assets/thumbs/オクラ.jpg" alt="オクラ" width="160"></a><br><a href="samples/オクラ.js">オクラ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=ゴーヤ.js"><img src="assets/thumbs/ゴーヤ.jpg" alt="ゴーヤ" width="160"></a><br><a href="samples/ゴーヤ.js">ゴーヤ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=ジャガイモ.js"><img src="assets/thumbs/ジャガイモ.jpg" alt="ジャガイモ" width="160"></a><br><a href="samples/ジャガイモ.js">ジャガイモ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=サツマイモ.js"><img src="assets/thumbs/サツマイモ.jpg" alt="サツマイモ" width="160"></a><br><a href="samples/サツマイモ.js">サツマイモ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=トウモロコシ.js"><img src="assets/thumbs/トウモロコシ.jpg" alt="トウモロコシ" width="160"></a><br><a href="samples/トウモロコシ.js">トウモロコシ</a></td>
+  </tr>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=シイタケ.js"><img src="assets/thumbs/シイタケ.jpg" alt="シイタケ" width="160"></a><br><a href="samples/シイタケ.js">シイタケ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=エリンギ.js"><img src="assets/thumbs/エリンギ.jpg" alt="エリンギ" width="160"></a><br><a href="samples/エリンギ.js">エリンギ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=玉ねぎ.js"><img src="assets/thumbs/玉ねぎ.jpg" alt="玉ねぎ" width="160"></a><br><a href="samples/玉ねぎ.js">玉ねぎ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=スイカ.js"><img src="assets/thumbs/スイカ.jpg" alt="スイカ" width="160"></a><br><a href="samples/スイカ.js">スイカ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=メロン.js"><img src="assets/thumbs/メロン.jpg" alt="メロン" width="160"></a><br><a href="samples/メロン.js">メロン</a></td>
+  </tr>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=リンゴ.js"><img src="assets/thumbs/リンゴ.jpg" alt="リンゴ" width="160"></a><br><a href="samples/リンゴ.js">リンゴ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=ブドウ.js"><img src="assets/thumbs/ブドウ.jpg" alt="ブドウ" width="160"></a><br><a href="samples/ブドウ.js">ブドウ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=バナナ.js"><img src="assets/thumbs/バナナ.jpg" alt="バナナ" width="160"></a><br><a href="samples/バナナ.js">バナナ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=サクランボ.js"><img src="assets/thumbs/サクランボ.jpg" alt="サクランボ" width="160"></a><br><a href="samples/サクランボ.js">サクランボ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=枝豆.js"><img src="assets/thumbs/枝豆.jpg" alt="枝豆" width="160"></a><br><a href="samples/枝豆.js">枝豆</a></td>
+  </tr>
+  <tr>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=ブロッコリー.js"><img src="assets/thumbs/ブロッコリー.jpg" alt="ブロッコリー" width="160"></a><br><a href="samples/ブロッコリー.js">ブロッコリー</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=カリフラワー.js"><img src="assets/thumbs/カリフラワー.jpg" alt="カリフラワー" width="160"></a><br><a href="samples/カリフラワー.js">カリフラワー</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=ロマネスコ.js"><img src="assets/thumbs/ロマネスコ.jpg" alt="ロマネスコ" width="160"></a><br><a href="samples/ロマネスコ.js">ロマネスコ</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=ミカン.js"><img src="assets/thumbs/ミカン.jpg" alt="ミカン" width="160"></a><br><a href="samples/ミカン.js">ミカン</a></td>
+    <td align="center" width="20%"><a href="https://cx20.github.io/VirtualVegetablePlant/play.html?f=柿.js"><img src="assets/thumbs/柿.jpg" alt="柿" width="160"></a><br><a href="samples/柿.js">柿</a></td>
+  </tr>
+</table>
+
+---
+
 ## まず動かす
 
 サンプルは [Babylon.js Playground](https://playground.babylonjs.com/) 用の形になっています。
@@ -66,7 +111,7 @@ npx serve .                  # 任意の静的サーバでよい
 │   ├── play.js              play.html の実行エンジン    （手書き）
 │   ├── _index_original.bak.html   01〜07章 本文の出典。消さないこと
 │   ├── src/                 samples/*.js のビューア用複製（生成物・.gitignore 済み）
-│   └── thumbs/              図鑑のサムネイル（*.jpg / index.json / thumbs.js）
+│   └── thumbs/              図鑑と README のサムネイル（*.jpg / index.json / thumbs.js）
 │
 └── tools/
     ├── build.js             HTML 全ページと assets/src/ を生成
