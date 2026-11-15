@@ -10,6 +10,9 @@
 
 必要な数学は sin・cos、座標、比例、それに少しのベクトル（内積・外積）。高校1年までの内容でだいたい追えます。
 
+題材を変えた姉妹編に **[たべもののつくりかた（VirtualFoodCourt）](https://github.com/cx20/VirtualFoodCourt)** と
+**[おかしのつくりかた（VirtualSweetsFactory）](https://github.com/cx20/VirtualSweetsFactory)** があります（→ [姉妹リポジトリ](#姉妹リポジトリ)）。
+
 ---
 
 ## まず動かす
@@ -52,6 +55,7 @@ npx serve .                  # 任意の静的サーバでよい
 ├── view.html                ソースビューア
 ├── play.html                サンプルをその場で実行するページ
 ├── terms.html               用語集
+├── LICENSE                  MIT License
 │
 ├── samples/                 ★ サンプル 25 本（Babylon.js Playground 用の .js）
 │
@@ -179,6 +183,21 @@ node tools/shoot.js ニンジン   # 名前で絞り込み（部分一致）
 
 ---
 
+## 姉妹リポジトリ
+
+同じ Babylon.js による手続き的モデリングを、題材を変えて解説しています。
+
+| サイト | リポジトリ | 内容 |
+| --- | --- | --- |
+| [やさいのつくりかた](https://cx20.github.io/VirtualVegetablePlant/) | [VirtualVegetablePlant](https://github.com/cx20/VirtualVegetablePlant)（このリポジトリ） | 野菜・果物・きのこの形や表面の模様を、計算とコードで作る方法を解説します。 |
+| [たべもののつくりかた](https://cx20.github.io/VirtualFoodCourt/) | [VirtualFoodCourt](https://github.com/cx20/VirtualFoodCourt) | 料理を題材に、形に加えて焼き色や透け、衣・麺・汁、盛り付けなどの表現を解説します。 |
+| [おかしのつくりかた](https://cx20.github.io/VirtualSweetsFactory/) | [VirtualSweetsFactory](https://github.com/cx20/VirtualSweetsFactory) | お菓子を題材に、型で抜く、焼く、たれを掛けるといった工程や、やわらかい物が触れ合って変形する表現を解説します。 |
+
+---
+
 ## ライセンス
 
-このリポジトリには現在 LICENSE ファイルがありません（未設定）。
+[MIT License](LICENSE) です。サンプルのコード、解説ページ、サムネイル画像を含む、このリポジトリの内容すべてに適用されます。
+
+実行時に CDN から読み込む Babylon.js（Apache License 2.0）と Havok Physics（MIT License）は、
+このリポジトリには含まれていません。それぞれのライセンスに従います。
