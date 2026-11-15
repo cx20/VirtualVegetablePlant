@@ -1,6 +1,124 @@
 // =====================================================================
-//  Photoreal Goya (Bitter Melon)  /  写実的なゴーヤー（苦瓜）  BUILD: goya-C
+//  Photoreal Goya (Bitter Melon)  /  写実的なゴーヤー（苦瓜）  BUILD: goya-L
 //  Babylon.js Playground 用（そのまま貼り付けて実行できます）
+//
+//  以下は各版の変更履歴。現在の方式は末尾の「現在の構成と表現」を参照。
+//
+//  goya-K からの変更点（軸方向の色）:
+//    ・ヘタ寄りを濃くするのをやめ、先端へ向けて淡くする勾配に変えた。
+//      写真では肩は胴と同じ緑で、色が変わるのは先端側（黄緑に抜ける）
+//    ・果柄の色を胴に寄せた
+//
+//  goya-J からの変更点（果柄）:
+//    ・果柄が太い円筒で、果実が一度すぼまってから太い柄が付くため、
+//      容器の蓋に見えた。実物は細い柄（径 約3mm）で、付け根だけが
+//      ラッパ状に広がって肩へなめらかにつながる。柄の付け根の半径と
+//      果実の始まりの半径をそろえ、柄を細く長くして、少し曲げた
+//
+//  goya-I からの変更点（稜の途切れ方と粒の丸さ）:
+//    ・稜が連続しすぎていた。瘤を 1〜3cm に短くし、切れ目を広げ、
+//      ところどころ瘤を抜く。抜けた所には粒が入り込む。
+//      長さ・切れ目・抜く確率はプリセットで変えられる
+//      （ridgeLen / ridgeGap / ridgeSkip）。品種差・個体差が大きい所
+//    ・粒を大きく丸くした。goya-I は小さな棘に見えた。列を 3 → 2 に
+//      減らして粒の幅を広げ、尖りと傾きを弱めた
+//    ・すき間埋めの最小世代を外した（うるさかった）
+//
+//  goya-H からの変更点（いぼの分布。スキャンの Matcap と突き合わせた）:
+//    ・粒の大きさをそろえた。スキャンの粒は直径 3〜5mm にまとまっていて、
+//      goya-H の「大きなレンズ＋小さな玉」（直径比 3.5 倍）は泡に見えた
+//    ・粒を稜に平行な「列」に並べた。稜と稜のあいだに 3 列。完全な乱数で
+//      撒くと列が消え、実物の「縦に流れる」印象が出ない。列を置いた後、
+//      残ったすき間を小粒で埋める
+//    ・粒を先端側へ傾けた。スキャンの粒は真上ではなく先端へ向いた牙形
+//    ・粒の大きさを軸方向に変えた（ヘタ寄りは細かく、胴で最大）
+//    ・稜の瘤を細く長くし、断面を尖った屋根から丸みのある棒へ戻した。
+//      ヘタの際から始め、肩の「縦溝」につなげる
+//    ・3本表示の分割を 512x320 に上げた（粒が細かくなったため）
+//
+//  goya-G からの変更点（塊ひとつずつの形と質感）:
+//    ・粒を高くした（高さ ≒ 半幅の 1.45 倍）。レンズ豆のように平たかった。
+//      粒ごとに尖り具合を振り、球に近い物から円錐に近い物まで混ぜる
+//    ・稜の瘤を俵形から「屋根形」に変えた。断面は頂が尖り、平面形は
+//      両端のすぼまった紡錘形。長さも 2〜6cm に伸ばし、傾きを抑えた
+//    ・先端を尖らせ、稜を嘴の際まで通した
+//    ・色を明るい黄緑へ寄せ、粒のあいだの暗さを弱めた。透け感を少し足した
+//    ・最細のざらつきを 1/3 にした。実物の表皮は滑らか
+//
+//  goya-F からの変更点（いぼの生成ルールの入れ替え）:
+//    ・いぼを「面の分割（ボロノイ）」から「地の上に載る楕円の充填」に変えた。
+//      実物の粒は面を分割した板ではなく、ほぼ一定の深さの地から立つ
+//      独立した塊。大きい物の間に小さい物が入り、大きい物ほど縦に長い。
+//      これを「大きい順に、空いた所へ詰める」多階層のダーツ投げで作る:
+//        第0世代  稜の線に沿って細長い楕円を、切れ目を空けて並べる
+//        第1世代〜 半径を段階的に小さく・縦横比を 1 に近づけながら、
+//                 既存の楕円と重ならない所にだけ置く
+//      高さは楕円の幅に比例。高さ場は各楕円の丸い断面の最大値
+//    ・楕円の一覧は品種ごとに1回だけ作り、メッシュとテクスチャが共有する
+//    ・色を少し明るくし、艶を落とした
+//
+//  goya-E2 からの変更点（実物のスキャンと見比べた作り直し）:
+//    ・粒を「格子に並べたドーム」から「敷き詰めた小石」に変えた。
+//      スキャンの粒は互いに押し合って面を埋め、頂は平たく、境は狭く深い。
+//      ドームの和集合は粒が列に並んで見え、トウモロコシや編み物になる。
+//      重み付きボロノイ（F2-F1）で大小不揃いの石畳にし、肩を丸める
+//    ・大粒と小粒は max で重ねる。大粒の無い所・すき間に小粒が覗く
+//    ・稜を不揃いにした。大きく蛇行し、幅が変わり、稜ごとに高さが違う
+//    ・太さを実物に寄せた（長さ:径 ≒ 5.3:1 → 4:1）
+//    ・法線マップは「メッシュで出せない物」だけにした（粒の境の皺と
+//      最細のざらつき）。粒そのものを入れると陰影が二重になる
+//    ・色の明暗差を下げた。粒の頂を黄緑に抜きすぎると斑点に見える
+//
+//  goya-E からの変更点（色と凹凸の食い違いの修正）:
+//    ・色・AO・艶の「溝／頂」を、粒の高さからではなく、ジオメトリに
+//      与えた変位そのものから決めるようにした。goya-E では稜の上の粒を
+//      消したため「粒が無い＝溝」と判定され、いちばん出っ張っている稜の
+//      瘤が溝の色で黒く塗られていた（濃緑の長方形が並んで見えた原因）
+//    ・変位の式を reliefAt の1か所にまとめ、メッシュとテクスチャの両方が
+//      同じ関数を呼ぶ。式を2か所に書くと、片方だけ直して食い違う
+//    ・溝／頂は「変位 − 変位をぼかしたもの」（周囲より高いか低いか）で
+//      判定し、しきい値は分布の標準偏差で正規化する
+//
+//  goya-D からの変更点（形状の写実化。掃引メッシュのまま）:
+//    ・稜を分節した。実物の稜は1本の連続したリブではなく、長さ1〜3cmの
+//      細長い瘤が途切れながら連なる。稜ごと・節ごとに長さと高さを変え、
+//      節の切れ目では稜の上にも粒が立つようにした（ridgeSegN / ridgeSeg）
+//    ・中粒（約3mm）をジオメトリにも入れた（medGeoAmp）。法線マップだけ
+//      だと陰影は付くがシルエットが滑らかなままになる。これに合わせて
+//      分割を 448x280 まで上げ、法線マップ側の粒の寄与は下げた
+//    ・粒の断面を立てた（dome 0.95 → 0.70）。放物面だと裾が寝て
+//      粒どうしの境が浅い皿になる。実物は側面が立ち、皺が狭く深い
+//    ・稜と粒の変位量を上げ、断面が歯車状になるようにした
+//    ・平均の引き算（wartMean など）を手書きの定数から実測に変えた。
+//      場の形を変えるたびに果実が太ったり痩せたりするのを防ぐ
+//    ・稜を先端の嘴の際まで残した（以前は t=0.86 から消していた）
+//
+//  goya-C からの変更点（Inspector のデバッグ表示）:
+//    ・Physics Helper が何も出ない／Scene Explorer の Picker が当たらない
+//      問題の修正。原因は GUI 専用カメラで、activeCameras を 2 台にすると
+//      Babylon の各機能が「activeCameras の末尾＝描画の基準カメラ」と
+//      見なす所で全部 guiCam を拾ってしまう:
+//        ・UtilityLayerRenderer → Physics Helper が何も出ない／ギズモがずれる
+//        ・EffectLayer          → 選択ハイライトが全カメラパスで合成される
+//        ・scene.activeCamera   → scene.pick() のレイが guiCam 基準になる
+//      Babylon のレイ生成（CreatePickingRayToRef）は
+//        camera → scene.activeCamera → scene.cameraToUseForPointers
+//      の順に見るので、cameraToUseForPointers を設定していても
+//      activeCamera が guiCam だと画面座標が原点前方 -50cm の別カメラで
+//      逆投影され、まったく違う所を指す。
+//    ・そもそもカメラを分ける必要が無かった。Layer.applyPostProcess を
+//      false にすると、その前景レイヤーは _afterCameraPostProcessStage で
+//      描かれる＝ポストプロセスの後に合成される。つまりカメラ1台のまま
+//      GUI だけ Bloom / DOF から外せる。カメラが1台なら activeCamera は
+//      常に主カメラなので、Picker も Physics Helper も EffectLayer も
+//      素の状態で正しく動く。guiOwnCamera の既定を false にしてこちらを
+//      標準にした（true にすれば従来のカメラ分離＋bindDebugCamera に戻る）
+//    ・加えて、Inspector v2 が scene.pick へ渡す Y が上下反転している。
+//      当たり位置に印を出して確かめたところ、Babylon が返す pickInfo は
+//      正しく、Inspector の選択枠だけがキャンバスの水平中心線を挟んだ
+//      反対側に付いていた（WebGPU・WebGL のどちらでも同じ）。
+//      これは Inspector 側の不具合だが、受け取り側で戻せるので
+//      fixInspectorPickY で対処した。直ったら false にしてよい
 //
 //  goya-A からの変更点:
 //    ・法線マップの v 方向の符号を修正（(yu - yd) → (yd - yu)）
@@ -17,22 +135,34 @@
 //    1. Rng         … シード付き擬似乱数
 //    2. Noise       … 3D値ノイズ（形状）/ 2D周期ノイズ（テクスチャ）
 //    3. Mesh utils  … 巻き順の自動判定・法線の溶接・掃引
-//    4. Fields      … 半径プロファイル / 稜（リブ）の場 / イボの場 / 細粒
+//    4. Fields      … 半径プロファイル / 稜の線 / 楕円の充填 / 共通の変位
 //    5. TextureLab  … 果皮のアルベド・ORM・法線、竹の網代を手続き生成
-//    6. Goya        … 果実 + 短い果柄
+//    6. Goya        … 果実 + 付け根が広がる細い果柄 / 物理用の代理形状
 //    7. Basket      … ざる
 //    8. Scene / 物理（Havok で1本ずつ落とす）
 //    9. GUI
 //
-//  きゅうり版からの主な変更点（ここを外すと「イボだらけのきゅうり」になる）:
-//    ・胴は平行ではない。中央が最も太く、両端へ紡錘形に細る。特に先端は尖る
-//    ・縦に8〜10本の「太い稜（リブ）」がある。稜の上は滑らかで、
-//      イボが立つのは稜と稜のあいだ（谷と斜面）。ここが最大の見分け
-//    ・稜は定規で引いたようには走らない。ゆっくり蛇行し、太い稜と細い稜が交互
-//    ・イボは大小2階層。粗い瘤（数mm、ジオメトリで出す）と、
-//      その上に載る細かい粒（1〜2mm、法線マップで出す）
-//    ・色はきゅうりよりずっと濃い。谷が暗く、瘤の頂が明るい黄緑に抜ける
-//    ・艶はある（特に稜の上）が、粒の集合がハイライトを砕くので鏡にはならない
+//  現在の構成と表現:
+//    ・中長 / あばし / 白の3品種。胴は中央が太い紡錘形で、先端の丸さは
+//      品種で変える。曲がった軸に断面を並べ、長さ・太さ・曲がりに個体差を出す
+//    ・8〜10本の稜は、蛇行する線に沿った細長い瘤の連なり。
+//      長さ・切れ目・抜けを ridgeLen / ridgeGap / ridgeSkip で変える
+//    ・稜のあいだに丸い粒を2列に並べ、残ったすき間や稜の抜けた所を
+//      3段階の大きさの粒で埋める。粒は胴で大きく、両端で小さい。
+//      粒の頂は少し先端側へ寄せ、尖りすぎない形にする
+//    ・稜も粒も楕円をもとにした高さ場で、重なる所は最大の高さを使う。
+//      buildElements の配置と reliefAt の変位をメッシュ・テクスチャで共有し、
+//      品種ごとにキャッシュする。変位の平均を引いて太りすぎを防ぐ
+//    ・稜と粒はジオメトリで作る。法線マップは表皮のざらつきやよれだけを補い、
+//      同じ凹凸の陰影を二重に付けない。色・AO・粗さは周囲との高低差に合わせる
+//    ・緑の品種は肩を胴と同じ緑に保ち、先端側へ淡い黄緑に抜く。
+//      果柄は果皮に近い色で、付け根だけ広がる細い形を少し曲げる
+//    ・表示は3 / 5 / 8本。軸×周方向の分割は順に512x320 / 448x280 / 320x200。
+//      物理には稜と粒を省き、果柄を含めた粗い代理メッシュの凸包を使う
+//    ・通常 / 白クレイ / 法線マップ表示、法線マップの強度・Y反転、診断ライトで
+//      見え方を確認できる。初期表示は中長5本、法線マップの強度は「中」
+//    ・GUI は既定でカメラ1台のままポストプロセス後に合成する。
+//      Inspector の反転した Y 座標を戻す補正は fixInspectorPickY で切り替える
 // =====================================================================
 
 var createScene = async function () {
@@ -42,39 +172,36 @@ var createScene = async function () {
     const PRESETS = {
         nakanaga: {
             label: "中長ゴーヤー",
-            length: 25.0, radius: 2.48,
+            length: 24.0, radius: 3.00,
             fullness: 1.00,
-            tipBlunt: 0.15,                     // 0=先が尖る / 1=先が丸い
+            tipBlunt: 0.05,                     // 0=先が尖る / 1=先が丸い
             bendA: 0.026, bendB: 0.010,
             // 稜（リブ）
             // 【対策】ridgeCount は偶数にすること。太い稜と細い稜を交互に
             //         する変調が周方向に半周期ぶん入るので、奇数だと
             //         u=0 の継ぎ目で稜の太さが不連続になる
-            ridgeCount: 10, ridgeAmp: 0.160, ridgeAlt: 0.34,
-            ridgeMeander: 0.016, twist: 0.22,
+            ridgeCount: 10, ridgeAlt: 0.30,
+            // 稜の瘤と丸い粒。幅・長さ・切れ目の寸法は cm
+            //   ridgeWidth = 稜の瘤の半幅 / ridgeLen = 瘤の長さの範囲
+            //   ridgeGap   = 瘤と瘤の切れ目の範囲 / ridgeSkip = 瘤を抜く確率
+            //   beadScale  = 粒の大きさの倍率 / beadHeight = 高さの倍率
+            //   ridgeBase  = 稜の下のゆるい盛り上がり（半径比）
+            ridgeWidth: 0.34, ridgeLen: [1.0, 3.2], ridgeGap: [0.15, 0.90], ridgeSkip: 0.18, beadScale: 1.00, beadHeight: 1.00, ridgeBase: 0.040,
+            ridgeMeander: 1.0, twist: 0.25,
             asymmetry: 0.030,
-            // 粗い瘤（ジオメトリ + テクスチャ）
-            // 【対策】主役はこの大粒。直径7mm前後で、r0/r1 を離して大小を
-            //         はっきり付ける。粒径をそろえると編み物の畝になる
-            wartCell: { nu: 22, nv: 42, asp: 0.62, jitU: 0.34, jitV: 0.88, r0: 0.44, r1: 0.74, vari: 0.62, dome: 0.95, seed: 101 },
-            wartAmp: 0.105, wartMean: 0.40,
-            // 補助の小粒。大粒の肌理を作るだけで、単独では主張させない
-            medCell: { nu: 56, nv: 96, asp: 0.68, jitU: 0.40, jitV: 0.90, r0: 0.42, r1: 0.62, vari: 0.55, dome: 0.85, seed: 307 },
-            medAmp: 0.26,
-            wartValley: 0.62,                   // 稜の頂で粒を消す割合
             // 最細のざらつき（法線マップのみ）
-            grainU: 150, grainV: 240, grainAmp: 0.10,
+            grainU: 150, grainV: 240, grainAmp: 0.035,
             // 色（sRGB）
-            skinDark: [0.055, 0.135, 0.040],    // 溝の底
-            skinMid: [0.165, 0.345, 0.115],
-            skinLight: [0.325, 0.520, 0.215],   // 稜（滑らかで淡い）
-            skinTip: [0.205, 0.400, 0.140],     // 先端寄り
-            wartBase: [0.085, 0.195, 0.062],
-            wartPeak: [0.440, 0.645, 0.285],    // 粒の頂の明るい黄緑
+            skinDark: [0.090, 0.200, 0.060],    // 溝の底
+            skinMid: [0.260, 0.470, 0.160],
+            skinLight: [0.420, 0.620, 0.260],   // 稜（滑らかで淡い）
+            skinTip: [0.430, 0.630, 0.270],     // 先端寄り
+            wartBase: [0.140, 0.290, 0.090],
+            wartPeak: [0.500, 0.700, 0.300],    // 粒の頂の明るい黄緑
             fleck: [0.530, 0.710, 0.355],
-            stem: [0.155, 0.290, 0.085], stemCut: [0.620, 0.640, 0.420],
-            stemLen: 0.075, stemRadius: 0.16,
-            skinRoughness: 0.36, waxIntensity: 0.60, bloom: 0.10
+            stem: [0.215, 0.395, 0.130], stemCut: [0.620, 0.640, 0.420],
+            stemLen: 0.090, stemRadius: 0.050,
+            skinRoughness: 0.40, waxIntensity: 0.45, bloom: 0.10
         },
         abashi: {
             label: "あばしゴーヤー",
@@ -83,24 +210,20 @@ var createScene = async function () {
             fullness: 1.00,
             tipBlunt: 0.85,
             bendA: 0.018, bendB: 0.007,
-            ridgeCount: 8, ridgeAmp: 0.180, ridgeAlt: 0.38,
-            ridgeMeander: 0.022, twist: 0.14,
+            ridgeCount: 8, ridgeAlt: 0.32,
+            ridgeWidth: 0.40, ridgeLen: [0.9, 2.6], ridgeGap: [0.15, 0.90], ridgeSkip: 0.20, beadScale: 1.25, beadHeight: 1.00, ridgeBase: 0.045,
+            ridgeMeander: 0.9, twist: 0.20,
             asymmetry: 0.034,
-            wartCell: { nu: 18, nv: 26, asp: 0.78, jitU: 0.40, jitV: 0.88, r0: 0.46, r1: 0.78, vari: 0.60, dome: 0.88, seed: 101 },
-            wartAmp: 0.115, wartMean: 0.40,
-            medCell: { nu: 44, nv: 62, asp: 0.80, jitU: 0.42, jitV: 0.90, r0: 0.42, r1: 0.62, vari: 0.55, dome: 0.85, seed: 307 },
-            medAmp: 0.22,
-            wartValley: 0.50,
-            grainU: 120, grainV: 168, grainAmp: 0.08,
+            grainU: 120, grainV: 168, grainAmp: 0.030,
             skinDark: [0.098, 0.205, 0.066],
             skinMid: [0.250, 0.470, 0.170],
             skinLight: [0.430, 0.640, 0.300],
-            skinTip: [0.300, 0.520, 0.205],
+            skinTip: [0.450, 0.670, 0.300],
             wartBase: [0.135, 0.275, 0.092],
             wartPeak: [0.545, 0.735, 0.375],
             fleck: [0.620, 0.780, 0.430],
-            stem: [0.175, 0.310, 0.095], stemCut: [0.640, 0.655, 0.435],
-            stemLen: 0.070, stemRadius: 0.15,
+            stem: [0.235, 0.435, 0.150], stemCut: [0.640, 0.655, 0.435],
+            stemLen: 0.090, stemRadius: 0.050,
             skinRoughness: 0.40, waxIntensity: 0.50, bloom: 0.14
         },
         shiro: {
@@ -110,24 +233,20 @@ var createScene = async function () {
             fullness: 1.00,
             tipBlunt: 0.50,
             bendA: 0.022, bendB: 0.009,
-            ridgeCount: 10, ridgeAmp: 0.140, ridgeAlt: 0.28,
-            ridgeMeander: 0.018, twist: 0.20,
+            ridgeCount: 10, ridgeAlt: 0.26,
+            ridgeWidth: 0.34, ridgeLen: [1.2, 3.6], ridgeGap: [0.10, 0.70], ridgeSkip: 0.12, beadScale: 1.05, beadHeight: 0.75, ridgeBase: 0.035,
+            ridgeMeander: 0.9, twist: 0.25,
             asymmetry: 0.028,
-            wartCell: { nu: 22, nv: 40, asp: 0.66, jitU: 0.34, jitV: 0.88, r0: 0.43, r1: 0.72, vari: 0.60, dome: 1.00, seed: 101 },
-            wartAmp: 0.090, wartMean: 0.40,
-            medCell: { nu: 54, nv: 90, asp: 0.70, jitU: 0.40, jitV: 0.90, r0: 0.42, r1: 0.62, vari: 0.55, dome: 0.85, seed: 307 },
-            medAmp: 0.24,
-            wartValley: 0.66,
-            grainU: 144, grainV: 228, grainAmp: 0.10,
+            grainU: 144, grainV: 228, grainAmp: 0.035,
             skinDark: [0.585, 0.625, 0.465],
             skinMid: [0.730, 0.762, 0.600],
             skinLight: [0.862, 0.882, 0.742],
-            skinTip: [0.788, 0.806, 0.646],
+            skinTip: [0.870, 0.885, 0.750],
             wartBase: [0.640, 0.676, 0.512],
             wartPeak: [0.925, 0.935, 0.822],
             fleck: [0.945, 0.950, 0.860],
             stem: [0.330, 0.400, 0.190], stemCut: [0.700, 0.700, 0.500],
-            stemLen: 0.075, stemRadius: 0.16,
+            stemLen: 0.090, stemRadius: 0.050,
             skinRoughness: 0.42, waxIntensity: 0.42, bloom: 0.20
         }
     };
@@ -161,10 +280,11 @@ var createScene = async function () {
         settleSpeed: 3.0, settleSpin: 3.5, settleHold: 0.35,
         settleTimeout: 5.5,
 
-        // 【対策】稜10本＋イボ28列を解像するので、きゅうりより分割が要る。
-        //         周方向はイボ1個あたり4頂点を割れる程度が下限
-        segmentsAxis: 256,
-        segmentsRound: 176,
+        // 【対策】中粒（約3mm）までジオメトリで出すので、頂点間隔は 0.6mm 台が
+        //         要る。周方向は稜の本数（8 / 10）の公倍数にして、どの稜にも
+        //         頂に頂点が乗るようにする
+        segmentsAxis: 512,
+        segmentsRound: 320,
         stemSegments: 12,
         stemSides: 12,
 
@@ -176,6 +296,19 @@ var createScene = async function () {
         dofFStop: 2.8,
 
         // GUI
+        // 【対策】GUI をポストプロセスから外すのに、以前はカメラを2台にして
+        //         layerMask で分けていた。しかし activeCameras が2台あると
+        //         scene.activeCamera が guiCam を指す瞬間ができ、Inspector の
+        //         Picker / Physics Helper / 選択ハイライトが軒並み狂う。
+        //         Layer.applyPostProcess = false なら、カメラ1台のまま
+        //         GUI だけ Bloom / DOF の後に合成できる。既定はこちら。
+        //         true にすると従来のカメラ分離（＋bindDebugCamera）に戻る
+        guiOwnCamera: false,
+
+        // 【対策】Inspector v2 が scene.pick へ渡す Y が上下反転している。
+        //         受け取り側で戻す。Inspector 側が直ったら false にしてよい
+        fixInspectorPickY: true,
+
         compactWidth: 700,
         compactMinSide: 480,
         guiMaxScale: 2.2
@@ -183,7 +316,7 @@ var createScene = async function () {
 
     const START_VARIETY = "nakanaga";
     const START_SEED = 20260726;
-    const BUILD = "goya-C";
+    const BUILD = "goya-L";
 
     function buildConfig(varietyKey, seed) {
         const cfg = Object.assign({}, GLOBAL, PRESETS[varietyKey]);
@@ -201,9 +334,32 @@ var createScene = async function () {
         // 【対策】瘤1個あたり周方向に6頂点は要る。これを割ると、法線マップの
         //         凹凸だけが残ってシルエットが棒のように滑らかになり、
         //         「濃緑の棒に水玉を描いた」絵になる
-        if (cfg.count > 3) { cfg.segmentsAxis = 232; cfg.segmentsRound = 152; }
-        if (cfg.count > 5) { cfg.segmentsAxis = 176; cfg.segmentsRound = 128; }
+        if (cfg.count > 3) { cfg.segmentsAxis = 448; cfg.segmentsRound = 280; }
+        if (cfg.count > 5) { cfg.segmentsAxis = 320; cfg.segmentsRound = 200; }
+        // 【対策】粒や節の高さは 0..1 なので、平均を引かずに足すと果実が太る。
+        //         平均は場の形（dome・半径・谷の重み）で変わるので、定数で
+        //         持たずに実測する。品種だけで決まるのでキャッシュする
+        let st = statCache[varietyKey];
+        if (!st) {
+            cfg.elems = buildElements(cfg);
+            st = fieldStats(cfg); st.elems = cfg.elems;
+            statCache[varietyKey] = st;
+        }
+        cfg.elems = st.elems;
+        cfg.liftMean = st.lift; cfg.beadMean = st.bead;
         return cfg;
+    }
+
+    const statCache = {};
+    function fieldStats(cfg) {
+        const rng = new Rng(977), n = 8000;
+        cfg.liftMean = 0; cfg.beadMean = 0;
+        let sl = 0, sb = 0;
+        for (let i = 0; i < n; i++) {
+            const R = reliefAt(rng.next(), rng.range(0.15, 0.85), cfg);
+            sl += R.lift; sb += R.bead;
+        }
+        return { lift: sl / n, bead: sb / n };
     }
 
     const V3 = BABYLON.Vector3;
@@ -402,20 +558,20 @@ var createScene = async function () {
     }
 
     // =================================================================
-    // 4. Fields （プロファイル / 稜 / イボ / 細粒）
+    // 4. Fields （プロファイル / 稜の線 / 楕円の充填 / 共通の変位）
     // =================================================================
     // [軸方向 t, 半径比]。t=0 がヘタ側、t=1 が先端
     // 【対策】きゅうりのように胴を平行にするとゴーヤーに見えない。
     //         ゴーヤーは中央がいちばん太い紡錘形で、先端は尖る。
     //         2本のプロファイルを持ち、品種の tipBlunt で混ぜる
     const PROF_SHARP = [
-        [0.000, 0.055], [0.018, 0.230], [0.045, 0.400], [0.085, 0.560],
+        [0.000, 0.110], [0.018, 0.250], [0.045, 0.400], [0.085, 0.560],
         [0.150, 0.740], [0.230, 0.870], [0.330, 0.950], [0.440, 0.992],
-        [0.540, 1.000], [0.640, 0.980], [0.730, 0.935], [0.810, 0.855],
-        [0.880, 0.720], [0.935, 0.545], [0.975, 0.310], [1.000, 0.030]
+        [0.540, 1.000], [0.640, 0.975], [0.730, 0.915], [0.810, 0.810],
+        [0.880, 0.650], [0.935, 0.450], [0.975, 0.230], [1.000, 0.030]
     ];
     const PROF_BLUNT = [
-        [0.000, 0.075], [0.018, 0.280], [0.045, 0.480], [0.085, 0.655],
+        [0.000, 0.110], [0.018, 0.290], [0.045, 0.480], [0.085, 0.655],
         [0.150, 0.825], [0.230, 0.925], [0.330, 0.980], [0.440, 1.000],
         [0.540, 1.000], [0.640, 0.992], [0.730, 0.968], [0.810, 0.922],
         [0.880, 0.845], [0.935, 0.715], [0.975, 0.495], [1.000, 0.090]
@@ -442,78 +598,247 @@ var createScene = async function () {
         return Math.max(0, mix(a, b, clamp(blunt, 0, 1)));
     }
 
-    // ---- 稜（リブ）の場 ----------------------------------------------
-    // u は周方向（周期1、整数ぶんずらしても同じ）、t は軸方向 0..1
-    // 【対策】cos をそのまま使うと蒲鉾を並べたようになる。実物の稜は
-    //         「頂が広く、谷が細く深い」ので指数で潰す。
-    //         また稜は一直線ではない。ゆっくり蛇行させないと押し出し成形に見える
-    function ridgeAt(u, t, cfg) {
+    // ---- 稜の線 -----------------------------------------------------
+    // u は周方向（周期1）、t は軸方向 0..1。q が整数の所が稜の線
+    // 【対策】稜は定規で引いた線ではない。数cmの波長でゆっくり蛇行する。
+    //         量は「稜の間隔」単位。隣の稜も同じ場で動くので交差しない
+    function ridgeQ(u, t, cfg) {
+        const w1 = Noise.fbm2u(u * 3, t * 4.5, 3, cfg.wartSeed + 61, 3) - 0.5;
+        return cfg.ridgeCount * u + cfg.twist * t + cfg.ridgeMeander * w1;
+    }
+    // k 番目の稜が t で通る u（蛇行が u に依存するので反復で解く）
+    function ridgeU(k, t, cfg) {
         const n = cfg.ridgeCount;
-        const wander = cfg.ridgeMeander * (Noise.fbm2u(u * 3, t * 2.4, 3, cfg.wartSeed + 61, 3) - 0.5);
-        const a = 2 * Math.PI * (n * (u + wander) + cfg.twist * t);
-        // 太い稜と細い稜が交互に並ぶ（周期は稜2本ぶん）
-        const alt = 1 + cfg.ridgeAlt * Math.cos(a * 0.5);
-        const crest = Math.pow(0.5 + 0.5 * Math.cos(a), 0.62);
-        // 両端では稜が収束して消える
-        const fade = smooth(0.0, 0.13, t) * (1 - smooth(0.86, 1.0, t));
-        return { crest: crest, amp: alt * fade };
+        let u = (k - cfg.twist * t) / n;
+        for (let it = 0; it < 3; it++) {
+            const w1 = Noise.fbm2u(u * 3, t * 4.5, 3, cfg.wartSeed + 61, 3) - 0.5;
+            u = (k - cfg.twist * t - cfg.ridgeMeander * w1) / n;
+        }
+        return u;
     }
 
-    // ---- 粒（イボ）の場 -----------------------------------------------
-    // 【対策】セルの境界を溝にする方式（最近傍と2番目の距離差 F2-F1）は、
-    //         角ばった板を敷き詰めた「ワニ革」や「干上がった泥」になる。
-    //         実物のゴーヤーの粒には角が無く、断面が丸い。
-    //         そこで球冠（ドーム）の和集合として作る。セルごとに中心と半径を
-    //         決め、いちばん高いドームを採用すれば、丸いまま密に重なる。
-    // 【対策】jitU（周方向のばらつき）を小さくすること。実物の粒は縦の列を
-    //         なして並んでおり、完全にランダムに散らすと砂利をまぶした
-    //         ように見える。asp < 1 で軸方向へ伸ばすと米粒状になる
-    function cellAt(u, t, cfg, P) {
-        const NU = P.nu, NV = P.nv, seed = cfg.wartSeed + P.seed;
-        const gu = u * NU, gv = t * NV;
-        const cu = Math.floor(gu), cv = Math.floor(gv);
-        let bq = 0, bh = 0;
-        for (let dv = -1; dv <= 1; dv++) {
-            for (let du = -1; du <= 1; du++) {
-                const iu = cu + du, iv = cv + dv;
-                let wu = iu % NU; if (wu < 0) wu += NU;
-                const a1 = Noise._h2(wu, iv, seed);
-                const a2 = Noise._h2(wu, iv, seed + 7717);
-                const a3 = (a1 * 7.13 + a2 * 3.71) % 1;
-                const px = iu + 0.5 + P.jitU * (a1 - 0.5);
-                const py = iv + 0.5 + P.jitV * (a2 - 0.5);
-                const dx = gu - px, dy = (gv - py) * P.asp;
-                const r = P.r0 + (P.r1 - P.r0) * a3;
-                let q = 1 - (dx * dx + dy * dy) / (r * r);
-                if (q <= 0) continue;
-                // 【対策】sqrt（半球）だと球を貼り付けたブロッコリーになる。
-                //         実物の瘤は皮が内から押し上げられた水ぶくれで、
-                //         裾が広く頂が低い。dome で断面を寝かせる
-                q = Math.pow(q, P.dome) * ((1 - P.vari) + P.vari * a3);
-                if (q > bq) { bq = q; bh = a3; }
+    // ---- いぼ：楕円の充填 ---------------------------------------------
+    // 【対策】いぼは「面の分割」ではなく「地の上に載る独立した塊」。
+    //         ボロノイ（F2-F1）は面を隙間なく割るので地が残らず、境が直線の
+    //         多角形になってワニ革に見える。等間隔の格子も避け、稜に沿う列に
+    //         揺らぎを加えて、残りのすき間を埋める。形を作る規則は
+    //           (1) 粒のあいだに、ほぼ一定の深さの地がある
+    //           (2) 大きい物の間に小さい物が入る（逆は無い）
+    //           (3) 大きい物ほど軸方向に細長い（稜の瘤 3〜6倍 → 小粒は円）
+    //           (4) 高さは幅に比例する
+    //         で、稜の瘤、列の粒、すき間の粒の順に、重なりを制限して配置する。
+    //         果実が小さいうちにできた隆起が伸長で縦に
+    //         引き伸ばされ、広がった表面のすき間に後から小さい隆起ができた、
+    //         と読める（見た目からの作業仮説で、発生学の裏付けは無い）
+    // 【対策】寸法は実寸（cm）で持つ。周長は両端へ向かって縮むので、
+    //         u の差を cm に直す倍率（sc）を楕円ごとに自分の位置で持つ。
+    //         こうしないと両端で粒が周方向に潰れる
+    function buildElements(cfg) {
+        const rng = new Rng(cfg.wartSeed * 7 + 13);
+        const C = 2 * Math.PI * cfg.radius, L = cfg.length, n = cfg.ridgeCount;
+        // 当たり判定と評価を速くする格子（1マス約6mm）
+        const GU = Math.max(8, Math.floor(C / 0.6)), GT = Math.max(8, Math.floor(L / 0.6));
+        const cells = new Array(GU * GT);
+        for (let i = 0; i < cells.length; i++) cells[i] = [];
+        const E = { GU: GU, GT: GT, cells: cells, L: L, count: 0,
+            u: [], t: [], a: [], b: [], h: [], cs: [], sn: [], sc: [], gen: [], id: [], pt: [], ln: [] };
+        const scAt = (t) => C * Math.max(0.12, profileAt(t, cfg.tipBlunt));
+        function forCells(u, t, du, dt, fn) {
+            const y0 = clamp(Math.floor((t - dt) * GT), 0, GT - 1);
+            const y1 = clamp(Math.floor((t + dt) * GT), 0, GT - 1);
+            let x0 = 0, x1 = GU - 1;
+            if (du < 0.5) { x0 = Math.floor((u - du) * GU); x1 = Math.floor((u + du) * GU); }
+            for (let y = y0; y <= y1; y++) for (let x = x0; x <= x1; x++) {
+                fn(cells[y * GU + (((x % GU) + GU) % GU)]);
             }
         }
-        // ヘタ側と先端では粒が立たない。ただし切りすぎないこと
-        // 【対策】ここを広く取ると端だけつるりとして、別の野菜を接いだように
-        //         見える。実物は果柄の際、先端の嘴の手前まで粒がある
-        const ends = smooth(0.005, 0.035, t) * (1 - smooth(0.945, 1.0, t));
-        return { h: bq * ends, tip: bh };
+        // 楕円どうしの重なり。相手の座標系で「半径の和」の楕円に入るかで近似
+        // K < 1 で少しだけ重なりを許す（粒が押し合って接する）
+        function overlaps(u, t, a, b, K) {
+            let hit = false;
+            const r = Math.max(a, b);
+            forCells(u, t, r / scAt(t), r / L, (list) => {
+                if (hit) return;
+                for (let k = 0; k < list.length; k++) {
+                    const i = list[k];
+                    let du = u - E.u[i]; du -= Math.round(du);
+                    const dx = du * E.sc[i], dy = (t - E.t[i]) * L;
+                    const l = dy * E.cs[i] + dx * E.sn[i], w = dx * E.cs[i] - dy * E.sn[i];
+                    const A = E.a[i] + a, B = E.b[i] + b;
+                    if ((w * w) / (B * B) + (l * l) / (A * A) < K) { hit = true; return; }
+                }
+            });
+            return hit;
+        }
+        // a = 軸方向の半長、b = 周方向の半幅、th = 軸からの傾き
+        function add(u, t, a, b, h, th, gen) {
+            u -= Math.floor(u);
+            const i = E.count++, sc = scAt(t), cs = Math.cos(th), sn = Math.sin(th);
+            E.u.push(u); E.t.push(t); E.a.push(a); E.b.push(b); E.h.push(h);
+            E.cs.push(cs); E.sn.push(sn); E.sc.push(sc); E.gen.push(gen); E.id.push(rng.next());
+            // 尖り具合（1 = 丸い / 0.6 = 円錐寄り）。稜の瘤では使わない
+            E.pt.push(1 - 0.30 * rng.range(0.00, 1.00));
+            // 先端側への傾き（頂の位置を軸方向へずらす量）
+            E.ln.push(gen === 0 ? 0 : 0.22 * rng.range(0.20, 1.00));
+            forCells(u, t, (b * Math.abs(cs) + a * Math.abs(sn)) / sc + 1e-4,
+                (a * Math.abs(cs) + b * Math.abs(sn)) / L + 1e-4, (list) => list.push(i));
+        }
+
+        // ---- 第0世代：稜の瘤
+        // 【対策】稜は1本のリブではなく、両端のすぼまった細長い瘤の連なり。
+        //         長さと切れ目をばらつかせる。太い稜と細い稜が交互に並ぶ
+        for (let k = 0; k < n; k++) {
+            const strong = (k % 2 === 0) ? 1 : (1 - cfg.ridgeAlt);
+            let t = 0.012 + 0.01 * rng.next();
+            while (t < 0.985) {
+                const len = rng.range(cfg.ridgeLen[0], cfg.ridgeLen[1]) * (0.6 + 0.4 * strong);
+                // 【対策】先端の手前で稜を切ると、嘴の周りだけ丸い茄子の尻になる。
+                //         残りが短ければ、最後の瘤を嘴の際まで伸ばす
+                let t1 = t + len / L;
+                if (t1 > 0.93) t1 = 0.992;
+                const tm = 0.5 * (t + t1);
+                const sc = scAt(tm);
+                const ex = (ridgeU(k, t1, cfg) - ridgeU(k, t, cfg)) * sc, ey = (t1 - t) * L;
+                const a = 0.5 * Math.hypot(ex, ey);
+                // 両端では周長が縮むので、稜の幅も一緒に細くする
+                const b = Math.min(cfg.ridgeWidth * strong * rng.range(0.8, 1.2), 0.30 * sc / n);
+                // 【対策】稜を端から端まで通すと「山の尾根」になる。実物の稜は
+                //         短い瘤の連なりで、ところどころ抜けて粒が入り込む。
+                //         細い稜ほどよく抜ける。先端へ束ねる最後の瘤は抜かない
+                if (a > b && (t1 > 0.99 || rng.next() > cfg.ridgeSkip * (strong < 1 ? 1.8 : 1.0))) {
+                    add(ridgeU(k, tm, cfg), tm, a * 1.04, b,
+                        b * 1.60 * rng.range(0.70, 1.20) * cfg.beadHeight, Math.atan2(ex, ey), 0);
+                }
+                t = t1 + rng.range(cfg.ridgeGap[0], cfg.ridgeGap[1]) / L;
+            }
+        }
+
+        // 粒の大きさの倍率。ヘタ寄りは細かく、胴で最大、先端でまた細かい
+        const sizeAt = (u, t) => cfg.beadScale
+            * (0.55 + 0.45 * smooth(0.05, 0.32, t)) * (1 - 0.40 * smooth(0.80, 0.98, t))
+            * (0.84 + 0.32 * Noise.fbm2u(u * 3, t * 5, 3, cfg.wartSeed + 77, 3));
+
+        // ---- 第1世代：稜に平行な列
+        // 【対策】粒を完全な乱数で撒くと、実物の「縦に流れる列」が消える。
+        //         稜と稜のあいだを 2 列に分け、列ごとに端から順に並べる。
+        //         列の位置は ridgeU に小数の番号を渡せば稜と一緒に蛇行する。
+        //         列そのものもゆっくり左右へ振り、粒ごとに間隔を変える
+        const NL = 2;
+        for (let k = 0; k < n; k++) for (let j = 0; j < NL; j++) {
+            const f0 = 0.20 + (j + 0.5) * 0.60 / NL;
+            let t = rng.range(0.05, 0.08);
+            while (t < 0.955) {
+                const s = sizeAt((k + f0) / n, t);
+                // 列の間隔より太い粒は置けない（両端で周長が縮む）
+                const b = Math.min(0.25 * s * rng.range(0.82, 1.18), 0.30 * scAt(t) / n);
+                const a = b * rng.range(1.05, 1.55);
+                const tc = t + a / L;
+                const f = f0 + 0.16 * (Noise.fbm2u(k * 3.7 + j * 1.3, tc * 9, 64, cfg.wartSeed + 401, 2) - 0.5);
+                const u = ridgeU(k + f, tc, cfg);
+                if (!overlaps(u, tc, a, b, 0.74)) {
+                    add(u, tc, a, b, b * 1.40 * rng.range(0.82, 1.15) * cfg.beadHeight, rng.gauss(0, 0.10), 1);
+                }
+                t = tc + a / L * rng.range(0.90, 1.10) + rng.range(0, 0.05) / L;
+            }
+        }
+
+        // ---- 第2世代〜：残ったすき間を、大きい順に埋める
+        // [半幅cm, 縦横比, 高さ/半幅]
+        // 【対策】世代間の大きさの差は小さくする。差を付けすぎると
+        //         「大きなレンズと小さな玉」になって泡に見える
+        const GENS = [
+            [0.200, 1.15, 1.40],
+            [0.155, 1.05, 1.35],
+            [0.120, 1.00, 1.20]
+        ];
+        for (let g = 0; g < GENS.length; g++) {
+            const b0 = GENS[g][0], asp = GENS[g][1];
+            const tries = Math.min(90000, Math.round(9 * C * L * 0.75 / (Math.PI * b0 * b0 * asp)));
+            for (let k = 0; k < tries; k++) {
+                const t = rng.range(0.045, 0.965), u = rng.next();
+                // 面積あたりの密度をそろえる（細い所ほど候補を間引く）
+                if (rng.next() > profileAt(t, cfg.tipBlunt)) continue;
+                const b = b0 * sizeAt(u, t) * rng.range(0.85, 1.15);
+                if (b < 0.085 || b > 0.10 * scAt(t)) continue;
+                const a = b * asp * rng.range(0.90, 1.15);
+                if (overlaps(u, t, a, b, 0.72)) continue;
+                add(u, t, a, b, b * GENS[g][2] * rng.range(0.80, 1.15) * cfg.beadHeight, rng.gauss(0, 0.12), g + 2);
+            }
+        }
+        return E;
     }
-    // 粒の大きさを数cm単位でうねらせる場
-    // 【対策】同じ大きさの粒を等密度で敷き詰めると、機械編みのセーターに
-    //         見える。実物は粒が大きく盛り上がった一帯と控えめな一帯が
-    //         うねっている。ジオメトリとテクスチャの両方から同じ関数を呼ぶ
-    function lumpAt(u, t, cfg) {
-        const n = Noise.fbm2u(u * 3, t * 5, 3, cfg.wartSeed + 77, 3);
-        return clamp(0.42 + 1.25 * n, 0, 1.25);
+
+    // 点 (u, t) でいちばん高い楕円。h は cm
+    const NO_ELEM = { h: 0, q: 0, gen: -1, id: 0 };
+    function elemAt(u, t, cfg) {
+        const E = cfg.elems, L = E.L;
+        const uu = u - Math.floor(u);
+        const list = E.cells[clamp(Math.floor(t * E.GT), 0, E.GT - 1) * E.GU
+            + Math.min(E.GU - 1, Math.floor(uu * E.GU))];
+        let h = 0, q = 0, bi = -1;
+        for (let k = 0; k < list.length; k++) {
+            const i = list[k];
+            let du = uu - E.u[i]; du -= Math.round(du);
+            const dx = du * E.sc[i], dy = (t - E.t[i]) * L;
+            const l = dy * E.cs[i] + dx * E.sn[i], w = dx * E.cs[i] - dy * E.sn[i];
+            // 軸方向を半長で正規化し、瘤の範囲外を除く
+            const m = l / E.a[i];
+            if (m <= -1 || m >= 1) continue;
+            const b = E.b[i];
+            let hh, qq;
+            if (E.gen[i] === 0) {
+                // 【対策】稜の瘤は、平面形が両端のすぼまった細長い棒、断面は
+                //         頂に丸みのある山。goya-H の尖った屋根形は刃物に見えた。
+                //         丸い俵にすると太ったソーセージになる。その中間
+                const taper = 1 - m * m;
+                const x = Math.abs(w) / (b * Math.pow(taper, 0.45));
+                if (x >= 1) continue;
+                qq = (1 - x) * taper;
+                hh = E.h[i] * Math.pow(taper, 0.35) * (1 - Math.pow(x, 1.70));
+            } else {
+                // 【対策】丸い粒の頂を少し先端側へ寄せる。
+                //         軸方向の座標を m - c(1-m²) で写すと、両端は動かずに
+                //         頂だけが +t 側へずれる（c < 0.5 なら単調）
+                const ms = m - E.ln[i] * (1 - m * m);
+                const d2 = (w * w) / (b * b) + ms * ms;
+                if (d2 >= 1) continue;
+                qq = 1 - d2;
+                // pt = 1 で球寄り、小さいほど尖る。粒ごとに 0.7〜1.0 で変える
+                hh = E.h[i] * Math.pow(1 - Math.pow(d2, E.pt[i]), 0.80);
+            }
+            if (hh > h) { h = hh; q = qq; bi = i; }
+        }
+        return bi < 0 ? NO_ELEM : { h: h, q: q, gen: E.gen[bi], id: E.id[bi] };
     }
-    // 稜の頂だけを滑らかに残す重み
-    // 【対策】ここを crest^1.6 のように広く効かせると、周の半分以上で粒が
-    //         潰れて「のっぺりした濃緑の棒」に戻る。頂の細い帯だけに効かせる
-    function valleyAt(crest, cfg) {
-        // 【対策】ここを 0 に近づけると粒が全面を覆い、縦の筋が消えて
-        //         ブロッコリーの塊になる。稜に沿った平滑なレーンが要る
-        return 1 - cfg.wartValley * smooth(0.62, 0.98, crest);
+
+    // ---- 変位（半径比）。メッシュとテクスチャが共有する唯一の式 ---------
+    // 【対策】凹凸の式をメッシュ側（sectionAt）とテクスチャ側（field）に
+    //         別々に書くと、片方だけ変えた時に色と形が食い違う。
+    //         ここで1回だけ定義し、両方から呼ぶ
+    function reliefAt(u, t, cfg) {
+        // 【対策】楕円をそのまま使うと輪郭が幾何学的すぎて、泡や種に見える。
+        //         評価する位置を実寸で少し揺らして輪郭を崩す。1cm 波長の
+        //         ゆがみ（形そのものを歪める）と 3mm 波長のよれ（縁を波打たせる）
+        const C = 2 * Math.PI * cfg.radius, sd = cfg.wartSeed;
+        const wu = 0.16 * (Noise.fbm2u(u * 18, t * 24, 18, sd + 301, 2) - 0.5)
+            + 0.07 * (Noise.fbm2u(u * 60, t * 80, 60, sd + 303, 2) - 0.5);
+        const wt = 0.16 * (Noise.fbm2u(u * 18, t * 24, 18, sd + 305, 2) - 0.5)
+            + 0.07 * (Noise.fbm2u(u * 60, t * 80, 60, sd + 307, 2) - 0.5);
+        const e = elemAt(u + wu / C, clamp(t + wt / cfg.length, 0, 1), cfg);
+        // 両端ではいぼが立たない。ただし切りすぎないこと（端だけつるりとして
+        // 別の野菜を接いだように見える）
+        const ends = smooth(0.0, 0.04, t) * (1 - smooth(0.955, 1.0, t));
+        const bead = e.h / cfg.radius * (e.gen === 0 ? smooth(0.0, 0.015, t) * (1 - smooth(0.985, 1.0, t)) : ends);
+        // 稜の下のゆるい盛り上がり。断面を歯車状にする土台で、いぼではない
+        const lift = (0.5 + 0.5 * Math.cos(2 * Math.PI * ridgeQ(u, t, cfg)))
+            * smooth(0.0, 0.09, t) * (1 - smooth(0.94, 1.0, t));
+        return {
+            // 【対策】高さは 0 以上なので、平均を引かないと果実が太る
+            rel: (bead - cfg.beadMean) + cfg.ridgeBase * (lift - cfg.liftMean),
+            lift: lift, bead: bead,
+            crest: e.gen === 0 ? Math.sqrt(e.q) : 0,     // 稜の瘤の上だけ 1 に近い
+            seg: 1, wh: e.gen > 0 ? e.q : 0, mh: 0, tip: e.id, crease: 0
+        };
     }
 
     // ---- 細かい粒（法線と色のみ）---------------------------------------
@@ -557,41 +882,70 @@ var createScene = async function () {
                 med: new Float32Array(n2),     // 中くらいの粒
                 tip: new Float32Array(n2),     // 瘤の個体値
                 grain: new Float32Array(n2),   // 最細の粒
-                h: new Float32Array(n2)        // 法線マップ用の合成高さ
+                h: new Float32Array(n2),       // 法線マップ用の合成高さ
+                rel: new Float32Array(n2),     // ジオメトリの変位（reliefAt と同値）
+                crease: new Float32Array(n2),  // 粒の境の皺（メッシュでは出ない細さ）
+                cav: null                      // 周囲より高い(+) / 低い(-)。±1 前後
             };
             for (let y = 0; y < N; y++) {
                 const v = y / N;
                 for (let x = 0; x < N; x++) {
                     const u = x / N, i = y * N + x;
-                    const R = ridgeAt(u, v, cfg);
-                    // 【対策】ここがゴーヤーらしさの核心。稜の上に瘤を乗せると
-                    //         「イボだらけのきゅうり」になる。実物は稜が滑らかな
-                    //         リブで、瘤が立つのはそのあいだ
-                    const valley = valleyAt(R.crest, cfg);
-                    const W = cellAt(u, v, cfg, cfg.wartCell);
-                    const Mc = cellAt(u, v, cfg, cfg.medCell);
-                    const lump = lumpAt(u, v, cfg);
-                    const wh = clamp(W.h * valley * lump, 0, 1);
-                    // 【対策】小粒を全面に均一に敷くと機械編みのセーターになる。
-                    //         小粒はあくまで大粒の表面の肌理なので、大粒の
-                    //         高いところで強く、溝では弱くする
-                    const mh = Mc.h * valley * (0.30 + 0.70 * wh);
+                    const R = reliefAt(u, v, cfg);
+                    const wh = R.wh, mh = R.mh;
+                    F.rel[i] = R.rel;
+                    F.crease[i] = R.crease;
                     const gr = grainAt(u, v, cfg) * (0.40 + 0.60 * (1 - R.crest));
                     const wr = Noise.fbm2u(u * 14, v * 46, 14, cfg.wartSeed + 29, 3);
-                    F.crest[i] = R.crest;
+                    // 【対策】色と艶の「稜」は節のある所だけ。切れ目まで淡く光らせると
+                    //         凹凸は途切れているのに筋だけ通って見える
+                    F.crest[i] = R.crest * (0.45 + 0.55 * smooth(0.20, 0.70, R.seg));
                     F.wart[i] = wh;
                     F.med[i] = mh;
-                    F.tip[i] = W.tip;
+                    F.tip[i] = R.tip;
                     F.grain[i] = gr;
-                    // 【対策】稜は法線マップに入れない。ジオメトリ側で出しているので、
-                    //         両方に入れると陰影が二重にかかって塗り絵になる。
-                    //         逆に、ジオメトリで解像できない中粒と細粒はここが担当
-                    // 【対策】粗い粒はジオメトリ側が担当するが、分割数では角が丸まる。
-                    //         法線マップにも半分ほど入れて輪郭を立てる。ここを
-                    //         下げて小粒を上げると、粒の階層が逆転して編み目になる
-                    F.h[i] = clamp(0.58 * wh + cfg.medAmp * mh + cfg.grainAmp * gr + 0.05 * wr, 0, 1);
+                    // 【対策】稜と粒はメッシュで作るので、法線マップには重ねない。
+                    //         ここは表皮のざらつき gr とよれ wr を担当する。
+                    //         皺の項 crease は現在の reliefAt では 0
+                    F.h[i] = clamp(0.55 - 0.30 * R.crease + cfg.grainAmp * gr + 0.02 * wr, 0, 1);
                 }
             }
+            // ---- 溝／頂の判定：変位 − ぼかした変位
+            // 【対策】「粒の高さ wh が低い所＝溝」とすると、粒を消してある稜の
+            //         瘤まで溝あつかいになり、出っ張りが黒く塗られる。
+            //         色が見るべきは粒の有無ではなく、実際の面が周囲より
+            //         高いか低いか。ジオメトリと同じ変位から直接求める
+            // 【対策】ぼかし半径は実寸（cm）で決める。テクスチャは u と v で
+            //         1画素の実寸が違うので、画素数で決めると楕円になる
+            const RAD = 0.24;   // cm。粒の半径くらい
+            const ru = Math.max(1, Math.round(RAD / (2 * Math.PI * cfg.radius / N)));
+            const rv = Math.max(1, Math.round(RAD / (cfg.length / N)));
+            let a = Float32Array.from(F.rel), b = new Float32Array(n2);
+            for (let pass = 0; pass < 2; pass++) {
+                for (let y = 0; y < N; y++) {              // u 方向（折り返す）
+                    let s = 0;
+                    for (let k = -ru; k <= ru; k++) s += a[y * N + ((k + N) % N)];
+                    for (let x = 0; x < N; x++) {
+                        b[y * N + x] = s / (2 * ru + 1);
+                        s += a[y * N + ((x + ru + 1) % N)] - a[y * N + ((x - ru + N) % N)];
+                    }
+                }
+                for (let x = 0; x < N; x++) {              // v 方向（端で止める）
+                    let s = 0;
+                    for (let k = -rv; k <= rv; k++) s += b[clamp(k, 0, N - 1) * N + x];
+                    for (let y = 0; y < N; y++) {
+                        a[y * N + x] = s / (2 * rv + 1);
+                        s += b[clamp(y + rv + 1, 0, N - 1) * N + x] - b[clamp(y - rv, 0, N - 1) * N + x];
+                    }
+                }
+            }
+            // 【対策】しきい値を絶対値で置くと、品種で変位量が違うたびに
+            //         溝が出なくなったり真っ黒になったりする。標準偏差で割る
+            let ss = 0;
+            for (let i = 0; i < n2; i++) { a[i] = F.rel[i] - a[i]; ss += a[i] * a[i]; }
+            const sd = Math.sqrt(ss / n2) || 1;
+            for (let i = 0; i < n2; i++) a[i] /= sd;
+            F.cav = a;
             return F;
         },
 
@@ -605,15 +959,18 @@ var createScene = async function () {
                         const i0 = y * N + x, i = i0 * 4;
                         const crest = F.crest[i0], wh = F.wart[i0];
                         const mh = F.med[i0], gr = F.grain[i0];
-                        // 軸方向のわずかな色差（ヘタ寄りが濃く、先端寄りが少し淡い）
-                        let cr = mix(D[0], M[0], smooth(0.03, 0.34, v));
-                        let cg = mix(D[1], M[1], smooth(0.03, 0.34, v));
-                        let cb = mix(D[2], M[2], smooth(0.03, 0.34, v));
-                        cr = mix(cr, T[0], smooth(0.60, 1.0, v) * 0.70);
-                        cg = mix(cg, T[1], smooth(0.60, 1.0, v) * 0.70);
-                        cb = mix(cb, T[2], smooth(0.60, 1.0, v) * 0.70);
+                        // 軸方向の色差
+                        // 【対策】ヘタ寄りを濃くすると、肩だけ別の実を接いだように見える。
+                        //         実物の肩は胴と同じ緑で、色が変わるのは先端側。
+                        //         胴の後半から先端へ向けて、ゆっくり黄緑に抜ける
+                        let cr = mix(D[0], M[0], 0.92 + 0.08 * smooth(0.03, 0.34, v));
+                        let cg = mix(D[1], M[1], 0.92 + 0.08 * smooth(0.03, 0.34, v));
+                        let cb = mix(D[2], M[2], 0.92 + 0.08 * smooth(0.03, 0.34, v));
+                        cr = mix(cr, T[0], smooth(0.45, 0.97, v) * 0.85);
+                        cg = mix(cg, T[1], smooth(0.45, 0.97, v) * 0.85);
+                        cb = mix(cb, T[2], smooth(0.45, 0.97, v) * 0.85);
                         // 稜は粒が無く滑らかなので、光を返して淡い筋に見える
-                        const rib = smooth(0.70, 1.0, crest) * 0.42;
+                        const rib = smooth(0.70, 1.0, crest) * 0.28;
                         cr = mix(cr, L[0], rib);
                         cg = mix(cg, L[1], rib);
                         cb = mix(cb, L[2], rib);
@@ -622,12 +979,16 @@ var createScene = async function () {
                         cr *= mott; cg *= mott; cb *= mott;
                         // 【対策】色の明暗は大粒で決める。小粒を主役にすると
                         //         同じ大きさの明暗が一面に並び、編み物に見える
-                        const top = clamp(0.90 * wh + 0.25 * mh, 0, 1);
-                        const groove = Math.pow(1 - clamp(wh + 0.35 * mh, 0, 1), 1.5);
-                        cr = mix(cr, WB[0], groove * 0.92);
-                        cg = mix(cg, WB[1], groove * 0.92);
-                        cb = mix(cb, WB[2], groove * 0.92);
-                        const peak = Math.pow(top, 1.3) * (0.55 + 0.35 * F.tip[i0]);
+                        // 【対策】溝と頂は F.cav（実際の面の高低）で決める。粒でも稜の
+                        //         瘤でも、出っ張っていれば明るく、凹んでいれば暗い
+                        const cav = F.cav[i0];
+                        const groove = Math.max(smooth(-0.10, -1.30, cav), 0.85 * F.crease[i0]);
+                        cr = mix(cr, WB[0], groove * 0.60);
+                        cg = mix(cg, WB[1], groove * 0.60);
+                        cb = mix(cb, WB[2], groove * 0.60);
+                        // 粒ごとの明るさの個体差は粒の上だけ（稜の瘤には無い）
+                        const peak = smooth(0.0, 1.30, cav)
+                            * (0.26 + 0.20 * F.tip[i0] * smooth(0.05, 0.35, wh));
                         cr = mix(cr, WP[0], peak);
                         cg = mix(cg, WP[1], peak);
                         cb = mix(cb, WP[2], peak);
@@ -664,7 +1025,7 @@ var createScene = async function () {
                         // 【対策】艶を一様にすると射出成形のプラスチックになる。
                         //         ゴーヤーは稜の上と粒の頂がよく光り、粒のあいだの
                         //         溝は光が入らず粗く見える
-                        const gv2 = Math.pow(1 - clamp(wh + 0.35 * mh, 0, 1), 1.5);
+                        const gv2 = Math.max(smooth(-0.10, -1.30, F.cav[i0]), 0.85 * F.crease[i0]);
                         let rough = cfg.skinRoughness * (0.92 + 0.40 * (1 - crest));
                         // 稜は粒が無く滑らかなので、ここだけ艶が高い
                         rough = mix(rough, cfg.skinRoughness * 0.62, smooth(0.70, 1.0, crest) * 0.70);
@@ -677,11 +1038,11 @@ var createScene = async function () {
                         // 【対策】稜と稜のあいだの溝は実物ではかなり暗い。
                         //         SSAO だけに任せると溝が浅く見えるので焼いておく
                         let ao = 1.0;
-                        ao = mix(ao, 0.66, Math.pow(1 - crest, 1.4) * 0.75);
+                        ao = mix(ao, 0.66, Math.pow(1 - crest, 1.4) * 0.20);
                         // 【対策】粒の立体感の大半はこの溝の陰。法線マップだけでは
                         //         正面から見たときに平らに戻ってしまう。ただし
                         //         落としすぎると溝が黒く縁取られて鱗になる
-                        ao = mix(ao, 0.54, gv2 * 0.85);
+                        ao = mix(ao, 0.62, gv2 * 0.70);
                         d[i] = clamp(ao, 0, 1) * 255;
                         d[i + 1] = clamp(rough, 0.04, 1) * 255;
                         d[i + 2] = 0; d[i + 3] = 255;
@@ -771,8 +1132,7 @@ var createScene = async function () {
             m.useRoughnessFromMetallicTextureGreen = true;
             m.useMetallnessFromMetallicTextureBlue = true;
             m.bumpTexture = this.normalTex;
-            // 【対策】ゴーヤーの粒はきゅうりのイボよりずっと細かく、
-            //         ジオメトリでは出しきれない。法線を強めに効かせる
+            // 法線マップは表皮の微細な質感用。表示時の強度は applyRelief で上書きする
             m.bumpTexture.level = 1.35;
             m.transparencyMode = OPAQUE;
             m.useAlphaFromAlbedoTexture = false;
@@ -787,7 +1147,7 @@ var createScene = async function () {
             //         透過させると縁が白飛びして作り物になる。控えめに
             m.subSurface.isTranslucencyEnabled = true;
             m.subSurface.tintColor = new BABYLON.Color3(0.38, 0.62, 0.22);
-            m.subSurface.translucencyIntensity = 0.08;
+            m.subSurface.translucencyIntensity = 0.16;
             m.subSurface.minimumThickness = 0.6;
             m.subSurface.maximumThickness = 3.0;
             this.skin = m;
@@ -829,7 +1189,7 @@ var createScene = async function () {
             m.bumpTexture = this.normalTex;
             if (mode === 1) {
                 m.albedoTexture = null;
-                m.albedoColor = new C3(0.78, 0.78, 0.78);
+                m.albedoColor = new C3(0.42, 0.42, 0.42);
                 m.metallicTexture = null;
                 m.roughness = 0.62;
                 m.clearCoat.isEnabled = false;
@@ -906,24 +1266,13 @@ var createScene = async function () {
         sectionAt(t, uTex) {
             const cfg = this.cfg;
             const phi = uTex * Math.PI * 2;
-            const R = ridgeAt(uTex, t, cfg);
-            const W = cellAt(uTex, t, cfg, cfg.wartCell);
-            const valley = valleyAt(R.crest, cfg);
-            // 【対策】この低周波のムラをテクスチャ側だけに入れると、
-            //         色の起伏と実際の凹凸がずれて厚化粧に見える
-            const lump = lumpAt(uTex, t, cfg);
-            // 稜。crest の平均あたりを基準にして、谷が内側・稜が外側へ動くようにする
-            const ridge = cfg.ridgeAmp * (R.crest - 0.48) * R.amp;
+            // 稜・粒の変位はテクスチャと共有（reliefAt）
             // 低周波の非対称。これが無いと完全な回転体になり、
             // ハイライトが直線になって樹脂に見える
             const asym = this.a1 * Math.cos(phi - this.p1) * Math.sin(Math.PI * t)
                 + this.a2 * Math.cos(2 * phi - this.p2) * Math.sin(Math.PI * t * 1.3);
             const wob = 0.014 * (Noise.fbm3(Math.cos(phi) * 2.4, Math.sin(phi) * 2.4, t * 5.5, this.nseed, 3) - 0.5);
-            // 【対策】瘤の高さは 0..1 なので、そのまま足すと果実全体が
-            //         平均ぶん太る。平均を引いて「溝が食い込み、頂が出る」形にする。
-            //         細かい粒は分割数では解像できないので法線マップに任せる
-            return 1 + ridge + asym + wob
-                + cfg.wartAmp * (clamp(W.h * lump, 0, 1) - cfg.wartMean) * valley;
+            return 1 + reliefAt(uTex, t, cfg).rel + asym + wob;
         }
         radiusAt(t, uTex) {
             return Math.max(0.004, this.R * profileAt(t, this.blunt) * this.sectionAt(t, uTex));
@@ -956,21 +1305,26 @@ var createScene = async function () {
             this.parts.push(mesh);
         }
 
-        // 果柄：細く短い切り株。切り口だけ淡い
+        // 果柄：付け根がラッパ状に広がる細い柄を、少し曲げる。切り口は淡い
         _buildStem(skin) {
             const cfg = this.cfg, rng = this.rng;
             const K = cfg.stemSegments, M = cfg.stemSides;
             const base = this.spineAt(0), f0 = this.frameAt(0);
             const dir = f0.T.scale(-1);                       // 果実から離れる向き
             const L = cfg.stemLen * this.L * rng.range(0.85, 1.15);
-            const tilt = rng.range(0.05, 0.22), tiltA = rng.range(0, Math.PI * 2);
+            const tilt = rng.range(0.12, 0.40), tiltA = rng.range(0, Math.PI * 2);
             const side = f0.N.scale(Math.cos(tiltA)).add(f0.B.scale(Math.sin(tiltA)));
             const rings = [], centers = [];
             for (let i = 0; i <= K; i++) {
                 const s = i / K;
                 const lean = Math.tan(tilt) * L * 0.55 * s * s;
                 const c = base.add(dir.scale(L * s)).add(side.scale(lean));
-                const taper = 0.88 + 0.42 * Math.pow(1 - s, 1.5) - 0.14 * smooth(0.75, 1.0, s);
+                // 【対策】柄を一定の太さの円筒にすると、果実に蓋をかぶせたように見える。
+                //         実物は細い柄の付け根だけがラッパ状に広がり、肩へつながる。
+                //         付け根（s=0）の半径 = stemRadius × 2.2 を、果実の始まりの
+                //         半径（プロファイルの t=0、半径比 0.11）と一致させてある。
+                //         片方だけ変えると、継ぎ目に段か、くびれができる
+                const taper = 1 + 1.2 * Math.pow(1 - s, 2.5);
                 const rr = cfg.stemRadius * this.R * taper;
                 // 当たり判定にも果柄を含めるので、軸を粗く控えておく
                 if (i % 4 === 0 || i === K) this.stemAxis.push({ c: c, r: rr * 1.10 });
@@ -1009,7 +1363,7 @@ var createScene = async function () {
         }
 
         // 当たり判定：表示メッシュから凸包を取ると生成が重いので、
-        // 同じ関数を粗く評価した代理メッシュから凸包を起こす
+        // プロファイルと低周波の非対称を使う代理メッシュから凸包を起こす
         // 【対策】でこぼこの点群をそのまま凸包にすると、ほぼ同一平面の面が
         //         大量に生まれる。積み重なった状態では接触マニフォールドが
         //         毎ステップ別の面へ飛び移り、これが震えの主因になる。
@@ -1040,7 +1394,7 @@ var createScene = async function () {
                     const phi = (j % M) / M * Math.PI * 2;
                     const asym = this.a1 * Math.cos(phi - this.p1) * Math.sin(Math.PI * t)
                         + this.a2 * Math.cos(2 * phi - this.p2) * Math.sin(Math.PI * t * 1.3);
-                    const r = Math.max(0.004, this.R * profileAt(t, this.blunt) * (1 + asym)) * 0.96;
+                    const r = Math.max(0.004, this.R * profileAt(t, this.blunt) * (1 + asym)) * 1.02;
                     const cs = Math.cos(phi), sn = Math.sin(phi);
                     ring.push(new V3(
                         c.x + (f.N.x * cs + f.B.x * sn) * r,
@@ -1178,7 +1532,7 @@ var createScene = async function () {
     env.lodGenerationOffset = 0.80;
     // 【対策】ゴーヤーはアルベドがかなり暗い。きゅうりと同じ環境強度だと
     //         真っ黒な塊になる。環境光と露出をわずかに上げる
-    scene.environmentIntensity = 0.60;
+    scene.environmentIntensity = 0.72;
 
     const camera = new BABYLON.ArcRotateCamera("cam", -1.28, 1.24, 62, new V3(0, 2.2, 0), scene);
     camera.attachControl(true);
@@ -1269,14 +1623,14 @@ var createScene = async function () {
     let onRebuilt = null;
     let queue = [], dropIndex = 0, dropTimer = 0, settleTimer = 0, postDropTimer = 0, frozen = false;
 
-    // 粒の凹凸の強さと法線の向き。実機で見ながら合わせられるようにする
+    // 法線マップの強さと向き。メッシュの稜や粒の形状は変えない
     const BUMPS = [
         { label: "弱", level: 0.60 },
         { label: "中", level: 1.00 },
         { label: "強", level: 1.35 },
         { label: "最強", level: 2.00 }
     ];
-    let bumpIdx = 2, invY = false;
+    let bumpIdx = 1, invY = false;
     function applyRelief() {
         for (const k in skinCache) {
             const m = skinCache[k].skin;
@@ -1508,15 +1862,115 @@ var createScene = async function () {
     // =================================================================
     // 9. GUI
     // =================================================================
-    // 【対策】フルスクリーンGUIは既定でシーンと同じカメラで合成されるため、
-    //         Bloom / 被写界深度 / シャープンがUIにも乗ってボケる。
-    //         GUI専用カメラを layerMask で分離する
+    // 【対策】GUI に Bloom / 被写界深度 / シャープンを掛けないよう、
+    //   既定ではカメラ1台のまま、GUI だけポストプロセスの後に合成する。
+    //   カメラ分離は guiOwnCamera = true のときだけ使い、Inspector の
+    //   基準カメラも補正する（ヘッダの「goya-C からの変更点」を参照）
     const GUI_MASK = 0x20000000;
-    const guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
-    guiCam.layerMask = GUI_MASK;
-    scene.activeCameras = [camera, guiCam];
+
+    // guiOwnCamera = true（従来方式）にしたときだけ使う。基準カメラを明示して
+    // 壊れた 3 系統を直す
+    function bindDebugCamera(scene, mainCam) {
+        // (1) UtilityLayerRenderer（Physics Helper / ギズモ / 選択枠の土台）
+        // 【対策】Inspector が内部の WeakMap に抱えていて外から触れないレイヤーも
+        //   あるので、インスタンスを追わずプロトタイプごと差し替える
+        const ULR = BABYLON.UtilityLayerRenderer;
+        if (ULR) {
+            if (!ULR.prototype.__foodCamPatch) {
+                ULR.__foodCamTable = new WeakMap();
+                const orig = ULR.prototype.getRenderCamera;
+                ULR.prototype.getRenderCamera = function (getRigParentIfPossible) {
+                    if (!this._renderCamera) {
+                        const cam = ULR.__foodCamTable.get(this.originalScene);
+                        if (cam) {
+                            return (getRigParentIfPossible && cam.isRigCamera)
+                                ? cam.rigParent : cam;
+                        }
+                    }
+                    return orig.call(this, getRigParentIfPossible);
+                };
+                ULR.prototype.__foodCamPatch = true;
+            }
+            ULR.__foodCamTable.set(scene, mainCam);
+        }
+
+        // (2) EffectLayer（GlowLayer / HighlightLayer / 選択のアウトライン）
+        // 【対策】layerMask では止まらない。Inspector は選択のたびに後から
+        //   足してくるので、未束縛のものだけを毎フレーム拾う
+        scene.onBeforeRenderObservable.add(() => {
+            const ls = scene.effectLayers;
+            if (!ls) return;
+            for (let i = 0; i < ls.length; i++) {
+                const l = ls[i];
+                if (l.__foodCamBound) continue;
+                l.__foodCamBound = true;
+                if (l._effectLayerOptions) l._effectLayerOptions.camera = mainCam;
+                if (l._mainTexture) l._mainTexture.activeCamera = mainCam;
+            }
+        });
+
+        // (3) scene.activeCamera を描画後とポインタ処理の直前に戻す
+        // 【対策】描き終えた時点では guiCam が入ったままになる。
+        //   onPrePointerObservable は InputManager がレイを作るより先に走る
+        const back = () => {
+            if (scene.activeCamera !== mainCam) scene.activeCamera = mainCam;
+        };
+        scene.onAfterRenderObservable.add(back);
+        scene.onPrePointerObservable.add(back);
+    }
+
+    // Inspector v2 が渡してくる上下反転した座標を、受け取り側で戻す。
+    // 【対策】Babylon のピッキング自体は正しい（当たり位置に印を出して確認済み）。
+    //   狂っているのは Inspector が渡す Y だけなので、scene.pick を包んで、
+    //   「実際のポインタ位置を上下反転した座標」で呼ばれたときだけ戻す。
+    //   InputManager が維持している scene.pointerX / pointerY と突き合わせる
+    //   ので、それ以外の呼び出し（自前のレイやプログラムからの pick）は
+    //   素通しする。画面の上下中央付近では反転しても座標がほぼ同じになり
+    //   区別できないが、その場合はどちらで拾っても同じ所に当たる
+    function fixInspectorPickY(scene, engine) {
+        if (!GLOBAL.fixInspectorPickY || scene.__foodPickYFix) return;
+        scene.__foodPickYFix = true;
+        const orig = scene.pick.bind(scene);
+        scene.pick = function (x, y, ...rest) {
+            // 高解像度端末では描画解像度と CSS 座標がずれるので両方見る
+            const lv = engine.getHardwareScalingLevel() || 1;
+            const hs = [engine.getRenderHeight(), engine.getRenderHeight() / lv];
+            for (let i = 0; i < hs.length; i++) {
+                const flipped = hs[i] - scene.pointerY;
+                if (Math.abs(x - scene.pointerX) <= 2 && Math.abs(y - flipped) <= 2
+                    && Math.abs(scene.pointerY - flipped) > 6) {
+                    y = scene.pointerY;
+                    break;
+                }
+            }
+            return orig(x, y, ...rest);
+        };
+    }
+    fixInspectorPickY(scene, engine);
+
+    let guiCam = null;
+    if (GLOBAL.guiOwnCamera) {
+        guiCam = new BABYLON.FreeCamera("guiCam", new V3(0, 0, -50), scene);
+        guiCam.layerMask = GUI_MASK;
+        scene.activeCameras = [camera, guiCam];
+        bindDebugCamera(scene, camera);
+    } else {
+        // カメラは1台のまま。activeCamera が主カメラ以外を指す瞬間が無いので、
+        // bindDebugCamera による補正は不要（Y 座標の補正とは別）
+        scene.activeCameras = [camera];
+    }
     const ui = BABYLON.GUI.AdvancedDynamicTexture.CreateFullscreenUI("ui", true, scene);
-    if (ui.layer) ui.layer.layerMask = GUI_MASK;
+    if (ui.layer) {
+        if (GLOBAL.guiOwnCamera) {
+            ui.layer.layerMask = GUI_MASK;
+        } else {
+            // 【対策】前景レイヤーの applyPostProcess を false にすると、
+            //   Babylon はそのレイヤーを _afterCameraPostProcessStage で描く。
+            //   つまり Bloom / 被写界深度 / シャープンを掛け終わった後に
+            //   GUI を重ねるので、カメラを分けなくても UI はボケない
+            ui.layer.applyPostProcess = false;
+        }
+    }
 
     const COL = {
         idle: "#16240f", active: "#33631f", edge: "#2f4327",
@@ -1595,7 +2049,7 @@ var createScene = async function () {
         dbgBtn.background = dbgIdx ? COL.active : COL.idle;
         dbgBtn.textBlock.text = "表示: " + DEBUGS[dbgIdx];
     });
-    const bumpBtn = addButton("bump", "粒の凹凸: 強", () => {
+    const bumpBtn = addButton("bump", "粒の凹凸: 中", () => {
         bumpIdx = (bumpIdx + 1) % BUMPS.length;
         applyRelief();
         bumpBtn.textBlock.text = "粒の凹凸: " + BUMPS[bumpIdx].label;
